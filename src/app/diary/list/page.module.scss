@@ -1,0 +1,231 @@
+.container {
+  display: flex;
+}
+
+// === GNB (Global Navigation Bar) ===
+
+.gnb {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 72px;
+  z-index: 98;
+  padding-top: 10px;
+  padding-bottom: 24px;
+  background: #f5f5f5;
+}
+
+.menuItem {
+  margin-bottom: 12px;
+}
+
+.link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48px;
+  height: 55px;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  gap: 4px;
+
+  &:hover .icon {
+    background-color: #f0f0f0;
+  }
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  padding: 7px;
+  border-radius: 12px;
+}
+
+.user {
+  margin-top: auto;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  outline: 0;
+  order: -1;
+  margin-bottom: 12px;
+  transition: transform 0.3s ease-in-out;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+}
+
+.toggleOpen {
+  transform: rotate(180deg);
+}
+
+// === LNB (Local Navigation Bar) ===
+
+.lnb {
+  display: flex;
+  flex-flow: column;
+  position: fixed;
+  inset: 0 auto 0 72px;
+  width: 264px;
+  z-index: 97;
+  background: #fff;
+  border-right: 1px solid #ebebeb;
+  overflow: hidden;
+  padding: 11px 12px 0;
+  transition: translate 0.2s;
+  will-change: translate;
+}
+
+.lnbShow {
+  translate: 0;
+}
+
+.lnbHide {
+  translate: -264px;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding-left: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.diaryWrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.newDiaryLink {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  min-height: 48px;
+  padding-left: 38px;
+  padding-right: 10px;
+  margin-left: -5px;
+  margin-right: -5px;
+  border: 5px solid transparent;
+  border-radius: 13px;
+  background-clip: padding-box;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  position: relative;
+  text-decoration: none;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+}
+
+.footer {
+  margin-top: auto;
+  padding: 24px 0 24px 10px;
+  letter-spacing: -0.01em;
+  font-size: 10px;
+  line-height: 15px;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  p {
+    margin-top: 8px;
+  }
+}
+
+// === Main Content ===
+
+.main {
+  height: 100dvh;
+  width: 100%;
+  overflow: auto hidden;
+  scrollbar-width: thin;
+  transition: margin-left 0.2s;
+}
+
+.mainOpen {
+  margin-left: 336px;
+}
+
+.mainClosed {
+  margin-left: 72px;
+}
+
+.diaryList {
+  display: flex;
+  flex-flow: column;
+  height: 100dvh;
+  min-width: 360px;
+  padding-top: 28px;
+  position: relative;
+}
+
+.scroll {
+  flex-grow: 1;
+  overflow: hidden auto;
+  padding: 0 16px;
+  position: relative;
+  scrollbar-width: thin;
+}
+
+.video {
+  display: block;
+  width: 700px;
+  max-width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 16px;
+  object-fit: cover;
+  background-color: #ccc;
+  margin: 60px auto 18px;
+}
+
+.text {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.button {
+  display: block;
+  width: 163px;
+  height: 42px;
+  margin: 0 auto 60px;
+  border-radius: 21px;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  background-color: #1a1a1a;
+  color: #dadada;
+}
