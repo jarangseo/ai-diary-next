@@ -1,0 +1,60 @@
+// Mixins for responsive design
+// 0~767 || 768~1024 || 1025~♾️
+@mixin sml-mdm {
+  // 1 column or 2 columns
+  @media (max-width: 1024px) {
+    @content;
+  }
+}
+@mixin mdm-lrg {
+  // 2 columns or 3 columns
+  @media (min-width: 768px) {
+    @content;
+  }
+}
+@mixin sml {
+  // 1 column
+  @media (max-width: 767px) {
+    @content;
+  }
+}
+@mixin mdm {
+  // 2 columns
+  @media (min-width: 768px) and (max-width: 1024px) {
+    @content;
+  }
+}
+@mixin lrg {
+  // 3 columns
+  @media (min-width: 1025px) {
+    @content;
+  }
+}
+@mixin landscape {
+  @media (orientation: landscape) {
+    @content;
+  }
+}
+@mixin portrait {
+  @media (orientation: portrait) {
+    @content;
+  }
+}
+@mixin color {
+  // color support
+  @media (monochrome: 0) {
+    @content;
+  }
+}
+@mixin light {
+  // light theme
+  @media (prefers-color-scheme: light) {
+    @content;
+  }
+}
+@mixin dark {
+  // dark theme
+  @media (prefers-color-scheme: dark) {
+    @content;
+  }
+}
