@@ -1,83 +1,63 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
 
-:where(html, body) {
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
   min-height: 100dvh;
 }
-:where(html) {
+
+html {
   text-size-adjust: none;
 }
-:where(body) {
-  box-sizing: border-box;
-  margin: 0;
+
+body {
   padding-bottom: env(safe-area-inset-bottom);
   overflow-wrap: break-word;
   font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
 }
+
 :where(:lang(ko)) {
   word-break: keep-all;
 }
-:where(img) {
+
+img {
   max-width: 100%;
   height: auto;
 }
-:where([class]) {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-:where([class])::before,
-:where([class])::after {
-  box-sizing: border-box;
-  pointer-events: none;
-}
-:where(ol[class], ul[class]) {
+
+ol, ul {
   list-style: none;
 }
-:where(
-  button[class],
-  dialog[class],
-  fieldset[class],
-  hr[class],
-  iframe[class],
-  input[class],
-  select[class],
-  textarea[class]
-) {
+
+button, dialog, fieldset, hr, iframe, input, select, textarea {
   border: 0;
+  font-family: inherit;
 }
-:where(input[class], textarea[class]) {
+
+input, textarea {
   border-radius: 0;
 }
-:where(
-  button[class],
-  input[class],
-  mark[class],
-  meter[class],
-  progress[class]
-) {
+
+button, input, mark, meter, progress {
   background-color: transparent;
 }
-:where(table[class]) {
+
+table {
   border: 0;
   border-collapse: collapse;
   border-spacing: 0;
 }
-:where(
-  button[class],
-  input[class],
-  meter[class],
-  progress[class],
-  select[class],
-  textarea[class]
-) {
+
+button, input, meter, progress, select, textarea {
   appearance: none;
 }
-:where(
-  button[class],
-  label[class],
-  [type='checkbox'][class],
-  [type='radio'][class]
-) {
+
+button, label, [type='checkbox'], [type='radio'] {
   cursor: pointer;
 }
