@@ -47,6 +47,13 @@
   margin-top: auto;
 }
 
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .toggle {
   display: flex;
   align-items: center;

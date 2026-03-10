@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import '@/styles/globals.scss'
+import Providers from '@/components/Provider'
 
 export const metadata: Metadata = {
   title: 'AI Diary',
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }
