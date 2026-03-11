@@ -12,16 +12,11 @@ import {
 import { useSession, signOut } from 'next-auth/react'
 import Image from 'next/image'
 import clsx from 'clsx'
+import { useUiStore } from '@/stores/uiStore'
 
-export default function Gnb({
-  isOpen,
-  toggleMenu,
-}: {
-  isOpen: boolean
-  toggleMenu: () => void
-}) {
+export default function Gnb() {
   const { data: session } = useSession()
-
+  const { isLnbOpen, setIsLnbOpen } = useUiStore()
   return (
     <nav className={styles.gnb}>
       <h1 hidden>
@@ -77,9 +72,9 @@ export default function Gnb({
       </ul>
       <button
         type="button"
-        className={clsx(styles.toggle, isOpen && styles.toggleOpen)}
+        className={clsx(styles.toggle, isLnbOpen && styles.toggleOpen)}
         aria-label="Toggle menu"
-        onClick={toggleMenu}
+        onClick={setIsLnbOpen}
       >
         <ChevronLeftIcon size={24} />
       </button>

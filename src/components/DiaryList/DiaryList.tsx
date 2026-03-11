@@ -1,15 +1,18 @@
-'use client'
-
 import clsx from 'clsx'
 import { EditIcon, FilterIcon, SearchIcon } from 'lucide-react'
 import Link from 'next/link'
 import styles from './DiaryList.module.scss'
+import { auth } from '@/auth'
+import { getAllDiaries } from '@/lib/db'
 
 type DiaryListProps = {
   className?: string
 }
 
-export function DiaryList({ className }: DiaryListProps) {
+export async function DiaryList({ className }: DiaryListProps) {
+  const session = await auth()
+  const diaries = await getAllDiaries(session!.user!.id!)
+
   return (
     <article className={clsx(styles.article, className)}>
       <header className={styles.header}>
@@ -43,6 +46,18 @@ export function DiaryList({ className }: DiaryListProps) {
             </div>
           </Link>
         </li>
+        {diaries.map((diary) => (
+          <li className={styles.diaryItem} key={diary.date}>
+            <Link className={styles.diaryItemLink} href="/">
+              <strong className={styles.diaryItemTitle}>{diary.content}</strong>
+              <p className={styles.diaryItemContent}>{diary.content}</p>
+              <div className={styles.diaryItemFooter}>
+                <span className={styles.diaryItemMood}>MOOD emoji</span>
+                <span className={styles.diaryItemDate}>{diary.date}</span>
+              </div>
+            </Link>
+          </li>
+        ))}
       </ul>
     </article>
   )
