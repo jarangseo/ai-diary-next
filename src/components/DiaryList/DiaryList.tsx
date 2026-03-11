@@ -32,7 +32,10 @@ export async function DiaryList({ className }: DiaryListProps) {
       </header>
       <ul className={styles.list}>
         <li className={styles.diaryItem}>
-          <Link className={styles.diaryItemLink} href="/">
+          <Link
+            className={styles.diaryItemLink}
+            href={`/diary/${diaries[0].date}`}
+          >
             <strong className={styles.diaryItemTitle}>
               TITLETITLETITLETITLETITLETITLETITLE
             </strong>
@@ -48,7 +51,10 @@ export async function DiaryList({ className }: DiaryListProps) {
         </li>
         {diaries.map((diary) => (
           <li className={styles.diaryItem} key={diary.date}>
-            <Link className={styles.diaryItemLink} href="/">
+            <Link
+              className={styles.diaryItemLink}
+              href={`/diary/${diary.date}`}
+            >
               <strong className={styles.diaryItemTitle}>{diary.content}</strong>
               <p className={styles.diaryItemContent}>{diary.content}</p>
               <div className={styles.diaryItemFooter}>

@@ -1,6 +1,6 @@
 import styles from './Lnb.module.scss'
 import Link from 'next/link'
-import { PenIcon, PlusIcon } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 
 import clsx from 'clsx'
 import { useUiStore } from '@/stores/uiStore'
@@ -17,7 +17,6 @@ export default function Lnb() {
           className={styles.logoLink}
           aria-label="AI Diary"
         >
-          <PenIcon size={16} />
           AI Diary
         </Link>
       </h2>
