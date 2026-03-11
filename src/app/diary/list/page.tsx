@@ -1,6 +1,13 @@
+import { auth } from '@/auth'
 import styles from './page.module.scss'
+import { getAllDiaries } from '@/lib/db'
 
-export default function DiaryListPage() {
+export default async function DiaryListPage() {
+  const session = await auth()
+  const diaries = await getAllDiaries(session!.user!.id!)
+
+  console.log(diaries)
+
   return (
     <article className={styles.diaryList}>
       <header></header>
