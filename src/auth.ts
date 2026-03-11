@@ -7,4 +7,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: '/login', // custom login page
   },
+  callbacks: {
+    session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub
+      }
+      return session
+    },
+  },
 })
