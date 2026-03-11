@@ -1,0 +1,47 @@
+.calendar {
+  padding: 36px 10px;
+}
+
+.header {
+  align-items: center;
+  display: flex;
+  height: 24px;
+  margin: 0 32px;
+  position: relative;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  padding: 0 12px 0 14px;
+}
+
+.button {
+  flex-shrink: 0;
+}
+
+.prevButton {
+  order: -1;
+}
+
+.nextButton {
+  flex-shrink: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  width: 100%;
+}
+
+.weekday {
+  text-align: center;
+  margin: 18px 0 8px 0;
+}
+
+.dayCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

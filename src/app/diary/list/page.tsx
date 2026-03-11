@@ -1,31 +1,17 @@
-import { auth } from '@/auth'
+import { Calendar } from '@/components/Calendar/Calendar'
+import { DiaryList } from '@/components/DiaryList/DiaryList'
+import SplitPanel from '@/components/SplitPanel/SplitPanel'
 import styles from './page.module.scss'
-import { getAllDiaries } from '@/lib/db'
 
-export default async function DiaryListPage() {
-  const session = await auth()
-  const diaries = await getAllDiaries(session!.user!.id!)
-
-  console.log(diaries)
-
+export default function DiaryListPage() {
   return (
-    <article className={styles.diaryList}>
-      <header></header>
-      <div className={styles.scroll}>
-        <video
-          src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-          autoPlay
-          loop
-          playsInline
-          controls
-          className={styles.video}
-        ></video>
-        <p className={styles.text}>
-          Record the feelings you couldn&apos;t put into words. AI helps you
-          understand what you feel.
-        </p>
-        <button className={styles.button}>Start Writing</button>
-      </div>
-    </article>
+    <SplitPanel
+      left={<DiaryList className={styles.left} />}
+      right={
+        <aside className={styles.right}>
+          <Calendar />
+        </aside>
+      }
+    />
   )
 }

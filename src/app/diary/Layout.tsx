@@ -4,25 +4,24 @@ import styles from './layout.module.scss'
 import Gnb from '@/components/Gnb/Gnb'
 import Lnb from '@/components/Lnb/Lnb'
 import clsx from 'clsx'
-import { useState } from 'react'
+
+import { useUiStore } from '@/stores/uiStore'
 
 export default function DiaryLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const toggleMenu = () => {
-    setIsOpen(!isOpen)
-  }
+  const { isLnbOpen } = useUiStore()
+
   return (
     <div className={styles.container}>
-      <Gnb isOpen={isOpen} toggleMenu={toggleMenu} />
-      <Lnb isOpen={isOpen} />
+      <Gnb />
+      <Lnb />
       <main
         className={clsx(
           styles.main,
-          isOpen ? styles.mainOpen : styles.mainClosed
+          isLnbOpen ? styles.mainOpen : styles.mainClosed
         )}
       >
         {children}

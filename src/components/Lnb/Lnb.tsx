@@ -1,21 +1,32 @@
 import styles from './Lnb.module.scss'
 import Link from 'next/link'
-import { PenIcon, PlusIcon } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 
 import clsx from 'clsx'
+import { useUiStore } from '@/stores/uiStore'
 
-export default function Lnb({ isOpen }: { isOpen: boolean }) {
+export default function Lnb() {
+  const { isLnbOpen } = useUiStore()
   return (
-    <nav className={clsx(styles.lnb, isOpen ? styles.lnbShow : styles.lnbHide)}>
+    <nav
+      className={clsx(styles.lnb, isLnbOpen ? styles.lnbShow : styles.lnbHide)}
+    >
       <h2>
-        <Link href="/" className={styles.logoLink} aria-label="AI Diary">
-          <PenIcon size={16} />
+        <Link
+          href="/diary/list"
+          className={styles.logoLink}
+          aria-label="AI Diary"
+        >
           AI Diary
         </Link>
       </h2>
       <div className={styles.diaryWrap}>
         <div className={styles.newDiary}>
-          <Link className={styles.newDiaryLink} href="/" aria-label="New Diary">
+          <Link
+            className={styles.newDiaryLink}
+            href="/diary/write"
+            aria-label="New Diary"
+          >
             <PlusIcon size={16} />
             New Diary
           </Link>

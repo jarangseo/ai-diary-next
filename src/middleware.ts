@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export default auth((req) => {
   const { pathname } = req.nextUrl
 
-  if (pathname === '/diary/list') {
+  if (pathname === '/diary') {
     return NextResponse.next()
   }
   if (!req.auth) {
