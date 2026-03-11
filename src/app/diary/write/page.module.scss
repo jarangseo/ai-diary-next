@@ -1,0 +1,79 @@
+.write {
+  display: flex;
+  flex-flow: column;
+  height: 100dvh;
+  padding-top: 28px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 16px;
+  gap: 8px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #e5e7eb;
+  }
+}
+
+.dateInput {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid #111827;
+    outline-offset: -1px;
+  }
+}
+
+.saveButton {
+  margin-left: auto;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.content {
+  flex-grow: 1;
+  padding: 24px 32px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #1a1a1a;
+  resize: none;
+  border: none;
+  outline: none;
+  scrollbar-width: thin;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
