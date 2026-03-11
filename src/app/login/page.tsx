@@ -14,7 +14,7 @@ export default function LoginPage() {
           <form
             action={async () => {
               'use server'
-              await signIn('google', { redirectTo: '/diary/list' })
+              await signIn('google', { redirectTo: '/diary' })
             }}
           >
             <button type="submit" className={styles.googleBtn}>
@@ -56,7 +56,7 @@ export default function LoginPage() {
           <form
             action={async () => {
               'use server'
-              await signIn('github', { redirectTo: '/diary/list' })
+              await signIn('github', { redirectTo: '/diary' })
             }}
           >
             <button type="submit" className={styles.githubBtn}>

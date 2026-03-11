@@ -1,31 +1,40 @@
-import { auth } from '@/auth'
+import { EditIcon, FilterIcon, Link, SearchIcon } from 'lucide-react'
+import { Calendar } from '@/components/Calendar/Calendar'
+import SplitPanel from '@/components/SplitPanel/SplitPanel'
 import styles from './page.module.scss'
-import { getAllDiaries } from '@/lib/db'
 
-export default async function DiaryListPage() {
-  const session = await auth()
-  const diaries = await getAllDiaries(session!.user!.id!)
-
-  console.log(diaries)
-
+export default function DiaryListPage() {
   return (
-    <article className={styles.diaryList}>
-      <header></header>
-      <div className={styles.scroll}>
-        <video
-          src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-          autoPlay
-          loop
-          playsInline
-          controls
-          className={styles.video}
-        ></video>
-        <p className={styles.text}>
-          Record the feelings you couldn&apos;t put into words. AI helps you
-          understand what you feel.
-        </p>
-        <button className={styles.button}>Start Writing</button>
-      </div>
-    </article>
+    <SplitPanel
+      left={
+        <article className={styles.left}>
+          <header>
+            <h2>Diary List</h2>
+            {/* Search */}
+            <button>
+              <SearchIcon size={24} />
+            </button>
+            {/* Filter */}
+            <button>
+              <FilterIcon size={24} />
+            </button>
+            {/* Edit */}
+            <button>
+              <EditIcon size={24} />
+            </button>
+          </header>
+          <ul>
+            <li>
+              <Link href="/diary/1">2026-03-10</Link>{' '}
+            </li>
+          </ul>
+        </article>
+      }
+      right={
+        <aside className={styles.right}>
+          <Calendar />
+        </aside>
+      }
+    />
   )
 }
