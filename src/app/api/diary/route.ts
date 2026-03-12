@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { saveDiary } from '@/lib/db'
+import { saveDiary } from '@/lib/diary'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {

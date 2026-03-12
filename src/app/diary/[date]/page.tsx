@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { getDiary } from '@/lib/db'
+import { getDiary } from '@/lib/diary'
 import { notFound } from 'next/navigation'
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'

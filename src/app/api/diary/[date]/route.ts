@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { getDiary } from '@/lib/db'
+import { getDiary } from '@/lib/diary'
 import { NextResponse } from 'next/server'
 
 export async function GET(
