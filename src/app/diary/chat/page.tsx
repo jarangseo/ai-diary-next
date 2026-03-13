@@ -1,60 +1,74 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { io, Socket } from 'socket.io-client'
+import styles from './page.module.scss'
+import Link from 'next/link'
+import {
+  MessageCircleIcon,
+  PlusIcon,
+  ChevronRightIcon,
+} from 'lucide-react'
 
-export default function ChatPage() {
-  const [messages, setMessages] = useState<
-    { userId: string; message: string }[]
-  >([])
-  const [input, setInput] = useState('')
-  const socketRef = useRef<Socket | null>(null)
+// TODO: Fetch chat room list from API
+const mockRooms = [
+  {
+    id: 'room-1',
+    date: 'March 11, 2026',
+    memberCount: 3,
+    lastMessage: 'We should all go this weekend!',
+  },
+  {
+    id: 'room-2',
+    date: 'March 10, 2026',
+    memberCount: 2,
+    lastMessage: 'The weather was nice today',
+  },
+]
 
-  useEffect(() => {
-    const socket = io('http://localhost:4000')
-    socketRef.current = socket
+export default function ChatListPage() {
+  // TODO: const rooms = await fetch('/api/chat/rooms').then(r => r.json())
+  const rooms = mockRooms
 
-    socket.on('connect', () => {
-      socket.emit('join-room', 'test-room')
-    })
-
-    socket.on('new-message', (msg) => {
-      console.log(msg)
-      setMessages((prev) => [...prev, msg])
-    })
-
-    return () => {
-      socket.disconnect()
-      socketRef.current = null
-    }
-  }, [])
-
-  const sendMessage = async () => {
-    if (!input.trim()) return
-
-    socketRef.current?.emit('send-message', {
-      roomId: 'test-room',
-      content: input,
-    })
-    setInput('')
+  const handleCreate = () => {
+    // TODO: POST /api/chat/rooms → navigate to created roomId
+    // router.push(`/diary/chat/${newRoom.id}`)
   }
 
   return (
-    <div>
-      <h1>Chat</h1>
-      <div>
-        {messages.map((msg, i) => (
-          <p key={i}>
-            <strong>{msg.userId}</strong>: {msg.message}
-          </p>
-        ))}
-      </div>
-      <div>
-        <input value={input} onChange={(e) => setInput(e.target.value)} />
-        <button type="button" onClick={sendMessage}>
-          Send
-        </button>
-      </div>
+    <div className={styles.page}>
+      <h1 className={styles.title}>Chat Rooms</h1>
+
+      <button type="button" className={styles.createBtn} onClick={handleCreate}>
+        <PlusIcon size={18} />
+        Create New Chat Room
+      </button>
+
+      {rooms.length > 0 ? (
+        <div className={styles.roomList}>
+          {rooms.map((room) => (
+            <Link
+              key={room.id}
+              href={`/diary/chat/${room.id}`}
+              className={styles.roomItem}
+            >
+              <div className={styles.roomIcon}>
+                <MessageCircleIcon size={22} />
+              </div>
+              <div className={styles.roomInfo}>
+                <div className={styles.roomDate}>{room.date}</div>
+                <div className={styles.roomMeta}>
+                  {room.memberCount} members · {room.lastMessage}
+                </div>
+              </div>
+              <ChevronRightIcon size={18} className={styles.roomArrow} />
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.empty}>
+          No chat rooms yet.<br />
+          Create a new one to get started!
+        </div>
+      )}
     </div>
   )
 }

@@ -55,7 +55,7 @@ export default function SplitPanel({
         aria-valuenow={Math.round(leftWidth)}
         aria-valuemin={20}
         aria-valuemax={80}
-        aria-label="패널 크기 조절"
+        aria-label="Resize panels"
         tabIndex={0}
         onPointerDown={handlePointerDown}
         onKeyDown={handleKeyDown}
