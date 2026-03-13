@@ -3,7 +3,7 @@ import { EditIcon, FilterIcon, SearchIcon } from 'lucide-react'
 import Link from 'next/link'
 import styles from './DiaryList.module.scss'
 import { auth } from '@/auth'
-import { getAllDiaries } from '@/lib/db'
+import { getAllDiaries } from '@/lib/diary'
 
 type DiaryListProps = {
   className?: string
