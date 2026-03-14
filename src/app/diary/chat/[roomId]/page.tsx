@@ -78,7 +78,7 @@ export default function ChatRoomPage({
   const handleSend = () => {
     if (!input.trim()) return
     sendMessage(input)
-    emitTyping()
+
     // TODO: socket.emit('send-message', { roomId, content: input })
     // TODO: Detect @ai mention → trigger AI response
     setInput('')
@@ -99,6 +99,7 @@ export default function ChatRoomPage({
       }}
       currentUserId={currentUserId}
       messagesEndRef={messagesEndRef}
+      emitTyping={emitTyping}
     />
   )
 }

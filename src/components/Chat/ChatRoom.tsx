@@ -17,6 +17,7 @@ interface ChatRoomProps {
   onInvite?: () => void
   currentUserId: string
   messagesEndRef: React.RefObject<HTMLDivElement | null>
+  emitTyping: () => void
 }
 
 export default function ChatRoom({
@@ -26,6 +27,7 @@ export default function ChatRoom({
   typingUsers,
   inputValue,
   onInputChange,
+  emitTyping,
   onSend,
   onInvite,
   currentUserId,
@@ -76,7 +78,10 @@ export default function ChatRoom({
       <TypingIndicator users={typingUsers} />
       <ChatInput
         value={inputValue}
-        onChange={onInputChange}
+        onChange={(value) => {
+          onInputChange(value)
+          emitTyping()
+        }}
         onSend={onSend}
       />
     </div>
