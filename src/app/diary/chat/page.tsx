@@ -2,35 +2,35 @@
 
 import styles from './page.module.scss'
 import Link from 'next/link'
-import {
-  MessageCircleIcon,
-  PlusIcon,
-  ChevronRightIcon,
-} from 'lucide-react'
-
-// TODO: Fetch chat room list from API
-const mockRooms = [
-  {
-    id: 'room-1',
-    date: 'March 11, 2026',
-    memberCount: 3,
-    lastMessage: 'We should all go this weekend!',
-  },
-  {
-    id: 'room-2',
-    date: 'March 10, 2026',
-    memberCount: 2,
-    lastMessage: 'The weather was nice today',
-  },
-]
+import { MessageCircleIcon, PlusIcon, ChevronRightIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function ChatListPage() {
   // TODO: const rooms = await fetch('/api/chat/rooms').then(r => r.json())
-  const rooms = mockRooms
+  const [rooms, setRooms] = useState<any[]>([])
+  const router = useRouter()
 
-  const handleCreate = () => {
-    // TODO: POST /api/chat/rooms → navigate to created roomId
-    // router.push(`/diary/chat/${newRoom.id}`)
+  useEffect(() => {
+    fetch('/api/chat/rooms')
+      .then((res) => res.json())
+      .then((data) => {
+        setRooms(data)
+      })
+      .catch((err) => {
+        console.error(err)
+      })
+  }, [])
+
+  const handleCreate = async () => {
+    const today = new Date().toISOString().split('T')[0]
+    const res = await fetch('/api/chat/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: today }),
+    })
+    const room = await res.json()
+    router.push(`/diary/chat/${room.id}`)
   }
 
   return (
@@ -65,7 +65,8 @@ export default function ChatListPage() {
         </div>
       ) : (
         <div className={styles.empty}>
-          No chat rooms yet.<br />
+          No chat rooms yet.
+          <br />
           Create a new one to get started!
         </div>
       )}

@@ -32,10 +32,7 @@ export default function OnlineUsers({ users }: OnlineUsersProps) {
                   {user.name.charAt(0)}
                 </span>
               )}
-              <span
-                className={styles.status}
-                data-online={user.isOnline}
-              />
+              <span className={styles.status} data-online={user.isOnline} />
             </div>
             <span className={styles.name}>{user.name}</span>
           </li>

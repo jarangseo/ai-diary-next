@@ -4,24 +4,7 @@ import ChatInput from './ChatInput'
 import TypingIndicator from './TypingIndicator'
 import OnlineUsers from './OnlineUsers'
 import { LinkIcon, CalendarIcon } from 'lucide-react'
-
-// TODO: Replace with actual types
-interface Message {
-  id: string
-  content: string
-  type: 'user' | 'ai' | 'system'
-  userName?: string
-  userImage?: string
-  userId: string
-  createdAt: string
-}
-
-interface OnlineUser {
-  id: string
-  name: string
-  image?: string
-  isOnline: boolean
-}
+import type { ChatMessage as Message, OnlineUser } from '@/types/chat'
 
 interface ChatRoomProps {
   roomDate: string

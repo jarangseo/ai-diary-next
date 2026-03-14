@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
+import type { ChatMessage } from '@/types/chat'
 
 export function useSocket({
   userId,
@@ -14,11 +15,11 @@ export function useSocket({
   userId: string
   userName: string
   roomId: string
-  onNewMessage: (message: any) => void
+  onNewMessage: (message: ChatMessage) => void
   onUserTyping: (userId: string) => void
-  onUserJoined: (user: { userId: string; userName: string }) => void
+  onUserJoined: (user: { id: string; name: string }) => void
   onUserLeft: (userId: string) => void
-  onOnlineUsers: (users: { userId: string; userName: string }[]) => void
+  onOnlineUsers: (users: { id: string; name: string }[]) => void
 }) {
   const socketRef = useRef<Socket | null>(null)
   const callbacksRef = useRef({

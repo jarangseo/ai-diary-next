@@ -1,78 +1,84 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import ChatRoom from '@/components/Chat/ChatRoom'
+import { useSession } from 'next-auth/react'
+import { useSocket } from '@/hooks/useSocket'
+import type { ChatMessage, OnlineUser } from '@/types/chat'
 
-// TODO: Replace with real data
-const mockMessages = [
-  {
-    id: '5',
-    content: 'Alex has joined the room.',
-    type: 'system' as const,
-    userId: 'system',
-    createdAt: '2026-03-11T13:59:00Z',
-  },
-  {
-    id: '1',
-    content: 'I went to that new coffee shop downtown today',
-    type: 'user' as const,
-    userName: 'Me',
-    userId: 'me',
-    createdAt: '2026-03-11T14:00:00Z',
-  },
-  {
-    id: '2',
-    content: 'Oh nice! How was it?',
-    type: 'user' as const,
-    userName: 'Alex',
-    userImage: '',
-    userId: 'friend-a',
-    createdAt: '2026-03-11T14:01:00Z',
-  },
-  {
-    id: '3',
-    content: 'The latte was amazing and they had a rooftop terrace with a great view',
-    type: 'user' as const,
-    userName: 'Me',
-    userId: 'me',
-    createdAt: '2026-03-11T14:02:00Z',
-  },
-  {
-    id: '4',
-    content: 'We should all go together this weekend!',
-    type: 'user' as const,
-    userName: 'Alex',
-    userId: 'friend-a',
-    createdAt: '2026-03-11T14:03:00Z',
-  },
-  {
-    id: '6',
-    content:
-      'Sounds like a lovely day exploring a new spot! A weekend trip with friends to the rooftop cafe sounds like a great plan.',
-    type: 'ai' as const,
-    userName: 'AI',
-    userId: 'ai',
-    createdAt: '2026-03-11T14:05:00Z',
-  },
-]
-
-const mockOnlineUsers = [
-  { id: 'me', name: 'Me', isOnline: true },
-  { id: 'friend-a', name: 'Alex', isOnline: true },
-  { id: 'friend-b', name: 'Sam', isOnline: false },
-]
-
-export default function ChatRoomPage() {
+export default function ChatRoomPage({
+  params,
+}: {
+  params: Promise<{ roomId: string }>
+}) {
+  // TODO: Get roomId from params
+  const { roomId } = use(params)
+  const { data: session } = useSession()
+  const currentUserId = session?.user?.id ?? ''
+  const currentUserName = session?.user?.name ?? ''
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // TODO: Get roomId from params
   // TODO: Connect socket via useSocket hook
+  const { sendMessage, emitTyping } = useSocket({
+    userId: currentUserId,
+    userName: currentUserName,
+    roomId,
+    onNewMessage: (msg) => {
+      setMessages((prev) => [...prev, msg])
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 50)
+    },
+    onUserTyping: (userName) => {
+      setTypingUsers((prev) =>
+        prev.includes(userName) ? prev : [...prev, userName]
+      )
+      setTimeout(() => {
+        setTypingUsers((prev) => prev.filter((u) => u !== userName))
+      }, 2000)
+    },
+    onUserJoined: (user) => {
+      setOnlineUsers((prev) => {
+        if (prev.some((u) => u.id === user.id)) return prev
+        return [...prev, { ...user, isOnline: true }]
+      })
+    },
+    onUserLeft: (userId) => {
+      setOnlineUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isOnline: false } : u))
+      )
+    },
+    onOnlineUsers: (users) => {
+      setOnlineUsers(users.map((u) => ({ ...u, isOnline: true, image: '' })))
+    },
+  })
   // TODO: Load existing messages via getMessages(roomId)
+  useEffect(() => {
+    const fetchMessages = async () => {
+      // const messages = await getMessages(roomId)
+      // setMessages(messages)
+
+      fetch(`/api/chat/rooms/${roomId}/messages`)
+        .then((res) => res.json())
+        .then((data) => {
+          setMessages(data)
+        })
+        .catch((err) => {
+          console.error(err)
+        })
+    }
+    fetchMessages()
+  }, [roomId])
   // TODO: Manage online users and typing state via socket events
 
   const handleSend = () => {
     if (!input.trim()) return
+    sendMessage(input)
+    emitTyping()
     // TODO: socket.emit('send-message', { roomId, content: input })
     // TODO: Detect @ai mention → trigger AI response
     setInput('')
@@ -81,9 +87,9 @@ export default function ChatRoomPage() {
   return (
     <ChatRoom
       roomDate="March 11, 2026"
-      messages={mockMessages}
-      onlineUsers={mockOnlineUsers}
-      typingUsers={[]}
+      messages={messages}
+      onlineUsers={onlineUsers}
+      typingUsers={typingUsers}
       inputValue={input}
       onInputChange={setInput}
       onSend={handleSend}
@@ -91,7 +97,7 @@ export default function ChatRoomPage() {
         // TODO: Copy invite link to clipboard
         // navigator.clipboard.writeText(`${origin}/api/chat/rooms/join?code=${inviteCode}`)
       }}
-      currentUserId="me"
+      currentUserId={currentUserId}
       messagesEndRef={messagesEndRef}
     />
   )
