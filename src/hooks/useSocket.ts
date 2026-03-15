@@ -42,7 +42,7 @@ export function useSocket({
   })
 
   useEffect(() => {
-    const socket: Socket = io('http://localhost:4000', {
+    const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
       auth: { userId, userName },
     })
     socketRef.current = socket
@@ -65,7 +65,7 @@ export function useSocket({
       toast.error('Connection lost. Reconnecting...')
     })
 
-    socket.on('reconnet', () => {
+    socket.on('reconnect', () => {
       toast.success('Reconnected to the server')
       socket.emit('join-room', roomId)
     })
