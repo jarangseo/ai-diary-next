@@ -71,3 +71,12 @@ export async function getMessages(roomId: string) {
     .order('created_at', { ascending: true })
   return data ?? []
 }
+
+export async function getRoom(roomId: string) {
+  const { data } = await supabase
+    .from('chat_rooms')
+    .select('*')
+    .eq('id', roomId)
+    .single()
+  return data ?? null
+}

@@ -1,8 +1,8 @@
 'use client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
-export default function JoinChatPage() {
+function JoinContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const code = searchParams.get('code')
@@ -34,11 +34,22 @@ export default function JoinChatPage() {
         return
       })
   }, [code, router])
+
   return (
     <div>
       {status === 'loading' && <div>Loading...</div>}
       {status === 'success' && <div>Success</div>}
       {status === 'error' && <div>Error</div>}
     </div>
+  )
+}
+
+export default function JoinChatPage() {
+  return (
+    // useSearchParams requires Suspense boundary during static build
+    // since URL query params are not available at build time
+    <Suspense fallback={<div>Loading...</div>}>
+      <JoinContent />
+    </Suspense>
   )
 }

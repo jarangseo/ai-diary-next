@@ -72,7 +72,7 @@ export default function ChatRoom({
 
       {/* Messages */}
       <div className={styles.messages}>
-        {messages.map((msg) => (
+        {messages?.map((msg) => (
           <ChatMessage
             key={msg.id}
             content={msg.content}

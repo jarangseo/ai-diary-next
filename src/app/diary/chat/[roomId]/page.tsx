@@ -1,11 +1,12 @@
 'use client'
 
-import { use, useEffect, useRef, useState } from 'react'
+import { use, useRef, useState } from 'react'
 import ChatRoom from '@/components/Chat/ChatRoom'
 import { useSession } from 'next-auth/react'
 import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage, OnlineUser, ChatRoomData } from '@/types/chat'
 import { useRouter } from 'next/navigation'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 export default function ChatRoomPage({
   params,
@@ -17,19 +18,23 @@ export default function ChatRoomPage({
   const { data: session } = useSession()
   const currentUserId = session?.user?.id ?? ''
   const currentUserName = session?.user?.name ?? ''
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const queryClient = useQueryClient()
+
   // TODO: Connect socket via useSocket hook
   const { sendMessage, emitTyping } = useSocket({
     userId: currentUserId,
     userName: currentUserName,
     roomId,
     onNewMessage: (msg) => {
-      setMessages((prev) => [...prev, msg])
+      queryClient.setQueryData(['messages', roomId], (prev: ChatMessage[]) => [
+        ...(prev || []),
+        msg,
+      ])
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }, 50)
@@ -57,34 +62,18 @@ export default function ChatRoomPage({
       setOnlineUsers(users.map((u) => ({ ...u, isOnline: true, image: '' })))
     },
   })
-  const [room, setRoom] = useState<ChatRoomData | null>(null)
+
   // TODO: Load existing messages via getMessages(roomId)
-  useEffect(() => {
-    const fetchMessages = async () => {
-      // const messages = await getMessages(roomId)
-      // setMessages(messages)
+  const { data: messages } = useQuery<ChatMessage[]>({
+    queryKey: ['messages', roomId],
+    queryFn: () =>
+      fetch(`/api/chat/rooms/${roomId}/messages`).then((res) => res.json()),
+  })
 
-      fetch(`/api/chat/rooms/${roomId}/messages`)
-        .then((res) => res.json())
-        .then((data) => {
-          setMessages(data)
-        })
-        .catch((err) => {
-          console.error(err)
-        })
-
-      fetch(`/api/chat/rooms/${roomId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setRoom(data)
-        })
-        .catch((err) => {
-          console.error(err)
-        })
-    }
-    fetchMessages()
-  }, [roomId])
-  // TODO: Manage online users and typing state via socket events
+  const { data: room } = useQuery<ChatRoomData>({
+    queryKey: ['room', roomId],
+    queryFn: () => fetch(`/api/chat/rooms/${roomId}`).then((res) => res.json()),
+  })
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -127,7 +116,7 @@ export default function ChatRoomPage({
   return (
     <ChatRoom
       roomDate={room?.date ?? ''}
-      messages={messages}
+      messages={messages || []}
       onlineUsers={onlineUsers}
       typingUsers={typingUsers}
       inputValue={input}

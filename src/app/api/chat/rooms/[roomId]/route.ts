@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { supabase } from '@/lib/supabase'
+import { getRoom } from '@/lib/chat'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -11,11 +11,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { roomId } = await params
-  const { data } = await supabase
-    .from('chat_rooms')
-    .select('*')
-    .eq('id', roomId)
-    .single()
+  const data = await getRoom(roomId)
 
   if (!data)
     return NextResponse.json({ error: 'Room not found' }, { status: 404 })
