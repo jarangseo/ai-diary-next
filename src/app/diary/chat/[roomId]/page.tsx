@@ -5,6 +5,7 @@ import ChatRoom from '@/components/Chat/ChatRoom'
 import { useSession } from 'next-auth/react'
 import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage, OnlineUser, ChatRoomData } from '@/types/chat'
+import { useRouter } from 'next/navigation'
 
 export default function ChatRoomPage({
   params,
@@ -21,7 +22,7 @@ export default function ChatRoomPage({
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
+  const router = useRouter()
   // TODO: Connect socket via useSocket hook
   const { sendMessage, emitTyping } = useSocket({
     userId: currentUserId,
@@ -105,6 +106,24 @@ export default function ChatRoomPage({
     }
   }
 
+  const handleGenerateDiary = async () => {
+    if (!room) return
+
+    const res = await fetch('/api/chat/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId, date: room.date }),
+    })
+
+    if (!res.ok) {
+      alert('Failed to generate diary')
+      return
+    }
+
+    const data = await res.json()
+    router.push(`/diary/${data.date}`)
+  }
+
   return (
     <ChatRoom
       roomDate={room?.date ?? ''}
@@ -118,6 +137,7 @@ export default function ChatRoomPage({
       currentUserId={currentUserId}
       messagesEndRef={messagesEndRef}
       emitTyping={emitTyping}
+      onGenerateDiary={handleGenerateDiary}
     />
   )
 }
