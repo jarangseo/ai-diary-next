@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 .detail {
   display: flex;
   flex-flow: column;
@@ -8,8 +10,8 @@
 .header {
   display: flex;
   align-items: center;
-  padding: 0 8px 0 16px;
-  gap: 8px;
+  padding: 0 $spacing-sm 0 $spacing-lg;
+  gap: $spacing-sm;
 }
 
 .backButton {
@@ -18,36 +20,36 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  color: #1a1a1a;
-  transition: background-color 0.2s;
+  color: $color-text-primary;
+  transition: background-color $transition-normal;
 
   &:hover {
-    background-color: #e5e7eb;
+    background-color: $color-border;
   }
 }
 
 .date {
-  font-size: 15px;
-  font-weight: 600;
-  color: #111827;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
 }
 
 .emotion {
   margin-left: auto;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 13px;
-  font-weight: 500;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-normal;
   background-color: #f3f4f6;
   color: #374151;
 }
 
 .content {
   flex-grow: 1;
-  padding: 24px 32px;
-  font-size: 16px;
+  padding: $spacing-xl $spacing-2xl;
+  font-size: $font-size-base;
   line-height: 1.8;
-  color: #1a1a1a;
+  color: $color-text-primary;
   white-space: pre-wrap;
   overflow-y: auto;
   scrollbar-width: thin;

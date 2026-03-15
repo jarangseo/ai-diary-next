@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 .container {
   display: flex;
 }
@@ -7,13 +9,13 @@
   width: 100%;
   overflow: auto hidden;
   scrollbar-width: thin;
-  transition: margin-left 0.2s;
+  transition: margin-left $transition-normal;
 }
 
 .mainOpen {
-  margin-left: 336px;
+  margin-left: $gnb-width + $lnb-width;
 }
 
 .mainClosed {
-  margin-left: 72px;
+  margin-left: $gnb-width;
 }

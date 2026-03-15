@@ -16,7 +16,7 @@ export interface OnlineUser {
 }
 
 export interface ChatRoomData {
-  id: string
+  room_id: string
   owner_id: string
   date: string
   invite_code: string

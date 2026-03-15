@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 .write {
   display: flex;
   flex-flow: column;
@@ -8,8 +10,8 @@
 .header {
   display: flex;
   align-items: center;
-  padding: 0 8px 0 16px;
-  gap: 8px;
+  padding: 0 $spacing-sm 0 $spacing-lg;
+  gap: $spacing-sm;
 }
 
 .backButton {
@@ -19,38 +21,38 @@
   width: 40px;
   height: 40px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color $transition-normal;
 
   &:hover {
-    background-color: #e5e7eb;
+    background-color: $color-border;
   }
 }
 
 .dateInput {
-  font-size: 15px;
-  font-weight: 500;
-  color: #111827;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 6px 12px;
+  font-size: $font-size-base;
+  font-weight: $font-weight-normal;
+  color: $color-text-primary;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 6px $spacing-md;
   cursor: pointer;
 
   &:focus {
-    outline: 2px solid #111827;
+    outline: 2px solid $color-text-primary;
     outline-offset: -1px;
   }
 }
 
 .saveButton {
   margin-left: auto;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  background-color: #1a1a1a;
-  color: #fff;
+  padding: $spacing-sm 20px;
+  border-radius: $radius-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  background-color: $color-text-primary;
+  color: $color-text-inverse;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity $transition-normal;
 
   &:hover {
     opacity: 0.85;
@@ -64,16 +66,16 @@
 
 .content {
   flex-grow: 1;
-  padding: 24px 32px;
-  font-size: 16px;
+  padding: $spacing-xl $spacing-2xl;
+  font-size: $font-size-base;
   line-height: 1.8;
-  color: #1a1a1a;
+  color: $color-text-primary;
   resize: none;
   border: none;
   outline: none;
   scrollbar-width: thin;
 
   &::placeholder {
-    color: #9ca3af;
+    color: $color-text-tertiary;
   }
 }

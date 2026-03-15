@@ -42,6 +42,8 @@ export function useSocket({
   })
 
   useEffect(() => {
+    if (!userId) return // user is not authenticated
+
     const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
       auth: { userId, userName },
     })

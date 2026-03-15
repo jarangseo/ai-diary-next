@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 .split {
   display: flex;
   height: 100%;
@@ -12,7 +14,7 @@
 }
 
 .divider {
-  width: 8px;
+  width: $spacing-sm;
   cursor: col-resize;
   background: transparent;
   position: relative;
@@ -25,14 +27,14 @@
     bottom: 0;
     left: 50%;
     width: 1px;
-    background: #e0e0e0;
+    background: $color-border;
     transform: translateX(-50%);
   }
 
   &:hover::after,
   &:active::after {
     width: 3px;
-    background: #999;
+    background: $color-text-tertiary;
   }
 
   &:focus-visible {

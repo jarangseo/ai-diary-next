@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 .diaryList {
   display: flex;
   flex-flow: column;
@@ -10,7 +12,7 @@
 .scroll {
   flex-grow: 1;
   overflow: hidden auto;
-  padding: 0 16px;
+  padding: 0 $spacing-lg;
   position: relative;
   scrollbar-width: thin;
 }
@@ -20,15 +22,15 @@
   width: 700px;
   max-width: 100%;
   aspect-ratio: 16/9;
-  border-radius: 16px;
+  border-radius: $radius-lg;
   object-fit: cover;
-  background-color: #ccc;
-  margin: 60px auto 18px;
+  background-color: $color-disabled;
+  margin: 60px auto $spacing-lg;
 }
 
 .text {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: $font-size-base;
+  font-weight: $font-weight-normal;
   margin-bottom: 22px;
   text-align: center;
 }
@@ -38,11 +40,11 @@
   width: 163px;
   height: 42px;
   margin: 0 auto 60px;
-  border-radius: 21px;
-  font-size: 16px;
-  font-weight: 500;
+  border-radius: $radius-lg;
+  font-size: $font-size-base;
+  font-weight: $font-weight-normal;
   text-align: center;
   white-space: nowrap;
-  background-color: #1a1a1a;
+  background-color: $color-text-primary;
   color: #dadada;
 }

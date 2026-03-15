@@ -14,7 +14,7 @@ function JoinContent() {
   const { mutate, isPending, isError } = useMutation({
     mutationFn: (inviteCode: string) => chatApi.joinRoom(inviteCode),
     onSuccess: (data: ChatRoomData) => {
-      router.push(`/diary/chat/${data.id}`)
+      router.push(`/diary/chat/${data.room_id}`)
     },
     onError: () => {
       toast.error('Failed to join room')

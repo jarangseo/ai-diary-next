@@ -1,25 +1,26 @@
 @use '@/styles/mixins' as *;
+@use '@/styles/variables' as *;
 
 // === System message ===
 .system {
   display: flex;
   justify-content: center;
-  padding: 8px 0;
+  padding: $spacing-sm 0;
 
   span {
-    font-size: 12px;
-    color: #999;
-    background: #f5f5f5;
-    padding: 4px 12px;
-    border-radius: 12px;
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    background: $color-bg-secondary;
+    padding: $spacing-xs $spacing-md;
+    border-radius: $radius-md;
   }
 }
 
 // === Chat message ===
 .message {
   display: flex;
-  gap: 8px;
-  padding: 4px 16px;
+  gap: $spacing-sm;
+  padding: $spacing-xs $spacing-lg;
   max-width: 100%;
 }
 
@@ -46,7 +47,7 @@
 .userAvatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: $radius-full;
   object-fit: cover;
 }
 
@@ -56,11 +57,11 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: #e0e0e0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #666;
+  border-radius: $radius-full;
+  background: $color-border;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
 }
 
 .aiAvatar {
@@ -69,16 +70,16 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: #e8f5e9;
-  color: #4caf50;
+  border-radius: $radius-full;
+  background: $color-success-light;
+  color: $color-success;
 }
 
 // === Body ===
 .body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: $spacing-xs;
   max-width: 70%;
 
   @include sml {
@@ -87,10 +88,10 @@
 }
 
 .name {
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
-  padding-left: 4px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  padding-left: $spacing-xs;
 }
 
 .row {
@@ -102,35 +103,35 @@
 // === Bubble ===
 .bubble {
   padding: 10px 14px;
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.5;
+  border-radius: $radius-lg;
+  font-size: $font-size-sm;
+  line-height: $line-height-normal;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
 .bubbleMine {
-  background: #3b82f6;
-  color: #fff;
+  background: $color-accent;
+  color: $color-text-inverse;
   border-bottom-right-radius: 4px;
 }
 
 .bubbleOther {
-  background: #f0f0f0;
-  color: #1a1a1a;
+  background: $color-bg-hover;
+  color: $color-text-primary;
   border-bottom-left-radius: 4px;
 }
 
 .bubbleAi {
-  background: #e8f5e9;
-  color: #1a1a1a;
+  background: $color-success-light;
+  color: $color-text-primary;
   border-bottom-left-radius: 4px;
 }
 
 // === Time ===
 .time {
   flex-shrink: 0;
-  font-size: 11px;
-  color: #999;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
   white-space: nowrap;
 }

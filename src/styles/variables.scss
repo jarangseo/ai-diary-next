@@ -1,0 +1,61 @@
+// === Colors ===
+$color-text-primary: #111827;
+$color-text-secondary: #6b7280;
+$color-text-tertiary: #9ca3af;
+$color-text-inverse: #fff;
+
+$color-bg-primary: #fff;
+$color-bg-secondary: #f5f5f5;
+$color-bg-hover: #f0f0f0;
+
+$color-border: #e5e7eb;
+
+$color-accent: #3b82f6;
+$color-accent-light: #e8f0fe;
+$color-accent-hover: rgba(59, 130, 246, 0.85);
+
+$color-success: #4caf50;
+$color-success-light: #e8f5e9;
+
+$color-error: #e14638;
+
+$color-disabled: #d0d0d0;
+
+// === Typography ===
+$font-size-xs: 11px;
+$font-size-sm: 13px;
+$font-size-base: 15px;
+$font-size-lg: 18px;
+$font-size-xl: 22px;
+$font-size-2xl: 30px;
+
+$font-weight-normal: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// === Spacing ===
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+$spacing-2xl: 32px;
+$spacing-3xl: 40px;
+
+// === Border Radius ===
+$radius-sm: 8px;
+$radius-md: 12px;
+$radius-lg: 16px;
+$radius-full: 50%;
+
+// === Transitions ===
+$transition-fast: 0.15s ease;
+$transition-normal: 0.2s ease;
+
+// === Layout ===
+$gnb-width: 72px;
+$lnb-width: 264px;
