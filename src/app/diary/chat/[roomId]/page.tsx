@@ -4,7 +4,7 @@ import { use, useEffect, useRef, useState } from 'react'
 import ChatRoom from '@/components/Chat/ChatRoom'
 import { useSession } from 'next-auth/react'
 import { useSocket } from '@/hooks/useSocket'
-import type { ChatMessage, OnlineUser } from '@/types/chat'
+import type { ChatMessage, OnlineUser, ChatRoomData } from '@/types/chat'
 
 export default function ChatRoomPage({
   params,
@@ -56,6 +56,7 @@ export default function ChatRoomPage({
       setOnlineUsers(users.map((u) => ({ ...u, isOnline: true, image: '' })))
     },
   })
+  const [room, setRoom] = useState<ChatRoomData | null>(null)
   // TODO: Load existing messages via getMessages(roomId)
   useEffect(() => {
     const fetchMessages = async () => {
@@ -66,6 +67,15 @@ export default function ChatRoomPage({
         .then((res) => res.json())
         .then((data) => {
           setMessages(data)
+        })
+        .catch((err) => {
+          console.error(err)
+        })
+
+      fetch(`/api/chat/rooms/${roomId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setRoom(data)
         })
         .catch((err) => {
           console.error(err)
@@ -84,19 +94,27 @@ export default function ChatRoomPage({
     setInput('')
   }
 
+  const handleInvite = async () => {
+    if (room?.invite_code) {
+      navigator.clipboard.writeText(
+        `${window.location.origin}/diary/chat/join?code=${room?.invite_code}`
+      )
+      alert('Invite link copied to clipboard')
+    } else {
+      alert('Room not found')
+    }
+  }
+
   return (
     <ChatRoom
-      roomDate="March 11, 2026"
+      roomDate={room?.date ?? ''}
       messages={messages}
       onlineUsers={onlineUsers}
       typingUsers={typingUsers}
       inputValue={input}
       onInputChange={setInput}
       onSend={handleSend}
-      onInvite={() => {
-        // TODO: Copy invite link to clipboard
-        // navigator.clipboard.writeText(`${origin}/api/chat/rooms/join?code=${inviteCode}`)
-      }}
+      onInvite={handleInvite}
       currentUserId={currentUserId}
       messagesEndRef={messagesEndRef}
       emitTyping={emitTyping}
