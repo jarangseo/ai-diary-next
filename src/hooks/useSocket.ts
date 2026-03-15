@@ -22,6 +22,7 @@ export function useSocket({
   onOnlineUsers: (users: { id: string; name: string }[]) => void
 }) {
   const socketRef = useRef<Socket | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const callbacksRef = useRef({
     onNewMessage,
     onUserTyping,
@@ -62,6 +63,10 @@ export function useSocket({
     return () => {
       socket.disconnect()
       socketRef.current = null
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
     }
   }, [userId, userName, roomId])
 
@@ -73,7 +78,13 @@ export function useSocket({
   )
 
   const emitTyping = useCallback(() => {
+    if (timeoutRef.current !== null) {
+      return
+    }
     socketRef.current?.emit('user-typing', { roomId, userId })
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null
+    }, 1000)
   }, [roomId, userId])
 
   return { sendMessage, emitTyping }
