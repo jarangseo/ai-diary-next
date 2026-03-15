@@ -6,13 +6,12 @@ import { MessageCircleIcon, PlusIcon, ChevronRightIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import type { ChatRoomData } from '@/types/chat'
+import { chatApi } from '@/services/chatServices'
 
 export default function ChatListPage() {
-  // TODO: const rooms = await fetch('/api/chat/rooms').then(r => r.json())
-
   const { data: rooms = [] } = useQuery<ChatRoomData[]>({
     queryKey: ['rooms'],
-    queryFn: () => fetch('/api/chat/rooms').then((res) => res.json()),
+    queryFn: () => chatApi.getRooms(),
   })
 
   const router = useRouter()
@@ -20,11 +19,7 @@ export default function ChatListPage() {
   const createRoom = useMutation({
     mutationFn: () => {
       const today = new Date().toISOString().split('T')[0]
-      return fetch('/api/chat/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: today }),
-      }).then((res) => res.json())
+      return chatApi.createRoom(today)
     },
     onSuccess: (room) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] })

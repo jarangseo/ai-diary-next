@@ -7,6 +7,7 @@ import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage, OnlineUser, ChatRoomData } from '@/types/chat'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { chatApi } from '@/services/chatServices'
 
 export default function ChatRoomPage({
   params,
@@ -63,24 +64,19 @@ export default function ChatRoomPage({
     },
   })
 
-  // TODO: Load existing messages via getMessages(roomId)
   const { data: messages } = useQuery<ChatMessage[]>({
     queryKey: ['messages', roomId],
-    queryFn: () =>
-      fetch(`/api/chat/rooms/${roomId}/messages`).then((res) => res.json()),
+    queryFn: () => chatApi.getMessages(roomId),
   })
 
   const { data: room } = useQuery<ChatRoomData>({
     queryKey: ['room', roomId],
-    queryFn: () => fetch(`/api/chat/rooms/${roomId}`).then((res) => res.json()),
+    queryFn: () => chatApi.getRoom(roomId),
   })
 
   const handleSend = () => {
     if (!input.trim()) return
     sendMessage(input)
-
-    // TODO: socket.emit('send-message', { roomId, content: input })
-    // TODO: Detect @ai mention → trigger AI response
     setInput('')
   }
 
