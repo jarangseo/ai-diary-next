@@ -1,0 +1,56 @@
+.inputWrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #ebebeb;
+  background: #fff;
+}
+
+.textarea {
+  flex: 1;
+  resize: none;
+  padding: 10px 14px;
+  border-radius: 20px;
+  background: #f5f5f5;
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  max-height: 120px;
+  overflow-y: auto;
+  font-family: inherit;
+
+  &::placeholder {
+    color: #aaa;
+  }
+
+  &:focus {
+    background: #f0f0f0;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    background: #d0d0d0;
+    cursor: default;
+  }
+}

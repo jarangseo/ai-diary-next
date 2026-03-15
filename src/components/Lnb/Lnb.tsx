@@ -27,8 +27,26 @@ export default function Lnb() {
             href="/diary/write"
             aria-label="New Diary"
           >
-            <PlusIcon size={16} />
             New Diary
+            <PlusIcon size={16} />
+          </Link>
+        </div>
+        <div className={styles.newDiary}>
+          <Link
+            className={styles.newDiaryLink}
+            href="/diary/list"
+            aria-label="Diary List"
+          >
+            Diary List
+          </Link>
+        </div>
+        <div className={styles.newDiary}>
+          <Link
+            className={styles.newDiaryLink}
+            href="/diary/chat"
+            aria-label="New Diary"
+          >
+            Chat Diary
           </Link>
         </div>
         <div className={styles.history}></div>
