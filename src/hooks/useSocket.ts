@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
 import type { ChatMessage } from '@/types/chat'
+import toast from 'react-hot-toast'
 
 export function useSocket({
   userId,
@@ -58,6 +59,15 @@ export function useSocket({
 
     socket.on('disconnect', () => {
       console.log('disconnected')
+    })
+
+    socket.on('connect_error', () => {
+      toast.error('Connection lost. Reconnecting...')
+    })
+
+    socket.on('reconnet', () => {
+      toast.success('Reconnected to the server')
+      socket.emit('join-room', roomId)
     })
 
     return () => {
