@@ -31,24 +31,6 @@ export async function DiaryList({ className }: DiaryListProps) {
         </button>
       </header>
       <ul className={styles.list}>
-        <li className={styles.diaryItem}>
-          <Link
-            className={styles.diaryItemLink}
-            href={`/diary/${diaries[0].date}`}
-          >
-            <strong className={styles.diaryItemTitle}>
-              TITLETITLETITLETITLETITLETITLETITLE
-            </strong>
-            <p className={styles.diaryItemContent}>
-              CONTENTCONTENTCON TENTCONTENTC ONTENTCONTENTCON
-              TENTCONTENTCONTENTCONTENTCONTENT
-            </p>
-            <div className={styles.diaryItemFooter}>
-              <span className={styles.diaryItemMood}>MOOD emoji</span>
-              <span className={styles.diaryItemDate}>2026-03-10</span>
-            </div>
-          </Link>
-        </li>
         {diaries.map((diary) => (
           <li className={styles.diaryItem} key={diary.date}>
             <Link
