@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 // === GNB (Global Navigation Bar) ===
 .gnb {
   display: flex;
@@ -6,15 +8,15 @@
   justify-content: space-between;
   position: fixed;
   inset: 0 auto 0 0;
-  width: 72px;
+  width: $gnb-width;
   z-index: 98;
   padding-top: 10px;
-  padding-bottom: 24px;
-  background: #f5f5f5;
+  padding-bottom: $spacing-xl;
+  background: $color-bg-secondary;
 }
 
 .menuItem {
-  margin-bottom: 12px;
+  margin-bottom: $spacing-md;
 }
 
 .link {
@@ -24,15 +26,15 @@
   width: 48px;
   height: 55px;
   font-size: 9px;
-  font-weight: 500;
+  font-weight: $font-weight-normal;
   line-height: 1.45;
   color: inherit;
   text-decoration: none;
   white-space: nowrap;
-  gap: 4px;
+  gap: $spacing-xs;
 
   &:hover .icon {
-    background-color: #f0f0f0;
+    background-color: $color-bg-hover;
   }
 }
 
@@ -40,7 +42,7 @@
   width: 40px;
   height: 40px;
   padding: 7px;
-  border-radius: 12px;
+  border-radius: $radius-md;
 }
 
 .user {
@@ -50,7 +52,7 @@
 .avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: $radius-full;
   object-fit: cover;
 }
 
@@ -60,14 +62,14 @@
   justify-content: center;
   width: 48px;
   aspect-ratio: 1;
-  border-radius: 50%;
+  border-radius: $radius-full;
   outline: 0;
   order: -1;
-  margin-bottom: 12px;
+  margin-bottom: $spacing-md;
   transition: transform 0.3s ease-in-out;
 
   &:hover {
-    background-color: #f0f0f0;
+    background-color: $color-bg-hover;
   }
 }
 

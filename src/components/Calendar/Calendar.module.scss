@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 .calendar {
   padding: 36px 10px;
 }
@@ -6,15 +8,15 @@
   align-items: center;
   display: flex;
   height: 24px;
-  margin: 0 32px;
+  margin: 0 $spacing-2xl;
   position: relative;
 }
 
 .title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #111827;
-  padding: 0 12px 0 14px;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  padding: 0 $spacing-md 0 14px;
 }
 
 .button {
@@ -37,7 +39,7 @@
 
 .weekday {
   text-align: center;
-  margin: 18px 0 8px 0;
+  margin: $spacing-lg 0 $spacing-sm 0;
 }
 
 .dayCell {

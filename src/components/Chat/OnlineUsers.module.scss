@@ -1,6 +1,8 @@
+@use '@/styles/variables' as *;
+
 .onlineUsers {
-  padding: 8px 12px;
-  border-bottom: 1px solid #ebebeb;
+  padding: $spacing-sm $spacing-md;
+  border-bottom: 1px solid $color-border;
   overflow-x: auto;
   scrollbar-width: none;
 
@@ -11,14 +13,14 @@
 
 .list {
   display: flex;
-  gap: 12px;
+  gap: $spacing-md;
 }
 
 .item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: $spacing-xs;
   flex-shrink: 0;
 }
 
@@ -29,7 +31,7 @@
 .avatar {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: $radius-full;
   object-fit: cover;
 }
 
@@ -39,11 +41,11 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: #e0e0e0;
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
+  border-radius: $radius-full;
+  background: $color-border;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
 }
 
 .status {
@@ -52,18 +54,18 @@
   right: -1px;
   width: 10px;
   height: 10px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  background: #ccc;
+  border-radius: $radius-full;
+  border: 2px solid $color-bg-primary;
+  background: $color-disabled;
 
   &[data-online='true'] {
-    background: #4caf50;
+    background: $color-success;
   }
 }
 
 .name {
-  font-size: 11px;
-  color: #666;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
   white-space: nowrap;
   max-width: 48px;
   overflow: hidden;

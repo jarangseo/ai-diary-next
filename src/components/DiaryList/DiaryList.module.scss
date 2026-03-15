@@ -1,3 +1,5 @@
+@use '@/styles/variables' as *;
+
 .article {
   padding-top: 28px;
 }
@@ -5,13 +7,13 @@
 .header {
   display: flex;
   align-items: center;
-  padding: 0 8px 0 32px;
+  padding: 0 $spacing-sm 0 $spacing-2xl;
 }
 
 .title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #111827;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
   margin-right: auto;
 }
 
@@ -23,47 +25,47 @@
   height: 40px;
 
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color $transition-normal;
 
   &:hover {
-    background-color: #e5e7eb;
+    background-color: $color-border;
   }
 }
 
 .list {
-  padding: 0 16px;
+  padding: 0 $spacing-lg;
 }
 
 .diaryItem {
   position: relative;
 
   &:hover {
-    background: #8080800d;
+    background: rgba($color-text-secondary, 0.05);
   }
   &::after {
     content: '';
-    background: #ebebeb;
+    background: $color-border;
     height: 1px;
-    left: 16px;
+    left: $spacing-lg;
     position: absolute;
-    right: 16px;
+    right: $spacing-lg;
   }
 }
 
 .diaryItemLink {
   display: block;
-  padding: 22px 16px;
-  border-radius: 8px;
+  padding: 22px $spacing-lg;
+  border-radius: $radius-sm;
   text-decoration: none;
-  color: #1a1a1a;
+  color: $color-text-primary;
 }
 
 .diaryItemTitle {
   display: block;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
   line-height: 1.45;
-  margin-bottom: 4px;
+  margin-bottom: $spacing-xs;
   max-width: 100%;
   overflow: hidden;
   white-space: nowrap;
@@ -71,7 +73,7 @@
 }
 
 .diaryItemContent {
-  font-size: 15px;
+  font-size: $font-size-base;
   line-height: 1.45;
   margin-bottom: 7px;
   padding-right: 20px;
@@ -84,15 +86,15 @@
 }
 
 .diaryItemMood {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgb(225, 70, 56);
+  font-size: $font-size-xs;
+  font-weight: $font-weight-normal;
+  color: $color-error;
 }
 
 .diaryItemDate {
-  font-size: 12px;
-  font-weight: 500;
-  color: #7f7f7f;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-normal;
+  color: $color-text-tertiary;
   &::before {
     content: '・';
     padding: 0 2px;

@@ -24,7 +24,7 @@ export default function ChatListPage() {
     },
     onSuccess: (room) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] })
-      router.push(`/diary/chat/${room.id}`)
+      router.push(`/diary/chat/${room.room_id}`)
     },
     onError: () => {
       toast.error('Failed to create room')
@@ -48,8 +48,8 @@ export default function ChatListPage() {
         <div className={styles.roomList}>
           {rooms.map((room) => (
             <Link
-              key={room.id}
-              href={`/diary/chat/${room.id}`}
+              key={room.room_id}
+              href={`/diary/chat/${room.room_id}`}
               className={styles.roomItem}
             >
               <div className={styles.roomIcon}>
@@ -58,6 +58,7 @@ export default function ChatListPage() {
               <div className={styles.roomInfo}>
                 <div className={styles.roomDate}>{room.date}</div>
                 <div className={styles.roomMeta}>
+                  {room.room_id}
                   {/* {room.memberCount} members · {room.lastMessage} */}
                 </div>
               </div>
