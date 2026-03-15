@@ -3,7 +3,7 @@ import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import TypingIndicator from './TypingIndicator'
 import OnlineUsers from './OnlineUsers'
-import { LinkIcon, CalendarIcon } from 'lucide-react'
+import { LinkIcon, CalendarIcon, BookOpenIcon } from 'lucide-react'
 import type { ChatMessage as Message, OnlineUser } from '@/types/chat'
 
 interface ChatRoomProps {
@@ -18,6 +18,7 @@ interface ChatRoomProps {
   currentUserId: string
   messagesEndRef: React.RefObject<HTMLDivElement | null>
   emitTyping: () => void
+  onGenerateDiary?: () => void
 }
 
 export default function ChatRoom({
@@ -32,6 +33,7 @@ export default function ChatRoom({
   onInvite,
   currentUserId,
   messagesEndRef,
+  onGenerateDiary,
 }: ChatRoomProps) {
   return (
     <div className={styles.chatRoom}>
@@ -50,6 +52,16 @@ export default function ChatRoom({
               aria-label="Copy invite link"
             >
               <LinkIcon size={18} />
+            </button>
+          )}
+          {onGenerateDiary && (
+            <button
+              type="button"
+              className={styles.inviteBtn}
+              onClick={onGenerateDiary}
+              aria-label="Generate Diary"
+            >
+              <BookOpenIcon size={18} />
             </button>
           )}
         </div>
