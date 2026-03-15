@@ -1,11 +1,13 @@
 import { supabase } from './supabase'
 
 export async function createRoom(ownerId: string, date: string) {
+  const inviteCode = crypto.randomUUID().slice(0, 8).toUpperCase()
   const { data, error } = await supabase
     .from('chat_rooms')
     .insert({
       owner_id: ownerId,
       date,
+      invite_code: inviteCode,
     })
     .select()
     .single()
@@ -39,7 +41,10 @@ export async function getRoomByInviteCode(code: string) {
 export async function joinRoom(userId: string, roomId: string) {
   const { error } = await supabase
     .from('room_members')
-    .upsert({ room_id: roomId, user_id: userId }, { onConflict: 'room_id,user_id' })
+    .upsert(
+      { room_id: roomId, user_id: userId },
+      { onConflict: 'room_id,user_id' }
+    )
   return !error
 }
 

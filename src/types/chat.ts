@@ -14,3 +14,11 @@ export interface OnlineUser {
   image?: string
   isOnline: boolean
 }
+
+export interface ChatRoomData {
+  id: string
+  owner_id: string
+  date: string
+  invite_code: string
+  created_at: string
+}
