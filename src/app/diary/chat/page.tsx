@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import type { ChatRoomData } from '@/types/chat'
 import { chatApi } from '@/services/chatServices'
+import toast from 'react-hot-toast'
 
 export default function ChatListPage() {
   const { data: rooms = [] } = useQuery<ChatRoomData[]>({
@@ -24,6 +25,9 @@ export default function ChatListPage() {
     onSuccess: (room) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] })
       router.push(`/diary/chat/${room.id}`)
+    },
+    onError: () => {
+      toast.error('Failed to create room')
     },
   })
 

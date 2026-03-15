@@ -8,6 +8,7 @@ import type { ChatMessage, OnlineUser, ChatRoomData } from '@/types/chat'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { chatApi } from '@/services/chatServices'
+import toast from 'react-hot-toast'
 
 export default function ChatRoomPage({
   params,
@@ -85,9 +86,9 @@ export default function ChatRoomPage({
       navigator.clipboard.writeText(
         `${window.location.origin}/diary/chat/join?code=${room?.invite_code}`
       )
-      alert('Invite link copied to clipboard')
+      toast.success('Invite link copied to clipboard')
     } else {
-      alert('Room not found')
+      toast.error('Room not found')
     }
   }
 
@@ -101,7 +102,7 @@ export default function ChatRoomPage({
     })
 
     if (!res.ok) {
-      alert('Failed to generate diary')
+      toast.error('Failed to generate diary')
       return
     }
 

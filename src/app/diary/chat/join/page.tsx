@@ -4,6 +4,7 @@ import type { ChatRoomData } from '@/types/chat'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect } from 'react'
+import toast from 'react-hot-toast'
 
 function JoinContent() {
   const searchParams = useSearchParams()
@@ -14,6 +15,9 @@ function JoinContent() {
     mutationFn: (inviteCode: string) => chatApi.joinRoom(inviteCode),
     onSuccess: (data: ChatRoomData) => {
       router.push(`/diary/chat/${data.id}`)
+    },
+    onError: () => {
+      toast.error('Failed to join room')
     },
   })
 
