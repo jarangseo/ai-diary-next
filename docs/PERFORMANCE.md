@@ -25,10 +25,20 @@
 
 > ⚠️ Turbopack 빌드는 webpack과 달리 라우트별 First Load JS 표를 출력하지 않는다 → `measure:bundle`로 대체.
 
-### 베이스라인 (2026-05-31, 계측 도구 포함 후)
+### 베이스라인 (2026-06-01, 계측 도구 포함 후)
 - **배포 JS**: 707 KB raw / **218 KB gzip** (Web Vitals 계측 +3 KB 포함)
 - **최대 청크**: 219 KB (framework/react), 그 외 110 KB·108 KB
-- 런타임 Web Vitals: *브라우저에서 측정 필요* (로그인 후 `/diary`에서 콘솔 확인)
+- **런타임 Web Vitals (프로덕션 `pnpm build && pnpm start`)**: 전부 good
+  - TTFB **272ms** / FCP **344ms** / LCP **344ms** / FID **5ms**
+  - 참고: dev 모드에선 TTFB 2067ms·FCP 2144ms로 부풀려짐(on-demand 컴파일) → 측정은 반드시 prod에서.
+
+> ⚠️ **현재 앱은 이미 빠르다(전부 green).** 데이터가 적기 때문. `select *` 등 취약점은
+> 데이터가 쌓여야 드러나므로, 본 작업의 핵심은 *미래 저하 예방 + 저하 탐지법 습득*이다.
+
+### 관측된 콘솔 노이즈 (베이스라인 시점)
+- `GET /api/diary/<날짜> 404` — 작성 화면 프리필이 "기존 글 없음"을 받는 정상 케이스이나, 404가
+  콘솔 에러로 남아 시끄럽다 → API가 200+null 반환하도록 바꾸는 설계 후보(복원력 묶음).
+- `...css was preloaded but not used` — Next 프리로드 특성, 대개 무해.
 
 각 수정 묶음 적용 시, 관련 지표의 **before → after**를 이 문서에 기록한다.
 
