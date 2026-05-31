@@ -11,6 +11,29 @@
 
 ---
 
+## 측정 인프라 & 베이스라인  (Task #8 — 0순위)
+
+> **측정 없이 최적화하면 그건 조급한 최적화.** 수정의 효과는 *숫자가 움직였는가*로만 증명한다.
+> 아래는 우리가 가진 "계기판"과 시작점 숫자.
+
+### 계기판
+| 지표 | 도구 | 보는 법 |
+|------|------|---------|
+| 런타임 LCP/INP/CLS/FCP/TTFB | `WebVitals` 컴포넌트(`next/web-vitals`) | 브라우저 콘솔 `[web-vitals]` 로그 (실무: RUM 엔드포인트로 전송) |
+| 배포 JS 번들 크기 | `pnpm build && pnpm measure:bundle` | gzip 기준 KB — 수정 전후 비교 |
+| Lighthouse 점수/기회 | Chrome DevTools → Lighthouse 탭 (또는 `npx lighthouse`) | LCP·TBT·CLS + 개선 제안 |
+
+> ⚠️ Turbopack 빌드는 webpack과 달리 라우트별 First Load JS 표를 출력하지 않는다 → `measure:bundle`로 대체.
+
+### 베이스라인 (2026-05-31, 계측 도구 포함 후)
+- **배포 JS**: 707 KB raw / **218 KB gzip** (Web Vitals 계측 +3 KB 포함)
+- **최대 청크**: 219 KB (framework/react), 그 외 110 KB·108 KB
+- 런타임 Web Vitals: *브라우저에서 측정 필요* (로그인 후 `/diary`에서 콘솔 확인)
+
+각 수정 묶음 적용 시, 관련 지표의 **before → after**를 이 문서에 기록한다.
+
+---
+
 ## 묶음 A — P0 핵심 방어  (Task #5)
 
 지금 실제 운영을 막는 가장 급한 것들.
