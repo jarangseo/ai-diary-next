@@ -1,64 +1,95 @@
 'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
-import styles from './Calendar.module.scss'
-
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import styles from './Calendar.module.scss'
+import { WEEKDAYS_KO, toDateKey } from '@/lib/date'
 
-export function Calendar() {
+type CalendarProps = {
+  /** 일기가 존재하는 날짜들 ('YYYY-MM-DD') */
+  entryDates?: string[]
+}
+
+export function Calendar({ entryDates = [] }: CalendarProps) {
+  const router = useRouter()
+  const today = new Date()
+  const todayKey = toDateKey(today)
+  const entrySet = new Set(entryDates)
+
+  const [view, setView] = useState({
+    year: today.getFullYear(),
+    month: today.getMonth(), // 0-indexed
+  })
+
+  const startWeekday = new Date(view.year, view.month, 1).getDay()
+  const daysInMonth = new Date(view.year, view.month + 1, 0).getDate()
+  const cells: (number | null)[] = [
+    ...Array<null>(startWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ]
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  const goPrev = () =>
+    setView(({ year, month }) =>
+      month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }
+    )
+  const goNext = () =>
+    setView(({ year, month }) =>
+      month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }
+    )
+
   return (
     <div className={styles.calendar}>
       <header className={styles.header}>
-        <h2 className={styles.title}>2026 March</h2>
-        <button className={clsx(styles.button, styles.prevButton)}>
-          <ChevronLeftIcon size={24} />
+        <button
+          className={styles.navButton}
+          onClick={goPrev}
+          aria-label="이전 달"
+        >
+          <ChevronLeftIcon size={20} />
         </button>
-        <button className={clsx(styles.button, styles.nextButton)}>
-          <ChevronRightIcon size={24} />
+        <h2 className={styles.title}>
+          {view.year}년 {view.month + 1}월
+        </h2>
+        <button
+          className={styles.navButton}
+          onClick={goNext}
+          aria-label="다음 달"
+        >
+          <ChevronRightIcon size={20} />
         </button>
       </header>
-      <div className={styles.grid} role="grid" aria-label="Calendar">
-        <div className={styles.weekday} role="columnheader">
-          Sun
-        </div>
-        <div className={styles.weekday} role="columnheader">
-          Mon
-        </div>
-        <div className={styles.weekday} role="columnheader">
-          Tue
-        </div>
-        <div className={styles.weekday} role="columnheader">
-          Wed
-        </div>
-        <div className={styles.weekday} role="columnheader">
-          Thu
-        </div>
-        <div className={styles.weekday} role="columnheader">
-          Fri
-        </div>
-        <div className={styles.weekday} role="columnheader">
-          Sat
-        </div>
-        <div className={styles.dayCell}>
-          <button type="button">1</button>
-        </div>
-        <div className={styles.dayCell}>
-          <button type="button">2</button>
-        </div>
-        <div className={styles.dayCell}>
-          <button type="button">3</button>
-        </div>
-        <div className={styles.dayCell}>
-          <button type="button">4</button>
-        </div>
-        <div className={styles.dayCell}>
-          <button type="button">5</button>
-        </div>
-        <div className={styles.dayCell}>
-          <button type="button">6</button>
-        </div>
-        <div className={styles.dayCell}>
-          <button type="button">7</button>
-        </div>
+
+      <div className={styles.grid} role="grid" aria-label="달력">
+        {WEEKDAYS_KO.map((w) => (
+          <div key={w} className={styles.weekday} role="columnheader">
+            {w}
+          </div>
+        ))}
+        {cells.map((day, i) => {
+          if (day === null) {
+            return <div key={`blank-${i}`} className={styles.empty} />
+          }
+          const dateKey = `${view.year}-${pad(view.month + 1)}-${pad(day)}`
+          const hasEntry = entrySet.has(dateKey)
+          const isToday = dateKey === todayKey
+          return (
+            <button
+              key={dateKey}
+              type="button"
+              className={clsx(styles.day, isToday && styles.today)}
+              onClick={() => router.push(`/diary/${dateKey}`)}
+              aria-label={`${view.month + 1}월 ${day}일${
+                hasEntry ? ', 일기 있음' : ''
+              }`}
+            >
+              <span className={styles.dayNum}>{day}</span>
+              {hasEntry && <span className={styles.dot} aria-hidden />}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

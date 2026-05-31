@@ -1,5 +1,86 @@
-// Mixins for responsive design
-// 0~767 || 768~1024 || 1025~♾️
+@use '@/styles/variables' as *;
+
+// =============================================================
+//  Component mixins — shared interaction patterns
+// =============================================================
+
+// --- Focus ring (interactive 요소 공통) ---
+@mixin focus-ring {
+  outline: 2px solid $color-accent;
+  outline-offset: 2px;
+}
+
+// --- Buttons ---
+@mixin btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  height: 44px;
+  padding: 0 $spacing-xl;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color $transition-normal, color $transition-normal,
+    border-color $transition-normal, opacity $transition-normal;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    background-color: $color-disabled;
+    color: $color-text-inverse;
+    cursor: default;
+  }
+}
+
+@mixin btn-primary {
+  @include btn-base;
+  background-color: $color-accent;
+  color: $color-text-inverse;
+
+  &:hover:not(:disabled) {
+    background-color: $color-accent-hover;
+  }
+}
+
+@mixin btn-secondary {
+  @include btn-base;
+  background-color: $color-surface;
+  color: $color-text-primary;
+  border: 1px solid $color-border;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-secondary;
+  }
+}
+
+@mixin btn-ghost {
+  @include btn-base;
+  background-color: transparent;
+  color: $color-text-secondary;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-hover;
+    color: $color-text-primary;
+  }
+}
+
+// --- Card (white surface on paper) ---
+@mixin card {
+  background-color: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+}
+
+// =============================================================
+//  Responsive mixins
+//  0~767 || 768~1024 || 1025~♾️
+// =============================================================
 @mixin sml-mdm {
   // 1 column or 2 columns
   @media (max-width: 1024px) {

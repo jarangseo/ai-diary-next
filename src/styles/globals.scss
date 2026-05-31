@@ -1,4 +1,5 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
 
 *,
 *::before,
@@ -20,6 +21,11 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   overflow-wrap: break-word;
   font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+  // Warm Journal base — tokens: $color-bg-primary / $color-text-primary
+  background-color: #faf8f4;
+  color: #2b2724;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 :where(:lang(ko)) {
@@ -46,6 +52,15 @@ input, textarea {
 
 button, input, mark, meter, progress {
   background-color: transparent;
+}
+
+button {
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 table {

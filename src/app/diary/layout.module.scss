@@ -1,21 +1,13 @@
 @use '@/styles/variables' as *;
 
 .container {
-  display: flex;
+  min-height: 100dvh;
+  background-color: $color-bg-primary;
 }
 
 .main {
-  height: 100dvh;
-  width: 100%;
-  overflow: auto hidden;
-  scrollbar-width: thin;
-  transition: margin-left $transition-normal;
-}
-
-.mainOpen {
-  margin-left: $gnb-width + $lnb-width;
-}
-
-.mainClosed {
-  margin-left: $gnb-width;
+  max-width: $content-max-width;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: calc(#{$topbar-height} + #{$spacing-xl}) $spacing-lg $spacing-3xl;
 }
