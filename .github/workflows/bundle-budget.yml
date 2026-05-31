@@ -1,0 +1,45 @@
+name: Bundle budget
+
+# PR마다 번들 크기를 측정해 예산 초과 시 실패 → 번들 회귀를 머지 전에 차단.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  bundle-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # next build는 모듈 로드 시 env를 참조하므로 빌드용 더미값을 넣는다.
+      # (번들 크기만 재므로 실제 시크릿은 불필요 — 라우트는 런타임 dynamic)
+      - name: Build
+        run: pnpm build
+        env:
+          AUTH_URL: http://localhost:3000
+          AUTH_SECRET: ci-dummy-secret
+          AUTH_GOOGLE_ID: ci-dummy
+          AUTH_GOOGLE_SECRET: ci-dummy
+          AUTH_GITHUB_ID: ci-dummy
+          AUTH_GITHUB_SECRET: ci-dummy
+          SUPABASE_URL: https://ci-dummy.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ci-dummy
+          OPENAI_API_KEY: ci-dummy
+          NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+
+      - name: Check bundle budget
+        run: pnpm check:bundle-budget
+        env:
+          BUNDLE_BUDGET_KB: 250

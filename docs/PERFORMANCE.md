@@ -42,6 +42,16 @@
 
 각 수정 묶음 적용 시, 관련 지표의 **before → after**를 이 문서에 기록한다.
 
+### CI 예산 게이트 (설치됨 — shift left)
+- `.github/workflows/bundle-budget.yml`: PR마다 build → `check:bundle-budget` 실행, **gzip JS > 250KB면 실패**.
+- `scripts/check-bundle-budget.mjs` (`pnpm check:bundle-budget`): 로컬에서도 동일 검사. 예산은 `BUNDLE_BUDGET_KB`로 조정.
+- 빌드용 env는 워크플로우에 더미값 주입(번들 크기만 재므로 실제 시크릿 불필요).
+- 한계/다음: Lighthouse CI는 auth 게이트 때문에 공개 라우트(`/login`)부터 시작해야 함(미설치).
+
+### RUM (monitor right) — 다음 단계
+- 앱이 **Vercel 배포** → `@vercel/speed-insights` 한 줄로 실사용자 Web Vitals 대시보드 연결 가능(미설치).
+- 현재 `WebVitals`는 콘솔 로그 단계. Vercel Speed Insights로 승격하면 프로덕션 RUM 완성.
+
 ---
 
 ## 묶음 A — P0 핵심 방어  (Task #5)
