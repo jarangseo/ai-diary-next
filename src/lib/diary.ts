@@ -67,8 +67,8 @@ export async function saveDiary(
 ) {
   const now = new Date().toISOString()
 
-  // 같은 날짜에 글이 있으면 수정(created_at 보존), 없으면 신규 작성.
-  // 기존 upsert는 created_at까지 매번 덮어써 작성 시각이 사라졌다.
+  // If an entry exists for the date, update it (preserving created_at); otherwise insert.
+  // The previous upsert overwrote created_at on every save, losing the original creation time.
   const existing = await getDiary(userId, date)
 
   if (existing) {

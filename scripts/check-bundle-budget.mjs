@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// 배포 JS(.next/static)의 gzip 크기를 예산과 비교해 초과 시 실패(exit 1).
-// CI에서 PR마다 실행 → 번들 회귀를 머지 전에 차단하는 "예산 게이트".
+// Compare the gzip size of shipped JS (.next/static) against a budget; fail (exit 1) if over.
+// Runs on every PR in CI → the "budget gate" that blocks bundle regressions before merge.
 //
-// 측정 방식: 모든 .js를 이어붙여 gzip (package.json의 measure:bundle과 동일 기준,
-// 베이스라인 218KB와 비교 가능). 사용량: node scripts/check-bundle-budget.mjs
-// 예산 조정: BUNDLE_BUDGET_KB 환경변수 (기본 250).
+// Method: concatenate all .js then gzip (same basis as package.json's measure:bundle,
+// comparable to the 218KB baseline). Usage: node scripts/check-bundle-budget.mjs
+// Adjust the budget via the BUNDLE_BUDGET_KB env var (default 250).
 
 import { gzipSync } from 'node:zlib'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -28,7 +28,7 @@ let files
 try {
   files = collectJs(STATIC_DIR)
 } catch {
-  console.error(`✗ ${STATIC_DIR} 없음 — 먼저 \`pnpm build\`를 실행하세요.`)
+  console.error(`✗ ${STATIC_DIR} not found — run \`pnpm build\` first.`)
   process.exit(1)
 }
 
@@ -38,14 +38,14 @@ const gzipKB = gzipSync(Buffer.concat(buffers)).length / 1024
 const over = gzipKB > BUDGET_KB
 const mark = over ? '✗' : '✓'
 console.log(
-  `${mark} shipped JS (gzip): ${gzipKB.toFixed(1)} KB / 예산 ${BUDGET_KB} KB  ` +
-    `(파일 ${files.length}개)`
+  `${mark} shipped JS (gzip): ${gzipKB.toFixed(1)} KB / budget ${BUDGET_KB} KB  ` +
+    `(${files.length} files)`
 )
 
 if (over) {
   console.error(
-    `\n번들이 예산을 ${(gzipKB - BUDGET_KB).toFixed(1)} KB 초과했습니다.\n` +
-      `의도된 증가라면 BUNDLE_BUDGET_KB를 올리고, 아니면 무엇이 커졌는지 확인하세요.`
+    `\nBundle exceeds the budget by ${(gzipKB - BUDGET_KB).toFixed(1)} KB.\n` +
+      `If the increase is intended, raise BUNDLE_BUDGET_KB; otherwise find what grew.`
   )
   process.exit(1)
 }

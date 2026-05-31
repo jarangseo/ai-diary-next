@@ -12,7 +12,7 @@ export function BackButton({
   const router = useRouter()
 
   const handleBack = () => {
-    // 직전 히스토리가 있으면 그대로 복귀(목록/캘린더 상태 보존), 없으면 홈으로
+    // If there is prior history, go back (preserving list/calendar state); otherwise go home.
     if (window.history.length > 1) router.back()
     else router.push(fallback)
   }

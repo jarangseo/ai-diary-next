@@ -7,7 +7,7 @@ import styles from './Calendar.module.scss'
 import { WEEKDAYS_KO, toDateKey } from '@/lib/date'
 
 type CalendarProps = {
-  /** 일기가 존재하는 날짜들 ('YYYY-MM-DD') */
+  /** dates that have an entry ('YYYY-MM-DD') */
   entryDates?: string[]
 }
 

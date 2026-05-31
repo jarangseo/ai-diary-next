@@ -1,119 +1,119 @@
-# 성능·복원력 방어 TODO
+# Performance & Resilience Defense TODO
 
-> 작성일: 2026-05-31 · 상태: **계획 (구현 전)**
+> Created: 2026-05-31 · Status: **in progress**
 
-**프레이밍**: "성능적으로 완벽"은 상태가 아니라 *지켜지는 예산(budget)*이다.
-진짜 방어책은 "빠르게 만든다"가 아니라 **각 계층에서 느려지거나 터지는 걸 막고, 회귀를 감시하는 것**.
+**Framing**: "perfect performance" is not a state but a *budget that is kept*.
+Real defense is not "make it fast" — it's **stopping each layer from slowing down or breaking, and watching for regressions**.
 
-태그: `[취약]` = 지금 실제 구멍 / `[예방]` = 선제 방어
+Tags: `[GAP]` = a real hole today / `[GUARD]` = proactive defense
 
-아래 4개 묶음 단위로 끊어서 구현·커밋한다(PR 비대화·회귀검증 방지). 묶음 = Task #5~#8.
+Work is split into the 4 bundles below and committed bundle-by-bundle (to keep PRs small and regressions easy to verify). Bundles = Task #5–#8.
 
 ---
 
-## 측정 인프라 & 베이스라인  (Task #8 — 0순위)
+## Measurement infra & baseline  (Task #8 — priority 0)
 
-> **측정 없이 최적화하면 그건 조급한 최적화.** 수정의 효과는 *숫자가 움직였는가*로만 증명한다.
-> 아래는 우리가 가진 "계기판"과 시작점 숫자.
+> **Optimizing without measuring is premature optimization.** A change is only justified if *a number moved*.
+> Below is our "dashboard" and starting numbers.
 
-### 계기판
-| 지표 | 도구 | 보는 법 |
-|------|------|---------|
-| 런타임 LCP/INP/CLS/FCP/TTFB | `WebVitals` 컴포넌트(`next/web-vitals`) | 브라우저 콘솔 `[web-vitals]` 로그 (실무: RUM 엔드포인트로 전송) |
-| 배포 JS 번들 크기 | `pnpm build && pnpm measure:bundle` | gzip 기준 KB — 수정 전후 비교 |
-| Lighthouse 점수/기회 | Chrome DevTools → Lighthouse 탭 (또는 `npx lighthouse`) | LCP·TBT·CLS + 개선 제안 |
+### Dashboard
+| Metric | Tool | How to read |
+|--------|------|-------------|
+| Runtime LCP/INP/CLS/FCP/TTFB | `WebVitals` component (`next/web-vitals`) | `[web-vitals]` logs in the browser console (in production: send to a RUM endpoint) |
+| Shipped JS bundle size | `pnpm build && pnpm measure:bundle` | gzip KB — compare before/after a change |
+| Lighthouse score/opportunities | Chrome DevTools → Lighthouse tab (or `npx lighthouse`) | LCP·TBT·CLS + improvement suggestions |
 
-> ⚠️ Turbopack 빌드는 webpack과 달리 라우트별 First Load JS 표를 출력하지 않는다 → `measure:bundle`로 대체.
+> ⚠️ Unlike webpack, the Turbopack build does not print a per-route First Load JS table → use `measure:bundle` instead.
 
-### 베이스라인 (2026-06-01, 계측 도구 포함 후)
-- **배포 JS**: 707 KB raw / **218 KB gzip** (Web Vitals 계측 +3 KB 포함)
-- **최대 청크**: 219 KB (framework/react), 그 외 110 KB·108 KB
-- **런타임 Web Vitals (프로덕션 `pnpm build && pnpm start`)**: 전부 good
+### Baseline (2026-06-01, with instrumentation included)
+- **Shipped JS**: 707 KB raw / **218 KB gzip** (includes +3 KB for Web Vitals instrumentation)
+- **Largest chunk**: 219 KB (framework/react), then 110 KB · 108 KB
+- **Runtime Web Vitals (production `pnpm build && pnpm start`)**: all good
   - TTFB **272ms** / FCP **344ms** / LCP **344ms** / FID **5ms**
-  - 참고: dev 모드에선 TTFB 2067ms·FCP 2144ms로 부풀려짐(on-demand 컴파일) → 측정은 반드시 prod에서.
+  - Note: in dev mode these inflate to TTFB 2067ms / FCP 2144ms (on-demand compilation) → always measure in production.
 
-> ⚠️ **현재 앱은 이미 빠르다(전부 green).** 데이터가 적기 때문. `select *` 등 취약점은
-> 데이터가 쌓여야 드러나므로, 본 작업의 핵심은 *미래 저하 예방 + 저하 탐지법 습득*이다.
+> ⚠️ **The app is already fast (all green)** because it has little data. Gaps like `select *` only
+> surface as data grows, so the goal of this work is *preventing future degradation + learning how to detect it*.
 
-### 관측된 콘솔 노이즈 (베이스라인 시점)
-- `GET /api/diary/<날짜> 404` — 작성 화면 프리필이 "기존 글 없음"을 받는 정상 케이스이나, 404가
-  콘솔 에러로 남아 시끄럽다 → API가 200+null 반환하도록 바꾸는 설계 후보(복원력 묶음).
-- `...css was preloaded but not used` — Next 프리로드 특성, 대개 무해.
+### Console noise observed (at baseline)
+- `GET /api/diary/<date> 404` — the write screen's prefill legitimately receives "no existing entry",
+  but the 404 shows up as a console error → candidate to have the API return 200+null instead (resilience bundle).
+- `...css was preloaded but not used` — a Next preload characteristic, usually harmless.
 
-각 수정 묶음 적용 시, 관련 지표의 **before → after**를 이 문서에 기록한다.
+For each bundle applied, record the relevant metric's **before → after** in this doc.
 
-### CI 예산 게이트 (설치됨 — shift left)
-- `.github/workflows/bundle-budget.yml`: PR마다 build → `check:bundle-budget` 실행, **gzip JS > 250KB면 실패**.
-- `scripts/check-bundle-budget.mjs` (`pnpm check:bundle-budget`): 로컬에서도 동일 검사. 예산은 `BUNDLE_BUDGET_KB`로 조정.
-- 빌드용 env는 워크플로우에 더미값 주입(번들 크기만 재므로 실제 시크릿 불필요).
-- 한계/다음: Lighthouse CI는 auth 게이트 때문에 공개 라우트(`/login`)부터 시작해야 함(미설치).
+### CI budget gate (installed — shift left)
+- `.github/workflows/bundle-budget.yml`: every PR runs build → `check:bundle-budget`, **fails if gzip JS > 250KB**.
+- `scripts/check-bundle-budget.mjs` (`pnpm check:bundle-budget`): same check locally. Adjust the budget via `BUNDLE_BUDGET_KB`.
+- Build env uses dummy values in the workflow (only bundle size is measured, so no real secrets needed).
+- Limitation/next: Lighthouse CI must start from a public route (`/login`) because of the auth gate (not installed yet).
 
-### RUM (monitor right) — 다음 단계
-- 앱이 **Vercel 배포** → `@vercel/speed-insights` 한 줄로 실사용자 Web Vitals 대시보드 연결 가능(미설치).
-- 현재 `WebVitals`는 콘솔 로그 단계. Vercel Speed Insights로 승격하면 프로덕션 RUM 완성.
+### RUM (monitor right) — next step
+- The app is **deployed on Vercel** → `@vercel/speed-insights` can wire up a real-user Web Vitals dashboard in one line (not installed yet).
+- `WebVitals` is currently at the console-log stage. Promoting it to Vercel Speed Insights completes production RUM.
 
 ---
 
-## 묶음 A — P0 핵심 방어  (Task #5)
+## Bundle A — P0 core defenses  (Task #5)
 
-지금 실제 운영을 막는 가장 급한 것들.
+The most urgent things that actually block real-world operation.
 
-- [ ] **데이터 페이지네이션** `[취약]` — `getAllDiaries`(전체 `select *`, LIMIT 없음) 제거
-  - `getDiaryDates(userId)`: `date, emotion_primary`만 (캘린더 점용, 가벼움 + 안전 상한)
-  - `getRecentDiaries(userId, {limit, before})`: 커서(date) 기반, 컬럼 명시
-  - `GET /api/diary?before=&limit=` 추가 → 목록 "더 보기"/무한스크롤
+- [ ] **Data pagination** `[GAP]` — remove `getAllDiaries` (full `select *`, no LIMIT)
+  - `getDiaryDates(userId)`: only `date, emotion_primary` (for calendar dots, lightweight + safe cap)
+  - `getRecentDiaries(userId, {limit, before})`: cursor-based (date), explicit columns
+  - add `GET /api/diary?before=&limit=` → list "load more"/infinite scroll
   - `src/lib/diary.ts`, `src/app/diary/page.tsx`, `DiaryHome`, `DiaryList`
-- [ ] **fetch 방어 래퍼** `[취약]` — `lib/http.ts`: timeout + `AbortController` + 지수 백오프 재시도
-  - `services/chatServices.ts`, write 저장, summarize 호출에 적용
-- [ ] **OpenAI 호출 방어** `[취약]` — `api/chat/summarize`
-  - 입력 길이/토큰 상한(긴 대화 truncate), client `timeout` + `maxRetries`
-  - try/catch + graceful fallback 응답
-- [ ] **React Query 기본정책** `[취약]` — `Provider.tsx`
+- [ ] **fetch defense wrapper** `[GAP]` — `lib/http.ts`: timeout + `AbortController` + exponential-backoff retry
+  - apply in `services/chatServices.ts`, write save, summarize call
+- [ ] **OpenAI call defense** `[GAP]` — `api/chat/summarize`
+  - input length/token cap (truncate long conversations), client `timeout` + `maxRetries`
+  - try/catch + graceful fallback response
+- [ ] **React Query defaults** `[GAP]` — `Provider.tsx`
   - `staleTime`(5m) / `gcTime`(10m) / `retry`(1) / `refetchOnWindowFocus:false`
-- [ ] **DB 인덱스** `[예방]` — Supabase SQL (앱 밖, 마이그레이션으로 제공)
+- [ ] **DB indexes** `[GUARD]` — Supabase SQL (outside the app, provided as a migration)
   - `(user_id, date)`, `(user_id, updated_at desc)`
 
-## 묶음 B — 자산·렌더링  (Task #6)
+## Bundle B — assets & rendering  (Task #6)
 
-FCP/LCP·초기 로딩 개선.
+Improve FCP/LCP and initial load.
 
-- [ ] **폰트 next/font 전환** `[취약]` — 현재 render-blocking `@import`
+- [ ] **Migrate fonts to next/font** `[GAP]` — currently render-blocking `@import`
   - Gowun Batang → `next/font/google`
-  - Pretendard → `next/font/local`(자체 호스팅) 또는 preconnect+preload 최적화
-    (※ `next/font/google`에 Pretendard 없음)
+  - Pretendard → `next/font/local` (self-hosted) or preconnect+preload optimization
+    (note: Pretendard is not available on `next/font/google`)
   - `display:swap` · subset · preload
-- [ ] **Suspense 스트리밍 + 스켈레톤** `[취약]` — `getAllDiaries`/데이터 블로킹 제거
-  - `src/app/diary/loading.tsx`, 데이터 fetch를 Suspense 경계로 분리
-- [ ] **API Cache-Control 헤더** `[취약]` — GET 라우트(private, 짧은 max-age)
-  - 저장 시 RSC `revalidateTag`/`unstable_cache` 무효화
-- [ ] **이미지·코드 스플리팅** `[예방]`
-  - 아바타 `next/image` `sizes`/적절한 로딩
-  - 채팅·소켓 코드 `dynamic import`로 메인 번들 분리
+- [ ] **Suspense streaming + skeleton** `[GAP]` — remove `getAllDiaries`/data blocking
+  - `src/app/diary/loading.tsx`, move data fetch behind a Suspense boundary
+- [ ] **API Cache-Control headers** `[GAP]` — GET routes (private, short max-age)
+  - invalidate via RSC `revalidateTag`/`unstable_cache` on save
+- [ ] **Image & code splitting** `[GUARD]`
+  - avatar `next/image` `sizes`/appropriate loading
+  - split chat·socket code out of the main bundle via `dynamic import`
 
-## 묶음 C — 복원력(에러/로딩)  (Task #7)
+## Bundle C — resilience (error/loading)  (Task #7)
 
-- [ ] **라우트별 error/loading** `[취약]` — 지금 채팅에만 `error.tsx`
-  - `src/app/diary/error.tsx`, `loading.tsx`, 전역 `global-error.tsx`
-- [ ] **server-only 가드** `[예방]` — `import 'server-only'`
-  - `lib/supabase.ts`(서비스롤 키), `lib/diary.ts`, `lib/chat.ts` 클라 번들 유입 차단
-- [ ] **입력 검증** `[예방]` — `zod`로 API 입력 검증 + payload 크기 제한
-  - `api/diary`(POST), `api/chat/summarize` 등
-- [ ] **상태 UI·토스트** `[예방]` — 빈/오류/오프라인 상태 UI, 토스트 중복 억제(같은 id)
+- [ ] **Per-route error/loading** `[GAP]` — currently only chat has `error.tsx`
+  - `src/app/diary/error.tsx`, `loading.tsx`, global `global-error.tsx`
+- [ ] **server-only guard** `[GUARD]` — `import 'server-only'`
+  - keep `lib/supabase.ts` (service-role key), `lib/diary.ts`, `lib/chat.ts` out of the client bundle
+- [ ] **Input validation** `[GUARD]` — validate API input with `zod` + payload size limit
+  - `api/diary`(POST), `api/chat/summarize`, etc.
+- [ ] **State UI & toasts** `[GUARD]` — empty/error/offline state UI, dedupe toasts (same id)
 
-## 묶음 D — 측정·예산  (Task #8)
+## Bundle D — measurement & budget  (Task #8)
 
-이게 없으면 "완벽"을 증명·유지할 수 없다.
+Without this you cannot prove or maintain "perfect".
 
-- [ ] **Web Vitals(RUM)** `[취약]` — `useReportWebVitals`로 LCP/INP/CLS 실측 수집
-- [ ] **번들 예산** `[예방]` — `@next/bundle-analyzer` + CI 사이즈 한계
-- [ ] **Lighthouse CI** `[예방]` — PR마다 점수 게이트(회귀 차단)
+- [ ] **Web Vitals (RUM)** `[GAP]` — collect real LCP/INP/CLS via `useReportWebVitals`
+- [ ] **Bundle budget** `[GUARD]` — `@next/bundle-analyzer` + size limit in CI
+- [ ] **Lighthouse CI** `[GUARD]` — score gate per PR (block regressions)
 
 ---
 
-## 보류 (별도 묶음 — 채팅/대규모 데이터 단계에서)
+## Deferred (separate bundle — chat / large-data stage)
 
-채팅 기능은 방향 합의상 보류(→ [PRODUCT_DIRECTION](./PRODUCT_DIRECTION.md))이므로 방어도 함께 보류.
+Chat is deferred by product decision (→ [PRODUCT_DIRECTION](./PRODUCT_DIRECTION.md)), so its defenses are deferred too.
 
-- 실시간(소켓): 재연결 backoff 명시, 탭 비가시(`visibilitychange`) 시 연결 해제, 메시지 목록 가상화 `[예방]`
-- 미들웨어 **rate limiting** `[예방]`
-- 인지 성능: 작성 저장 **optimistic UI**, 대량 리스트 **가상 스크롤** `[예방]`
+- Realtime (socket): explicit reconnection backoff, disconnect on tab hidden (`visibilitychange`), virtualize the message list `[GUARD]`
+- Middleware **rate limiting** `[GUARD]`
+- Perceived performance: **optimistic UI** on save, **virtual scrolling** for large lists `[GUARD]`

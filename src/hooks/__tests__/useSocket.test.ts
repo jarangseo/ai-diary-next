@@ -108,7 +108,7 @@ describe('useSocket', () => {
       result.current.emitTyping()
     })
 
-    // user-typing은 1번만 emit되어야 함
+    // user-typing should be emitted only once
     const typingCalls = mockSocket.emit.mock.calls.filter(
       ([event]) => event === 'user-typing'
     )

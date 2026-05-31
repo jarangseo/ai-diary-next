@@ -16,7 +16,7 @@ function WriteForm() {
   const [hasExisting, setHasExisting] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  // 선택한 날짜에 이미 글이 있으면 불러와 편집(빈 화면 저장으로 덮어쓰는 사고 방지)
+  // If the selected date already has an entry, load it for editing (prevents overwriting via a blank save)
   useEffect(() => {
     let active = true
     fetch(`/api/diary/${date}`)
