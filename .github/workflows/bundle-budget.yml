@@ -20,7 +20,9 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      # 번들 크기 측정엔 네이티브 빌드(sharp/@parcel/watcher 등)가 불필요.
+      # --ignore-scripts로 dependency 빌드 스크립트를 건너뛰어 ERR_PNPM_IGNORED_BUILDS 회피.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
 
       # next build는 모듈 로드 시 env를 참조하므로 빌드용 더미값을 넣는다.
       # (번들 크기만 재므로 실제 시크릿은 불필요 — 라우트는 런타임 dynamic)
