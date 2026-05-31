@@ -66,17 +66,29 @@ export async function saveDiary(
   isRecordOnly: boolean
 ) {
   const now = new Date().toISOString()
-  const { error } = await supabase.from('diaries').upsert(
-    {
-      user_id: userId,
-      date,
-      content,
-      is_record_only: isRecordOnly,
-      updated_at: now,
-      created_at: now,
-    },
-    { onConflict: 'user_id,date' }
-  )
+
+  // 같은 날짜에 글이 있으면 수정(created_at 보존), 없으면 신규 작성.
+  // 기존 upsert는 created_at까지 매번 덮어써 작성 시각이 사라졌다.
+  const existing = await getDiary(userId, date)
+
+  if (existing) {
+    const { error } = await supabase
+      .from('diaries')
+      .update({ content, is_record_only: isRecordOnly, updated_at: now })
+      .eq('user_id', userId)
+      .eq('date', date)
+
+    return !error
+  }
+
+  const { error } = await supabase.from('diaries').insert({
+    user_id: userId,
+    date,
+    content,
+    is_record_only: isRecordOnly,
+    created_at: now,
+    updated_at: now,
+  })
 
   return !error
 }

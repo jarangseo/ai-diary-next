@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeftIcon } from 'lucide-react'
 import { toDateKey } from '@/lib/date'
@@ -13,7 +13,23 @@ function WriteForm() {
 
   const [date, setDate] = useState(initialDate)
   const [content, setContent] = useState('')
+  const [hasExisting, setHasExisting] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // 선택한 날짜에 이미 글이 있으면 불러와 편집(빈 화면 저장으로 덮어쓰는 사고 방지)
+  useEffect(() => {
+    let active = true
+    fetch(`/api/diary/${date}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((diary) => {
+        if (!active) return
+        setContent(diary?.content ?? '')
+        setHasExisting(Boolean(diary))
+      })
+    return () => {
+      active = false
+    }
+  }, [date])
 
   const handleSave = async () => {
     if (!content.trim()) return
@@ -49,7 +65,7 @@ function WriteForm() {
           onClick={handleSave}
           disabled={saving || !content.trim()}
         >
-          {saving ? '저장 중…' : '저장'}
+          {saving ? '저장 중…' : hasExisting ? '수정' : '저장'}
         </button>
       </header>
       <textarea
