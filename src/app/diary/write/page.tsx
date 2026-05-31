@@ -1,14 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeftIcon } from 'lucide-react'
+import { toDateKey } from '@/lib/date'
 import styles from './page.module.scss'
 
-export default function DiaryWritePage() {
+function WriteForm() {
   const router = useRouter()
-  const today = new Date().toISOString().slice(0, 10)
-  const [date, setDate] = useState(today)
+  const searchParams = useSearchParams()
+  const initialDate = searchParams.get('date') ?? toDateKey(new Date())
+
+  const [date, setDate] = useState(initialDate)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -22,7 +25,7 @@ export default function DiaryWritePage() {
         body: JSON.stringify({ date, content, isRecordOnly: false }),
       })
       if (res.ok) {
-        router.push('/diary/list')
+        router.push(`/diary/${date}`)
       }
     } finally {
       setSaving(false)
@@ -46,16 +49,24 @@ export default function DiaryWritePage() {
           onClick={handleSave}
           disabled={saving || !content.trim()}
         >
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? '저장 중…' : '저장'}
         </button>
       </header>
       <textarea
         className={styles.content}
-        placeholder="How was your day?"
+        placeholder="오늘 하루는 어땠나요?"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         autoFocus
       />
     </article>
+  )
+}
+
+export default function DiaryWritePage() {
+  return (
+    <Suspense fallback={null}>
+      <WriteForm />
+    </Suspense>
   )
 }

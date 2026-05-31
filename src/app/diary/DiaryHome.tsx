@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { PlusIcon } from 'lucide-react'
 import { Calendar } from '@/components/Calendar/Calendar'
@@ -11,10 +11,24 @@ import styles from './DiaryHome.module.scss'
 
 type View = 'calendar' | 'list'
 
-export function DiaryHome({ diaries }: { diaries: Diary[] }) {
-  const [view, setView] = useState<View>('calendar')
+export function DiaryHome({
+  diaries,
+  view,
+}: {
+  diaries: Diary[]
+  view: View
+}) {
+  const router = useRouter()
+  const pathname = usePathname()
   const todayKey = toDateKey(new Date())
   const entryDates = diaries.map((d) => d.date)
+
+  // 뷰 상태를 URL에 반영 → 상세로 갔다가 뒤로가기 시 목록/캘린더 복원
+  const selectView = (next: View) => {
+    router.replace(next === 'list' ? `${pathname}?view=list` : pathname, {
+      scroll: false,
+    })
+  }
 
   return (
     <section className={styles.home}>
@@ -27,7 +41,7 @@ export function DiaryHome({ diaries }: { diaries: Diary[] }) {
               styles.toggleItem,
               view === 'calendar' && styles.active
             )}
-            onClick={() => setView('calendar')}
+            onClick={() => selectView('calendar')}
           >
             캘린더
           </button>
@@ -35,22 +49,22 @@ export function DiaryHome({ diaries }: { diaries: Diary[] }) {
             role="tab"
             aria-selected={view === 'list'}
             className={clsx(styles.toggleItem, view === 'list' && styles.active)}
-            onClick={() => setView('list')}
+            onClick={() => selectView('list')}
           >
             목록
           </button>
         </div>
 
-        <Link href={`/diary/${todayKey}`} className={styles.writeButton}>
+        <Link href={`/diary/write?date=${todayKey}`} className={styles.writeButton}>
           <PlusIcon size={18} />
           오늘 쓰기
         </Link>
       </div>
 
-      {view === 'calendar' ? (
-        <Calendar entryDates={entryDates} />
-      ) : (
+      {view === 'list' ? (
         <DiaryList diaries={diaries} />
+      ) : (
+        <Calendar entryDates={entryDates} />
       )}
     </section>
   )

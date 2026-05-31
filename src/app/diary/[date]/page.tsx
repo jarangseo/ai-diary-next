@@ -1,8 +1,7 @@
 import { auth } from '@/auth'
 import { getDiary } from '@/lib/diary'
 import { notFound } from 'next/navigation'
-import { ArrowLeftIcon } from 'lucide-react'
-import Link from 'next/link'
+import { BackButton } from '@/components/BackButton/BackButton'
 import styles from './page.module.scss'
 
 export default async function DiaryDetailPage({
@@ -20,9 +19,7 @@ export default async function DiaryDetailPage({
   return (
     <article className={styles.detail}>
       <header className={styles.header}>
-        <Link className={styles.backButton} href="/diary/list">
-          <ArrowLeftIcon size={20} />
-        </Link>
+        <BackButton className={styles.backButton} />
         <time className={styles.date}>{diary.date}</time>
         {diary.emotion && (
           <span className={styles.emotion}>{diary.emotion.primary}</span>

@@ -80,9 +80,13 @@ export function Calendar({ entryDates = [] }: CalendarProps) {
               key={dateKey}
               type="button"
               className={clsx(styles.day, isToday && styles.today)}
-              onClick={() => router.push(`/diary/${dateKey}`)}
+              onClick={() =>
+                router.push(
+                  hasEntry ? `/diary/${dateKey}` : `/diary/write?date=${dateKey}`
+                )
+              }
               aria-label={`${view.month + 1}월 ${day}일${
-                hasEntry ? ', 일기 있음' : ''
+                hasEntry ? ', 일기 있음' : ', 일기 작성'
               }`}
             >
               <span className={styles.dayNum}>{day}</span>
