@@ -2,80 +2,75 @@
 
 .write {
   display: flex;
-  flex-flow: column;
-  height: 100dvh;
-  padding-top: 28px;
+  flex-direction: column;
+  gap: $spacing-lg;
 }
 
 .header {
   display: flex;
   align-items: center;
-  padding: 0 $spacing-sm 0 $spacing-lg;
   gap: $spacing-sm;
 }
 
 .backButton {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
-  cursor: pointer;
-  transition: background-color $transition-normal;
+  border-radius: $radius-full;
+  color: $color-text-secondary;
+  transition: background-color $transition-fast, color $transition-fast;
 
   &:hover {
-    background-color: $color-border;
+    background-color: $color-bg-hover;
+    color: $color-text-primary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
   }
 }
 
 .dateInput {
-  font-size: $font-size-base;
-  font-weight: $font-weight-normal;
+  font-family: $font-sans;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
   color: $color-text-primary;
+  background-color: $color-surface;
   border: 1px solid $color-border;
-  border-radius: $radius-sm;
-  padding: 6px $spacing-md;
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
   cursor: pointer;
 
-  &:focus {
-    outline: 2px solid $color-text-primary;
-    outline-offset: -1px;
+  &:focus-visible {
+    @include focus-ring;
   }
 }
 
 .saveButton {
+  @include btn-primary;
   margin-left: auto;
-  padding: $spacing-sm 20px;
-  border-radius: $radius-lg;
+  height: 40px;
+  padding: 0 $spacing-lg;
   font-size: $font-size-sm;
-  font-weight: $font-weight-semibold;
-  background-color: $color-text-primary;
-  color: $color-text-inverse;
-  cursor: pointer;
-  transition: opacity $transition-normal;
-
-  &:hover {
-    opacity: 0.85;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
 }
 
 .content {
-  flex-grow: 1;
-  padding: $spacing-xl $spacing-2xl;
+  @include card;
+  min-height: 56dvh;
+  padding: $spacing-xl;
+  font-family: $font-serif;
   font-size: $font-size-base;
-  line-height: 1.8;
+  line-height: $line-height-relaxed;
   color: $color-text-primary;
-  resize: none;
-  border: none;
-  outline: none;
-  scrollbar-width: thin;
+  resize: vertical;
 
   &::placeholder {
     color: $color-text-tertiary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
   }
 }

@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { getDiary } from '@/lib/diary'
 import { notFound } from 'next/navigation'
 import { BackButton } from '@/components/BackButton/BackButton'
+import { formatDateLabel } from '@/lib/date'
 import styles from './page.module.scss'
 
 export default async function DiaryDetailPage({
@@ -20,7 +21,9 @@ export default async function DiaryDetailPage({
     <article className={styles.detail}>
       <header className={styles.header}>
         <BackButton className={styles.backButton} />
-        <time className={styles.date}>{diary.date}</time>
+        <time className={styles.date} dateTime={diary.date}>
+          {formatDateLabel(diary.date)}
+        </time>
         {diary.emotion && (
           <span className={styles.emotion}>{diary.emotion.primary}</span>
         )}
