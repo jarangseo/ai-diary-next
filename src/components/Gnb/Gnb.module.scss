@@ -1,78 +1,67 @@
 @use '@/styles/variables' as *;
 
-// === GNB (Global Navigation Bar) ===
-.gnb {
+// === Top bar (slim global navigation) ===
+.topbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 98;
+  height: $topbar-height;
+  background-color: rgba($color-bg-primary, 0.85);
+  backdrop-filter: saturate(180%) blur(8px);
+  border-bottom: 1px solid $color-border;
+}
+
+.inner {
   display: flex;
-  flex-flow: column;
   align-items: center;
   justify-content: space-between;
-  position: fixed;
-  inset: 0 auto 0 0;
-  width: $gnb-width;
-  z-index: 98;
-  padding-top: 10px;
-  padding-bottom: $spacing-xl;
-  background: $color-bg-secondary;
+  max-width: $content-max-width;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 $spacing-lg;
 }
 
-.menuItem {
-  margin-bottom: $spacing-md;
-}
+.logo {
+  font-family: $font-serif;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.01em;
+  color: $color-text-primary;
 
-.link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 48px;
-  height: 55px;
-  font-size: 9px;
-  font-weight: $font-weight-normal;
-  line-height: 1.45;
-  color: inherit;
-  text-decoration: none;
-  white-space: nowrap;
-  gap: $spacing-xs;
-
-  &:hover .icon {
-    background-color: $color-bg-hover;
+  a:hover {
+    color: $color-accent;
   }
 }
 
-.icon {
-  width: 40px;
-  height: 40px;
-  padding: 7px;
-  border-radius: $radius-md;
-}
-
-.user {
-  margin-top: auto;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: $radius-full;
-  object-fit: cover;
-}
-
-.toggle {
+.actions {
   display: flex;
   align-items: center;
+  gap: $spacing-xs;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  width: 48px;
-  aspect-ratio: 1;
+  width: 40px;
+  height: 40px;
   border-radius: $radius-full;
-  outline: 0;
-  order: -1;
-  margin-bottom: $spacing-md;
-  transition: transform 0.3s ease-in-out;
+  color: $color-text-secondary;
+  transition: background-color $transition-fast, color $transition-fast;
 
   &:hover {
     background-color: $color-bg-hover;
+    color: $color-text-primary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
   }
 }
 
-.toggleOpen {
-  transform: rotate(180deg);
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-full;
+  object-fit: cover;
 }

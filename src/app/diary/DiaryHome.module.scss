@@ -1,0 +1,47 @@
+@use '@/styles/variables' as *;
+
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.toggle {
+  display: inline-flex;
+  padding: $spacing-xs;
+  background-color: $color-bg-tertiary;
+  border-radius: $radius-md;
+}
+
+.toggleItem {
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  transition: background-color $transition-fast, color $transition-fast;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.active {
+  background-color: $color-surface;
+  color: $color-text-primary;
+  box-shadow: $shadow-xs;
+}
+
+.writeButton {
+  @include btn-primary;
+  height: 40px;
+  padding: 0 $spacing-lg;
+  font-size: $font-size-sm;
+}

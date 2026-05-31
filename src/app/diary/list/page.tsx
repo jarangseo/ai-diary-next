@@ -1,17 +1,6 @@
-import { Calendar } from '@/components/Calendar/Calendar'
-import { DiaryList } from '@/components/DiaryList/DiaryList'
-import SplitPanel from '@/components/SplitPanel/SplitPanel'
-import styles from './page.module.scss'
+import { redirect } from 'next/navigation'
 
-export default function DiaryListPage() {
-  return (
-    <SplitPanel
-      left={<DiaryList className={styles.left} />}
-      right={
-        <aside className={styles.right}>
-          <Calendar />
-        </aside>
-      }
-    />
-  )
+// 목록은 캘린더 홈(/diary)의 '목록' 토글로 통합됨
+export default function DiaryListRedirect() {
+  redirect('/diary')
 }

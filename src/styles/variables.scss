@@ -1,27 +1,47 @@
+// =============================================================
+//  Design Tokens — "Warm Journal" tone
+//  종이질감 오프화이트 + 테라코타 액센트 + 세이지 서브
+// =============================================================
+
 // === Colors ===
-$color-text-primary: #111827;
-$color-text-secondary: #6b7280;
-$color-text-tertiary: #9ca3af;
-$color-text-inverse: #fff;
+// --- Text (warm ink) ---
+$color-text-primary: #2b2724; // warm near-black (ink)
+$color-text-secondary: #6f655b; // warm gray
+$color-text-tertiary: #a59c90; // muted warm gray
+$color-text-inverse: #fffdf9; // warm white
 
-$color-bg-primary: #fff;
-$color-bg-secondary: #f5f5f5;
-$color-bg-hover: #f0f0f0;
+// --- Surface / Background (paper) ---
+$color-bg-primary: #faf8f4; // page — warm off-white paper
+$color-bg-secondary: #f3efe7; // secondary surface
+$color-bg-tertiary: #ece7dd; // inset / badge
+$color-bg-hover: #efeae1; // hover state
+$color-surface: #ffffff; // card surface (white on paper)
 
-$color-border: #e5e7eb;
+// --- Border ---
+$color-border: #e9e3d8; // soft warm border
+$color-border-strong: #ddd5c7; // stronger divider
 
-$color-accent: #3b82f6;
-$color-accent-light: #e8f0fe;
-$color-accent-hover: rgba(59, 130, 246, 0.85);
+// --- Accent (terracotta) ---
+$color-accent: #c2693f;
+$color-accent-light: #f5e7df;
+$color-accent-hover: #aa5733;
 
-$color-success: #4caf50;
-$color-success-light: #e8f5e9;
+// --- Sub (sage) ---
+$color-sub: #8a9a7b;
+$color-sub-light: #ecf0e7;
 
-$color-error: #e14638;
+// --- Status ---
+$color-success: #6f8f5e;
+$color-success-light: #ecf0e7;
+$color-error: #c0503f;
+$color-error-light: #f6e4e0;
 
-$color-disabled: #d0d0d0;
+$color-disabled: #d8d2c8;
 
 // === Typography ===
+$font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+$font-serif: 'Gowun Batang', 'Nanum Myeongjo', serif; // 일기책 느낌 (제목/본문)
+
 $font-size-xs: 11px;
 $font-size-sm: 13px;
 $font-size-base: 15px;
@@ -37,7 +57,7 @@ $line-height-tight: 1.25;
 $line-height-normal: 1.5;
 $line-height-relaxed: 1.75;
 
-// === Spacing ===
+// === Spacing === (4 · 8 · 12 · 16 · 24 · 32 · 40)
 $spacing-xs: 4px;
 $spacing-sm: 8px;
 $spacing-md: 12px;
@@ -52,10 +72,16 @@ $radius-md: 12px;
 $radius-lg: 16px;
 $radius-full: 50%;
 
+// === Shadows === (soft, ink-on-paper)
+$shadow-xs: 0 1px 2px rgba(43, 39, 36, 0.04);
+$shadow-sm: 0 1px 3px rgba(43, 39, 36, 0.06), 0 1px 2px rgba(43, 39, 36, 0.04);
+$shadow-md: 0 4px 12px rgba(43, 39, 36, 0.07);
+$shadow-lg: 0 8px 24px rgba(43, 39, 36, 0.09);
+
 // === Transitions ===
 $transition-fast: 0.15s ease;
 $transition-normal: 0.2s ease;
 
 // === Layout ===
-$gnb-width: 72px;
-$lnb-width: 264px;
+$topbar-height: 56px;
+$content-max-width: 720px;

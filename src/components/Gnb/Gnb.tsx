@@ -2,82 +2,57 @@
 
 import styles from './Gnb.module.scss'
 import Link from 'next/link'
-import {
-  HomeIcon,
-  UserIcon,
-  SettingsIcon,
-  ChevronLeftIcon,
-  LogOutIcon,
-} from 'lucide-react'
+import { SettingsIcon, LogOutIcon, UserIcon } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import Image from 'next/image'
-import clsx from 'clsx'
-import { useUiStore } from '@/stores/uiStore'
 
 export default function Gnb() {
   const { data: session } = useSession()
-  const { isLnbOpen, setIsLnbOpen } = useUiStore()
+
   return (
-    <nav className={styles.gnb}>
-      <h1 hidden>
-        <Link href="/" aria-label="AI Diary">
-          AI Diary
-        </Link>
-      </h1>
-      <ul>
-        <li className={styles.menuItem}>
-          <Link className={styles.link} href="/">
-            <HomeIcon size={24} className={styles.icon} />
-            Home
+    <header className={styles.topbar}>
+      <div className={styles.inner}>
+        <h1 className={styles.logo}>
+          <Link href="/diary" aria-label="AI Diary">
+            AI Diary
           </Link>
-        </li>
-      </ul>
-      <ul className={styles.user}>
-        {session ? (
-          <>
-            <li>
+        </h1>
+
+        <nav className={styles.actions}>
+          {session ? (
+            <>
+              <Link
+                className={styles.iconButton}
+                href="/settings"
+                aria-label="설정"
+              >
+                <SettingsIcon size={20} />
+              </Link>
               <button
-                className={styles.link}
+                className={styles.iconButton}
                 onClick={() => signOut({ callbackUrl: '/' })}
+                aria-label="로그아웃"
               >
                 {session.user?.image ? (
                   <Image
                     src={session.user.image}
                     alt={session.user.name ?? ''}
-                    width={40}
-                    height={40}
+                    width={28}
+                    height={28}
                     className={styles.avatar}
                   />
                 ) : (
-                  <LogOutIcon size={24} className={styles.icon} />
+                  <LogOutIcon size={20} />
                 )}
-                Logout
               </button>
-            </li>
-            <li>
-              <Link className={styles.link} href="/settings">
-                <SettingsIcon size={24} className={styles.icon} />
-                Settings
-              </Link>
-            </li>
-          </>
-        ) : (
-          <li>
-            <Link className={styles.link} href="/login">
-              <UserIcon size={24} className={styles.icon} />
-              Login
+            </>
+          ) : (
+            <Link className={styles.iconButton} href="/login" aria-label="로그인">
+              <UserIcon size={20} />
             </Link>
-          </li>
-        )}
-      </ul>
-      <button
-        type="button"
-        className={clsx(styles.toggle, isLnbOpen && styles.toggleOpen)}
-        aria-label="Toggle menu"
-        onClick={setIsLnbOpen}
-      >
-        <ChevronLeftIcon size={24} />
-      </button>
-    </nav>
+          )}
+        </nav>
+      </div>
+    </header>
   )
 }

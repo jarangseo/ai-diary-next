@@ -1,102 +1,64 @@
 @use '@/styles/variables' as *;
 
-.article {
-  padding-top: 28px;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  padding: 0 $spacing-sm 0 $spacing-2xl;
-}
-
-.title {
-  font-size: $font-size-xl;
-  font-weight: $font-weight-bold;
-  color: $color-text-primary;
-  margin-right: auto;
-}
-
-.button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-
-  cursor: pointer;
-  transition: background-color $transition-normal;
-
-  &:hover {
-    background-color: $color-border;
-  }
-}
-
 .list {
-  padding: 0 $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
 }
 
-.diaryItem {
-  position: relative;
+.item {
+  @include card;
+  display: block;
+  padding: $spacing-lg;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
 
   &:hover {
-    background: rgba($color-text-secondary, 0.05);
+    border-color: $color-border-strong;
+    box-shadow: $shadow-md;
   }
-  &::after {
-    content: '';
-    background: $color-border;
-    height: 1px;
-    left: $spacing-lg;
-    position: absolute;
-    right: $spacing-lg;
+
+  &:focus-visible {
+    @include focus-ring;
   }
 }
 
-.diaryItemLink {
-  display: block;
-  padding: 22px $spacing-lg;
-  border-radius: $radius-sm;
-  text-decoration: none;
+.itemHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.date {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+}
+
+.mood {
+  font-size: $font-size-base;
+}
+
+.excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-family: $font-serif;
+  font-size: $font-size-base;
+  line-height: $line-height-relaxed;
   color: $color-text-primary;
 }
 
-.diaryItemTitle {
-  display: block;
-  font-size: $font-size-base;
-  font-weight: $font-weight-bold;
-  line-height: 1.45;
-  margin-bottom: $spacing-xs;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.empty {
+  @include card;
+  padding: $spacing-3xl;
+  text-align: center;
+  color: $color-text-secondary;
 }
 
-.diaryItemContent {
-  font-size: $font-size-base;
-  line-height: 1.45;
-  margin-bottom: 7px;
-  padding-right: 20px;
-  word-break: normal;
-}
-
-.diaryItemFooter {
-  display: flex;
-  align-items: center;
-}
-
-.diaryItemMood {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-normal;
-  color: $color-error;
-}
-
-.diaryItemDate {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-normal;
+.emptyHint {
+  margin-top: $spacing-sm;
+  font-size: $font-size-sm;
   color: $color-text-tertiary;
-  &::before {
-    content: '・';
-    padding: 0 2px;
-  }
 }
