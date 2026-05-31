@@ -12,13 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 버전은 package.json의 packageManager(pnpm@11.1.2)에서 읽음 → 로컬과 동일
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22 # pnpm 11.5+ requires Node >= 22.13 (uses node:sqlite)
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
