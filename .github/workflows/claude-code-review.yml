@@ -2,7 +2,9 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
+    # Cost control: review once per PR open/reopen/ready, NOT on every push
+    # (`synchronize` removed). Re-trigger a review on demand by commenting `@claude review`.
+    types: [opened, ready_for_review, reopened]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
@@ -19,6 +21,7 @@ jobs:
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # hard backstop against a runaway run
     permissions:
       contents: read
       pull-requests: read
@@ -39,6 +42,10 @@ jobs:
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
+          # Cost cap: bound agentic turns per review (≈ caps API cost) without truncating
+          # a normal review. Raise toward 12–15 if reviews get cut off on large PRs.
+          claude_args: |
+            --max-turns 10
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
