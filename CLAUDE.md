@@ -99,6 +99,33 @@ dynamic calendar home (month nav, entry dots, date click → detail/write), warm
 - Styling is unified on SCSS design tokens (`variables.scss`, `mixins.scss`). New styles should use tokens.
 - Measure performance in production (`pnpm build && pnpm start`); dev TTFB is inflated by on-demand compilation. See `docs/PERFORMANCE.md`.
 
+## Development workflow
+
+How to carry out a change (keep each step small and verifiable):
+
+1. **Branch from `main`** — name as `type/short-desc` (e.g. `feat/emotion-analysis`,
+   `fix/...`, `perf/...`, `docs/...`). Never commit directly to `main`.
+2. **Read before you write** — for a new feature, first read the relevant code and explain
+   the current structure, then propose a plan. **Do not start with code.**
+3. **Plan first for non-trivial work** — agree the design (and any product decisions)
+   before writing code, then break the work into stages. See the bundle-by-bundle pattern
+   in `docs/PERFORMANCE.md`.
+4. **Test core logic, then self-verify** — after implementing core logic, write/run tests
+   to prove it yourself; don't rely on the reader to spot-check.
+5. **Verify at the end of each stage** — `pnpm typecheck` + `pnpm test:run` (+ `pnpm lint`)
+   must pass before committing. If the change can affect shipped JS, also
+   `pnpm check:bundle-budget` (CI fails if gzip JS > 250 KB).
+6. **Commit in small stages** — one logical step per commit, English message. Prefer several
+   small commits over one large one (smaller PRs = easier review + regression bisection).
+   Format `type(scope): subject`, present tense, lowercase subject; types in use:
+   `feat fix perf refactor style test docs ci chore`. End AI-authored commits with the
+   `Co-Authored-By: Claude ...` footer.
+7. **Review before merge** — run `/code-review` for correctness/cleanup; `/security-review`
+   when touching auth, API input, or the service-role DB path. Open a small PR into `main`.
+
+Code-style conventions (English artifacts, `services/`/`lib/` layering, SCSS tokens) are in
+**Conventions** below.
+
 ## Conventions
 
 - **Repo artifacts (commits, PRs, docs, code comments) are in English.** User-facing UI strings and

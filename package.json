@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "measure:bundle": "find .next/static -name '*.js' -print0 | xargs -0 cat | gzip -c | wc -c | awk '{printf \"shipped JS (gzip): %.1f KB\\n\", $1/1024}'",
