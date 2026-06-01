@@ -1,0 +1,36 @@
+name: CI
+
+# Run typecheck + tests + lint on every PR and on main pushes → block broken code before merge.
+# Complements bundle-budget.yml (which guards shipped JS size); this guards correctness.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # version is read from package.json's packageManager (pnpm@11.1.2) → matches local
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Native builds (sharp/@parcel/watcher, etc.) aren't needed for typecheck/test/lint.
+      # --ignore-scripts skips dependency build scripts to avoid ERR_PNPM_IGNORED_BUILDS.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # Separate steps so a failure points at the exact check.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test:run
+
+      - name: Lint
+        run: pnpm lint
