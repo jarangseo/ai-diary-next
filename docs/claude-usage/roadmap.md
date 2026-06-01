@@ -10,8 +10,8 @@
 
 ## A+ 정의 (이게 충족되면 A+)
 
-- [ ] **리뷰 스킬 상시화** — 모든 PR 전 `/code-review`, auth·API·DB 건드리면 `/security-review`가
-      "선택"이 아니라 단계 완료 조건(DoD)
+- [ ] **리뷰 자동화** — 모든 PR이 봇으로 자동 리뷰됨(`/code-review`를 손으로 부를 필요 없이).
+      리뷰가 "선택"이 아니라 **머지 전 자동 관문**
 - [ ] **검증 훅 자동화** — typecheck/test가 손이 아니라 훅으로 돌고, main 직커밋이 물리적으로 막힘
 - [ ] **CI 게이트** — test/typecheck/lint가 PR에서 자동 차단(현재는 번들 크기만)
 - [ ] **서브에이전트 교차검증** — 각 단계 후 독립 리뷰 에이전트로 adversarial 점검이 루틴
@@ -26,7 +26,7 @@
 | **T1** | CI 게이트(test/typecheck/lint) | 하 | ★★★ | 안전망 자동 강제. 즉시. |
 | **T5** | 권한 allowlist 큐레이션 | 하 | ★★ | 프롬프트 소음↓, 즉시. |
 | **T2** | 검증 훅 자동화 | 중 | ★★★ | 규칙을 훅으로. |
-| **T3** | 리뷰 스킬 상시화 | 하 | ★★★ | 습관 + DoD화. |
+| **T3** | 리뷰 자동화 (PR 봇) | 중 | ★★★ | 수동 호출 → 자동 관문. |
 | **T4** | CLAUDE.md 누락 보강 | 하 | ★★ | 컨텍스트 공백 제거. |
 | **T6** | 단계별 adversarial 리뷰 subagent | 중 | ★★ | 제3의 시각 상시. |
 
@@ -52,11 +52,29 @@
 - [ ] `update-config` 스킬로 `~/.claude/settings.json` 또는 프로젝트 `.claude/settings.json`에 작성
 - [ ] 훅이 과하게 느려지지 않게 범위 제한(변경 파일만, async 알림)
 
-### T3. 리뷰 스킬 상시화 — *다음*
-- [ ] 단계 DoD에 추가: "구현 → 테스트 → `pnpm typecheck/test/lint` → **`/code-review`** → 커밋"
-- [ ] auth/API/service-role 경로 변경 시 **`/security-review`** 필수 (Stage 3가 첫 적용 대상)
-- [ ] CLAUDE.md Development workflow의 review 단계를 "권장"이 아니라 "필수"로 강화
-- [ ] 리뷰에서 나온 지적을 그 PR에서 바로 반영하는 흐름 정착
+### T3. 리뷰 자동화 (PR 봇) — *대부분 완료*
+
+> **개정 사유**: 처음엔 "DoD 체크리스트에 `/code-review` 추가"(구현→…→리뷰→커밋)로 잡았으나,
+> 그건 *내가 매번 기억해 호출*하는 **규율(discipline)** 버전이라 잊을 수 있다(지금까지 PR 3개에서 누락).
+> 로드맵 상위 원칙은 "검증을 기억이 아니라 **시스템**으로"이므로, 리뷰도 **자동화로 졸업**시킨다.
+> 동시에 리뷰의 자연스러운 위치는 "커밋 전(local)"이 아니라 **"머지 전(PR 게이트)"** 이다.
+
+**개정된 DoD**
+```
+[로컬]  구현 → 테스트 → pnpm typecheck/test/lint → 커밋 → push → PR
+[PR]    🤖 봇 자동 리뷰 + CI(typecheck/test/lint) 통과 → 지적 반영 → 머지
+```
+
+- [x] **Claude GitHub Action 봇 도입** — Claude GitHub App 설치 시 자동 생성된 워크플로
+      (`claude-code-review.yml` 자동 리뷰 + `claude.yml` `@claude` 어시스턴트), `on: pull_request`로
+      PR마다 자동 리뷰 + 인라인 코멘트
+- [x] **사람 수동 단계 완료** — Claude GitHub App 설치(브라우저) + `CLAUDE_CODE_OAUTH_TOKEN` 시크릿 등록
+      (이 환경에선 `/install-github-app`이 비활성이라 GitHub App 페이지에서 직접 설치)
+- [x] **비용 캡 적용** — `--max-turns 10` + `synchronize` 트리거 제거(매 push 재리뷰 방지) + `timeout-minutes` 백스톱
+- [x] **`/code-review`(수동)는 "선택적 pre-push 가속기"로 강등** — 강제 관문은 PR 봇으로 단일화
+- [x] 봇이 `/code-review` 플러그인을 사용 → 보안 관점 포함(auth·입력검증·service-role·시크릿)
+- [ ] 봇이 단 지적을 그 PR에서 바로 반영하는 흐름 정착 (지속)
+- [ ] (선택) 브랜치 보호로 "봇·CI 통과"를 머지 필수 조건화
 
 ### T4. CLAUDE.md 누락 보강 — *다음*
 - [ ] **테스트 컨벤션** 섹션: `__tests__/` 위치 + "side-effect 모듈에서 순수 로직 분리·client 주입" 패턴
@@ -75,21 +93,21 @@
 ## 로드맵 3구간
 
 1. **지금 당장** — T1(CI 게이트) · T5(권한 정리) — 난이도 낮고 ROI 즉시
-2. **다음** — T2(훅) · T3(리뷰 스킬 DoD) · T4(CLAUDE.md 보강) — 습관·자동화 정착
+2. **다음** — T3(리뷰 봇) · T2(훅) · T4(CLAUDE.md 보강) — 자동화 정착
 3. **지속** — T6(서브에이전트 교차검증) + 아래 지표로 활용도 측정
 
 ## 활용도 측정 지표 (월 단위 체감)
 
-- 세션당 **skill 호출 수** (목표: PR마다 `/code-review` ≥ 1)
+- **PR 자동 리뷰 커버리지** (목표: 모든 PR에 봇 리뷰 1회 이상)
 - **훅 자동 검증 통과율** / 커밋 전 수동 검증을 잊은 횟수(목표: 0)
 - **CI 차단 건수** — 막아준 회귀가 있으면 게이트가 일하는 것
-- adversarial 리뷰에서 **커밋 전에 잡은 결함 수**
+- 봇·adversarial 리뷰에서 **머지 전에 잡은 결함 수**
 
 ---
 
 ## 적용 순서 메모
 
 이 로드맵의 첫 실전 대상은 **감정 분석 Stage 3(트리거 통합)** 이다.
-`api/diary`·`summarize`를 건드리므로 T3(`/security-review`)가 자연스럽게 발동하고,
+`api/diary`·`summarize`를 건드리므로 T3(PR 봇)의 보안 관점 리뷰가 자연스럽게 발동하고,
 T1(CI 게이트)이 있으면 그 PR부터 test/typecheck/lint가 자동 검증된다.
-즉 Stage 3를 **새 방식의 첫 시범 케이스**로 삼는 것을 권장한다.
+즉 Stage 3를 **새 방식(CI 게이트 + 자동 리뷰 봇)의 첫 시범 케이스**로 삼는 것을 권장한다.
