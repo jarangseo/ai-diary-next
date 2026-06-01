@@ -1,42 +1,6 @@
 import { supabase } from './supabase'
-import type { Diary, DiaryEmotion } from '@/types/diary'
-import type { DiaryRow } from './supabase'
-
-// Helper to convert Supabase row to Diary
-function rowToDiary(row: DiaryRow): Diary {
-  return {
-    date: row.date,
-    content: row.content,
-    isRecordOnly: row.is_record_only,
-    emotion: row.emotion_primary
-      ? {
-          primary: row.emotion_primary,
-          score: row.emotion_score ?? 0,
-          summary: row.emotion_summary ?? '',
-          questions: row.emotion_questions ?? [],
-        }
-      : undefined,
-    createdAt: new Date(row.created_at).getTime(),
-    updatedAt: new Date(row.updated_at).getTime(),
-  }
-}
-
-// Helper to convert Diary to Supabase row (partial)
-export function diaryToRow(
-  diary: Diary,
-  userId: string
-): Omit<DiaryRow, 'id' | 'created_at' | 'updated_at'> {
-  return {
-    user_id: userId,
-    date: diary.date,
-    content: diary.content,
-    is_record_only: diary.isRecordOnly,
-    emotion_primary: diary.emotion?.primary ?? null,
-    emotion_score: diary.emotion?.score ?? null,
-    emotion_summary: diary.emotion?.summary ?? null,
-    emotion_questions: diary.emotion?.questions ?? null,
-  }
-}
+import type { DiaryEmotion } from '@/types/diary'
+import { rowToDiary } from './diaryMapper'
 
 export async function getDiary(userId: string, date: string) {
   const { data } = await supabase
@@ -103,30 +67,25 @@ export async function deleteDiary(userId: string, date: string) {
   return !error
 }
 
-// export async function updateDiaryEmotion(
-//   date: string,
-//   emotion: DiaryEmotion
-// ): Promise<Diary | undefined> {
-//   const userId = getUserId()
-//   if (!supabase || !userId) return undefined
+// Attach (or re-attach) emotion analysis to an existing diary entry.
+// Targeted update of the emotion columns only — never touches `content` (analysis
+// runs after a save, so the content is already correct) and leaves `updated_at`
+// alone (emotion is derived metadata, not a user content edit).
+export async function updateDiaryEmotion(
+  userId: string,
+  date: string,
+  emotion: DiaryEmotion
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('diaries')
+    .update({
+      emotion_primary: emotion.primary,
+      emotion_score: emotion.score,
+      emotion_summary: emotion.summary,
+      emotion_questions: emotion.questions ?? null,
+    })
+    .eq('user_id', userId)
+    .eq('date', date)
 
-//   const diary = await getDiary(date)
-//   if (!diary) return undefined
-
-//   const updated: Diary = {
-//     ...diary,
-//     emotion,
-//     updatedAt: Date.now(),
-//   }
-
-//   const { error } = await supabase
-//     .from('diaries')
-//     .upsert(diaryToRow(updated, userId), { onConflict: 'user_id,date' })
-
-//   if (error) {
-//     console.error('Failed to update emotion:', error)
-//     throw error
-//   }
-
-//   return updated
-// }
+  return !error
+}

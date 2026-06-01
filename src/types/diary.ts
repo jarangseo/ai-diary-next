@@ -1,6 +1,8 @@
+import type { EmotionPrimary } from '@/lib/emotion'
+
 export interface DiaryEmotion {
-  primary: string
-  score: number
+  primary: EmotionPrimary
+  score: number // emotional intensity, 0–100
   summary: string
   questions?: string[]
 }
