@@ -8,7 +8,7 @@ export function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-/** 'YYYY-MM-DD' → '5월 31일 (토)' */
+/** 'YYYY-MM-DD' → Korean date label, e.g. '5월 31일 (토)' */
 export function formatDateLabel(dateKey: string): string {
   const [y, m, d] = dateKey.split('-').map(Number)
   const date = new Date(y, m - 1, d)

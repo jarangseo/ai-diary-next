@@ -1,65 +1,65 @@
-# 제품 방향 (Product Direction)
+# Product Direction
 
-> 작성일: 2026-05-31 · 상태: **v0 (방향 합의 완료, 세부 로드맵 미확정)**
+> Created: 2026-05-31 · Status: **v0 (direction agreed, detailed roadmap TBD)**
 
-이 문서는 ai-diary-next의 **제품 북극성**을 기록한다. 기능 우선순위와 설계 판단의 기준점.
+This document records the **product north star** for ai-diary-next. It is the reference point for feature priority and design decisions.
 
 ---
 
-## 한 줄 정의
+## One-line definition
 
-> **AI와 대화하며 자연스럽게 하루를 기록하고, 감정의 흐름을 돌아보는 개인 AI 일기 앱.**
+> **A personal AI diary app: record your day naturally by talking with AI, and look back on the flow of your emotions.**
 
-처음 초안은 "여러 명이 함께 쓰는 공유 일기 채팅"(README 참고)으로 시작했으나,
-**개인 AI 일기 중심**으로 방향을 재정의했다.
+The first draft started as a "shared diary chat for multiple people" (see README), but the
+direction was redefined to be **personal-AI-diary-centric**.
 
-## 핵심 사용자 루프
+## Core user loop
 
 ```
-1. 오늘 하루를 쓴다  (직접 작성  OR  AI와 대화하며 정리)
+1. Write today's day  (write directly  OR  organize it by talking with AI)
         ↓
-2. AI가 대화를 일기로 요약하고 감정을 분석한다
+2. AI summarizes the conversation into a diary entry and analyzes emotion
         ↓
-3. 캘린더/목록에서 지난 기록과 감정 흐름을 돌아본다
+3. Look back on past entries and emotional trends via calendar/list
 ```
 
-이 루프가 막히지 않고 도는 것 = 제품의 성공 기준.
+Keeping this loop turning without friction = the product's success criterion.
 
-차별점: **"혼자 일기 쓰기 어려운 사람"**도 AI와 대화하면 기록이 완성된다.
+Differentiator: **even people who find it hard to journal alone** can complete an entry by talking with AI.
 
-## 기능 우선순위
+## Feature priority
 
-| 기능 | 위치 | 현재 상태 |
-|------|------|-----------|
-| 일기 작성 / 조회 | 🟢 핵심 | 작동 |
-| AI 대화 → 일기 요약 | 🟢 핵심 | 작동 (GPT-4o-mini, `summarize` API) |
-| 감정 분석 + 표시 | 🟢 핵심 | **미구현** (타입/DB 컬럼만 예약됨) |
-| 캘린더 회고 | 🟢 핵심 | **미완성** (정적 하드코딩, 클릭 동작 없음) |
-| 설정 페이지 | 🟡 지원 | **비어있음** (`<div>Settings</div>`) |
-| 다인원 실시간 채팅 | ⏸️ 보류 | 작동하나 개인 중심에선 후순위 |
+| Feature | Position | Current status |
+|---------|----------|----------------|
+| Write / view diary | 🟢 core | working |
+| AI conversation → diary summary | 🟢 core | working (GPT-4o-mini, `summarize` API) |
+| Emotion analysis + display | 🟢 core | **not implemented** (only types/DB columns reserved) |
+| Calendar retrospective | 🟢 core | **incomplete** (static hardcoded, no click behavior) |
+| Settings page | 🟡 support | **empty** (`<div>Settings</div>`) |
+| Multi-user realtime chat | ⏸️ deferred | works, but lower priority under a personal focus |
 
-## ⚠️ 핵심 결정 기록
+## ⚠️ Key decision record
 
-**다인원 실시간 채팅(초대코드 · 온라인 유저 · 타이핑 · socket.io)을 어떻게 할 것인가**
+**What to do with multi-user realtime chat (invite codes · online users · typing · socket.io)**
 
-- **결정: 실시간 인프라는 유지하되 보류 (제거하지 않음).**
-- 개인 일기 핵심부(감정 분석, 캘린더, 설정)를 **먼저 완성**한다.
-- "함께쓰기"는 그 이후에 확장 옵션으로 살릴지 판단한다.
-- 즉, 단기 작업에서 채팅 다인원 기능은 **손대지 않는다.**
+- **Decision: keep the realtime infra but defer it (do not remove).**
+- **First complete** the personal-diary core (emotion analysis, calendar, settings).
+- Decide later whether to revive "shared writing" as an extension.
+- In other words, do **not touch** the multi-user chat features in near-term work.
 
-## 단기 작업의 무게중심
+## Near-term focus
 
-개인 일기 루프를 완성하는 순서:
+Order for completing the personal-diary loop:
 
-1. **캘린더 동적화** — 현재 월 계산, 일기 존재 여부 표시, 날짜 클릭 → 해당 일기 이동
-2. **감정 분석 구현** — 일기 저장 후 OpenAI로 감정 분석 → DB 저장 → UI 배지/아이콘
-3. **설정 페이지** — 프로필, 테마 등 기본 골격
+1. **Make the calendar dynamic** — compute current month, show whether an entry exists, click a date → go to that entry
+2. **Implement emotion analysis** — after saving an entry, analyze emotion via OpenAI → store in DB → UI badge/icon
+3. **Settings page** — basic skeleton (profile, theme, etc.)
 
-> 세부 실행 방식(직접 작업 vs 멀티에이전트 harness)은 추후 결정.
+> The execution approach (hands-on vs multi-agent harness) is TBD.
 
-## 미해결 / 추후 논의
+## Open / for later discussion
 
-- 감정 분석의 결과물 형태(점수 시각화? 회고 질문 제공?)와 UX
-- 캘린더에서 감정 흐름을 어떻게 시각화할지
-- 직접 작성 vs AI 대화 작성의 진입 동선 정리
-- 다인원 채팅 기능의 최종 거취
+- The output shape of emotion analysis (score visualization? reflective questions?) and its UX
+- How to visualize emotional trends on the calendar
+- Clarify the entry flow for direct writing vs AI-conversation writing
+- The final fate of the multi-user chat feature

@@ -90,7 +90,7 @@
   width: 5px;
   height: 5px;
   border-radius: $radius-full;
-  background-color: $color-sub; // 감정분석 구현 전: 중립 점(세이지)
+  background-color: $color-sub; // neutral dot (sage) until emotion analysis exists
 }
 
 .today .dot {

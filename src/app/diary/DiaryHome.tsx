@@ -23,7 +23,7 @@ export function DiaryHome({
   const todayKey = toDateKey(new Date())
   const entryDates = diaries.map((d) => d.date)
 
-  // 뷰 상태를 URL에 반영 → 상세로 갔다가 뒤로가기 시 목록/캘린더 복원
+  // Reflect view state in the URL → going back from a detail page restores list/calendar
   const selectView = (next: View) => {
     router.replace(next === 'list' ? `${pathname}?view=list` : pathname, {
       scroll: false,
