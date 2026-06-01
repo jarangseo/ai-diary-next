@@ -6,15 +6,16 @@ import type { DiaryRow } from './supabase'
 import { getEmotionMeta } from './emotion'
 
 export function rowToDiary(row: DiaryRow): Diary {
+  // Only surface emotion when the stored primary is a known key; unknown/legacy
+  // values fall back to undefined rather than producing a broken badge.
+  const emotionMeta = getEmotionMeta(row.emotion_primary)
   return {
     date: row.date,
     content: row.content,
     isRecordOnly: row.is_record_only,
-    // Only surface emotion when the stored primary is a known key; unknown/legacy
-    // values fall back to undefined rather than producing a broken badge.
-    emotion: getEmotionMeta(row.emotion_primary)
+    emotion: emotionMeta
       ? {
-          primary: getEmotionMeta(row.emotion_primary)!.key,
+          primary: emotionMeta.key,
           score: row.emotion_score ?? 0,
           summary: row.emotion_summary ?? '',
           questions: row.emotion_questions ?? [],

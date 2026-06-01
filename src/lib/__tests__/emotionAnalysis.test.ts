@@ -102,4 +102,18 @@ describe('analyzeEmotion', () => {
     const sentUserMessage = create.mock.calls[0][0].messages[1].content as string
     expect(sentUserMessage.length).toBeLessThan(4_200) // 4000 cap + short prefix
   })
+
+  it('returns null (does not throw) when no client is given and the API key is missing', async () => {
+    // `new OpenAI()` throws synchronously without a key; that must fall back to null,
+    // not crash the caller (the diary still saves without emotion).
+    const prev = process.env.OPENAI_API_KEY
+    delete process.env.OPENAI_API_KEY
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await expect(analyzeEmotion('오늘 하루')).resolves.toBeNull()
+    } finally {
+      errSpy.mockRestore()
+      if (prev !== undefined) process.env.OPENAI_API_KEY = prev
+    }
+  })
 })

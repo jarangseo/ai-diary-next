@@ -95,15 +95,18 @@ export async function analyzeEmotion(
   const text = content?.trim().slice(0, MAX_INPUT_CHARS)
   if (!text) return null
 
-  const openai =
-    client ??
-    new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      timeout: REQUEST_TIMEOUT_MS,
-      maxRetries: MAX_RETRIES,
-    })
-
   try {
+    // Construct inside try: `new OpenAI()` throws synchronously when the API key is
+    // missing/empty, and that must fall back to null too (never throw) — otherwise a
+    // misconfigured key would crash the save flow instead of saving without emotion.
+    const openai =
+      client ??
+      new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        timeout: REQUEST_TIMEOUT_MS,
+        maxRetries: MAX_RETRIES,
+      })
+
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
