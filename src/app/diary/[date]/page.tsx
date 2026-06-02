@@ -1,6 +1,8 @@
 import { auth } from '@/auth'
 import { getDiary } from '@/lib/diary'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { PencilIcon } from 'lucide-react'
 import { BackButton } from '@/components/BackButton/BackButton'
 import { formatDateLabel } from '@/lib/date'
 import { getEmotionMeta } from '@/lib/emotion'
@@ -29,15 +31,25 @@ export default async function DiaryDetailPage({
         <time className={styles.date} dateTime={diary.date}>
           {formatDateLabel(diary.date)}
         </time>
-        {meta && (
-          <span
-            className={styles.emotion}
-            style={{ color: meta.color, backgroundColor: `${meta.color}22` }}
+        <div className={styles.actions}>
+          {meta && (
+            <span
+              className={styles.emotion}
+              style={{ color: meta.color, backgroundColor: `${meta.color}22` }}
+            >
+              <span aria-hidden>{meta.emoji}</span>
+              {meta.label}
+            </span>
+          )}
+          <Link
+            href={`/diary/write?date=${diary.date}`}
+            className={styles.editButton}
+            aria-label="수정"
           >
-            <span aria-hidden>{meta.emoji}</span>
-            {meta.label}
-          </span>
-        )}
+            <PencilIcon size={16} />
+            수정
+          </Link>
+        </div>
       </header>
 
       <div className={styles.content}>{diary.content}</div>
