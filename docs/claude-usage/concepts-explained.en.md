@@ -1,7 +1,7 @@
-# Working with Claude Code — Concepts Explained (interview / recap notes)
+# Working with Claude Code — Concepts & Engineering Notes
 
 > Written: 2026-06-02 · Companions: [assessment.md](./assessment.md) · [roadmap.md](./roadmap.md)
-> Purpose: capture what I learned about "working with Claude Code" in plain language + interview talking points.
+> Purpose: plain-language notes on the "working with Claude Code" approach established in this project.
 > Korean version: [concepts-explained.md](./concepts-explained.md)
 
 ---
@@ -17,7 +17,7 @@ Move verification out of *a person's memory* and into *a system*. That's the cor
 
 ## 1. As-Is → To-Be
 
-| | As-Is (start) | To-Be (goal = A+) |
+| | As-Is (start) | To-Be (goal) |
 |---|---|---|
 | Verification | a human remembers to run tests → forgets | the system checks automatically |
 | Code review | meant to, but skipped it | a bot auto-reviews every PR |
@@ -46,15 +46,15 @@ opinions each run. So a bot "pass" is *advice*, not a *fact*.
 
 ---
 
-## 3. Sharp questions (interview talking points)
+## 3. Design questions & answers (why it was built this way)
 
-> Each item = question → core answer → why it matters. These show systems thinking.
+> Real questions hit during the work, with the reasoning. Each item = question → core answer → why it matters.
 
 ### Q1. A CI gate is just a GitHub safety feature — how does it improve "Claude utilization"?
 - **A**: CI makes you robust to *Claude's non-determinism*. It turns "remember to verify" into "the system verifies."
 - **Why it matters**: the more you delegate to AI (the less you hand-review), the more an automatic net is worth. CI is what lets you delegate *with confidence* — that *is* utilization.
 
-### Q2. If the bot says "pass," is it a blind pass?
+### Q2. If the bot says "pass," is that just a pass?
 - **A**: No. A bot pass = "the bot ran and left no comments" (a weak signal), not "guaranteed bug-free."
 - **Why it matters**: the real gate is the *deterministic CI (tests/typecheck)* + a human. The bot is a second pair of eyes, not an authority.
 
@@ -71,7 +71,7 @@ opinions each run. So a bot "pass" is *advice*, not a *fact*.
 - **Why it matters**: precedence `deny > ask > allow` → `git push *` is automatic, but `git push --force*` is intercepted. Balances "more convenience + still safe."
 
 ### Q6. (Meta) Why invest in all this automation?
-- **A**: Discipline + an automatic safety net drives most of the quality difference — more than clever prompts. It's applying solid engineering discipline (small PRs, tests-first, review) to Claude.
+- **A**: Discipline + an automatic safety net drives most of the quality difference — more than clever prompts. It's applying solid engineering discipline (small PRs, tests-first, review) to AI-assisted work.
 
 ---
 
@@ -86,15 +86,14 @@ opinions each run. So a bot "pass" is *advice*, not a *fact*.
 6. **Remaining** — verification hooks (T2: auto-check before commit + block commits to main),
    CLAUDE.md gap-filling (T4), subagent cross-review (T6).
 
-**Where I am now**: close to A. The big nets (auto-checks + auto-review + permission cleanup) are
-done; what's left is making them finer-grained.
+**Where it stands now**: the big nets (auto-checks + auto-review + permission cleanup) are done;
+what's left is making them finer-grained.
 
 ---
 
-## 5. One-sentence interview answer (compressed)
+## 5. Summary (one sentence)
 
-> "I think the key to using AI coding well isn't expecting the model to be perfect — it's building
-> safety nets (CI, a review bot, hooks) that catch mistakes automatically so you can delegate more.
-> Concretely, when I added the review bot I dogfooded it and caught a cost-config flaw, and I worked
-> with a clear trust distinction: a 'bot pass' is just advice, unlike the deterministic CI or a human's
-> judgment."
+> The key to using AI coding well isn't expecting the model to be perfect — it's building safety nets
+> (CI, a review bot, hooks) that catch mistakes automatically so you can delegate more; while adding
+> the review bot we dogfooded it and caught a cost-config flaw, and worked with a clear trust
+> distinction: a "bot pass" is just advice, unlike the deterministic CI or a human's judgment.
