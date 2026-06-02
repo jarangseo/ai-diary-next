@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
 import { getMessages } from '@/lib/chat'
-import { saveDiary } from '@/lib/diary'
+import { saveDiary, analyzeAndStoreEmotion } from '@/lib/diary'
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 
@@ -54,5 +54,8 @@ export async function POST(request: Request) {
 
   await saveDiary(session.user.id, date, diaryContent, false)
 
-  return NextResponse.json({ content: diaryContent, date })
+  // Analyze the just-generated entry and store its emotion (best-effort).
+  const emotion = await analyzeAndStoreEmotion(session.user.id, date, diaryContent)
+
+  return NextResponse.json({ content: diaryContent, date, emotion })
 }

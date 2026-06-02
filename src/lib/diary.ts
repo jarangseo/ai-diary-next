@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { DiaryEmotion } from '@/types/diary'
 import { rowToDiary } from './diaryMapper'
+import { analyzeEmotion } from './emotionAnalysis'
 
 export async function getDiary(userId: string, date: string) {
   const { data } = await supabase
@@ -88,4 +89,19 @@ export async function updateDiaryEmotion(
     .eq('date', date)
 
   return !error
+}
+
+// Best-effort: analyze the content and, if successful, store the emotion on the
+// (already-saved) entry. Both primitives swallow their own failures (analyzeEmotion
+// returns null, updateDiaryEmotion returns false), so this never throws — a diary
+// is always saved even if analysis or the emotion write fails. Returns the emotion
+// that was stored, or null. Call AFTER the entry is saved for the given date.
+export async function analyzeAndStoreEmotion(
+  userId: string,
+  date: string,
+  content: string
+): Promise<DiaryEmotion | null> {
+  const emotion = await analyzeEmotion(content)
+  if (emotion) await updateDiaryEmotion(userId, date, emotion)
+  return emotion
 }
