@@ -12,7 +12,8 @@
 - ✅ **T3 리뷰 자동화** — PR 봇 가동(`claude-code-review.yml` + `@claude` 어시스턴트, PR #24).
       실측: 리뷰 1회 ≈ **9턴 / $1.20**, PR당 1회.
 - ✅ **T5 권한 정리** — `settings.local.json` allowlist를 21개 일회성 → 17 패턴 + 7 `ask` 가드로 큐레이션.
-- ⬜ **T2**(훅) · **T4**(CLAUDE.md 보강) · **T6**(서브에이전트) — 미착수
+- 🔵 **T2 검증 훅** — main 직커밋 차단 훅 완료(PR #29, 테스트 8케이스 + CI 연결). Stop 훅은 보류.
+- ⬜ **T4**(CLAUDE.md 보강) · **T6**(서브에이전트) — 미착수
 
 ---
 
@@ -33,7 +34,7 @@
 | **T1** | CI 게이트(test/typecheck/lint) | ✅ 완료 | ★★★ | 브랜치 보호 required만 남음 |
 | **T3** | 리뷰 자동화 (PR 봇) | ✅ 완료 | ★★★ | 수동 호출 → 자동 관문 |
 | **T5** | 권한 allowlist 큐레이션 | ✅ 완료 | ★★ | 21개 → 17 allow + 7 ask |
-| **T2** | 검증 훅 자동화 | ⬜ **다음** | ★★★ | 규칙을 훅으로 |
+| **T2** | 검증 훅 자동화 | 🔵 일부 완료 | ★★★ | main 커밋 차단 ✅ / Stop 훅 보류 |
 | **T4** | CLAUDE.md 누락 보강 | ⬜ 다음 | ★★ | 컨텍스트 공백 제거 |
 | **T6** | 단계별 adversarial 리뷰 subagent | ⬜ 지속 | ★★ | 제3의 시각 상시 |
 
@@ -84,12 +85,17 @@
       우선순위 `deny > ask > allow`라 `git push *`는 자동이되 force/delete만 확인
 - 참고: gitignore 대상(로컬 전용)이라 커밋 없음. 적용은 다음 세션부터 반영될 수 있음.
 
-### T2. 검증 훅 자동화 — *다음*
-- [ ] `Stop` 훅: 작업 종료 시 `pnpm typecheck && pnpm test:run` 자동 실행, 실패면 알림
-- [ ] `PreToolUse(Bash)` 가드: `git commit`이 현재 브랜치 `main`일 때 차단
-- [ ] (선택) `PostToolUse(Edit|Write)` 훅: 변경 파일에 한해 lint/format
-- [ ] `update-config` 스킬로 `~/.claude/settings.json` 또는 프로젝트 `.claude/settings.json`에 작성
-- [ ] 훅이 과하게 느려지지 않게 범위 제한(변경 파일만, async 알림)
+### T2. 검증 훅 자동화 — 🔵 일부 완료
+- [x] **`PreToolUse(Bash)` 가드: main 직커밋 차단** (PR #29) — `.claude/hooks/block-main-commit.sh`
+      + `.claude/settings.json` 등록(팀 공유). `git commit`을 *명령으로서* 매치(시작/구분자 뒤)해
+      `echo "git commit"` 같은 false positive 방지. **8케이스 테스트 + `ci.yml`에서 실행(강제)**.
+- [ ] `Stop` 훅: 종료 시 `pnpm typecheck && test:run` 자동 — **보류**. CI와 겹쳐(속도만 추가) 가치 낮고,
+      매 턴 ~10초·루프 위험. 하려면 notify-only + 코드변경 가드로 신중히.
+- [ ] (선택) `PostToolUse(Edit|Write)` 린트 — **스킵 권장**(편집마다 느리고 CI·Stop과 중복).
+
+> **dogfood 교훈 (#29에서)**: 봇 리뷰는 **success/0코멘트**였지만, 사람 리뷰가 매처의 false-positive
+> 버그를 잡음 → "봇 pass는 보증이 아니라 *조언*"의 실증. 그래서 고친 뒤 **테스트를 CI에 박아**
+> 재발을 사람 기억이 아니라 시스템이 막게 함. (리뷰 1회 실측 비용 ≈ $1.2–1.5)
 
 ### T4. CLAUDE.md 누락 보강 — *다음*
 - [ ] **테스트 컨벤션** 섹션: `__tests__/` 위치 + "side-effect 모듈에서 순수 로직 분리·client 주입" 패턴
@@ -108,7 +114,7 @@
 ## 로드맵 3구간
 
 1. ✅ **완료** — T1(CI 게이트) · T3(리뷰 봇) · T5(권한 정리)
-2. **다음** — T2(검증 훅) · T4(CLAUDE.md 보강)
+2. **다음** — T2 마저(Stop 훅, 신중히) · T4(CLAUDE.md 보강)
 3. **지속** — T6(서브에이전트 교차검증) + 아래 지표로 활용도 측정
 
 ## 활용도 측정 지표 (월 단위 체감)
