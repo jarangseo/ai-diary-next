@@ -54,11 +54,14 @@ Source of truth for the taxonomy is `src/lib/emotion.ts` (`EMOTIONS` / `EMOTION_
 - [x] **decided: re-analyze on every save** — `saveDiary` upserts, so editing re-runs analysis and
       `updateDiaryEmotion` overwrites; emotion always reflects the latest content
 
-### ⬜ 4. UI display
-- [ ] detail page (`diary/[date]`) — emotion badge (color + emoji + label) + `summary` + reflection-question card
-- [ ] calendar (`components/Calendar`) — replace the single-color dot with an **emotion-colored** dot (use `EMOTION_META[*].color`)
+### 🔵 4. UI display (in progress)
+- [x] detail page (`diary/[date]`) — emotion badge (emoji + Korean label, tinted with the emotion color) +
+      `summary` + reflection-question card (`돌아보기`). Color applied inline from `EMOTION_META`.
+- [ ] calendar (`components/Calendar`) — replace the single-color dot with an **emotion-colored** dot.
+      Needs date→emotion plumbing (Calendar currently only gets `entryDates: string[]`).
 - [ ] list (`DiaryList`) — per-entry emotion indicator
-- [ ] add emotion color tokens to `styles/variables.scss` (currently hardcoded in `EMOTION_META`)
+- [x] ~~add emotion color tokens to `styles/variables.scss`~~ — **decided against**: keep `EMOTION_META`
+      as the single source of truth and apply colors inline, to avoid SCSS↔TS drift
 
 ### ⬜ 5. (later) Emotional trend retrospective
 - [ ] monthly emotion distribution / flow visualization — follow-up PR; see PRODUCT_DIRECTION "open for later"
