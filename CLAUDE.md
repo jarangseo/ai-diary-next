@@ -80,7 +80,8 @@ Diary upsert conflict key: `(user_id, date)`. `saveDiary` updates if a row exist
 dynamic calendar home (month nav, entry dots, date click → detail/write), warm-tone redesign.
 
 **Incomplete / next (order for completing the personal-diary loop)**:
-1. Emotion analysis — `updateDiaryEmotion` in `lib/diary.ts` is commented out; analysis logic + UI missing
+1. Emotion analysis — **in progress**; data layer (`lib/emotion.ts`, `updateDiaryEmotion`) + AI engine
+   (`lib/emotionAnalysis.ts`) done. Remaining: trigger wiring (save/summarize) + UI. Tracker: `docs/EMOTION_ANALYSIS.md`
 2. Settings page — `app/settings/page.tsx` is an empty placeholder
 3. (deferred) chat `@ai` mention; DiaryList search/filter/edit buttons removed in redesign
 
