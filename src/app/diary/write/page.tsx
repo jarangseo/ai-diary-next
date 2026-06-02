@@ -41,7 +41,10 @@ function WriteForm() {
         body: JSON.stringify({ date, content, isRecordOnly: false }),
       })
       if (res.ok) {
-        router.push(`/diary/${date}`)
+        // replace (not push) so "back" from the detail skips this write page and
+        // returns to wherever the user came from — the list or the calendar,
+        // whichever URL is still in history.
+        router.replace(`/diary/${date}`)
       }
     } finally {
       setSaving(false)
