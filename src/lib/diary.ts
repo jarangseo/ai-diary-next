@@ -88,6 +88,10 @@ export async function updateDiaryEmotion(
     .eq('user_id', userId)
     .eq('date', date)
 
+  // Best-effort, but never silent: a swallowed DB error here made an emotion-column
+  // type mismatch (numeric overflow on the 0–100 score) hard to diagnose.
+  if (error) console.error('updateDiaryEmotion failed:', error.message)
+
   return !error
 }
 
