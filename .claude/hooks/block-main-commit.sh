@@ -19,13 +19,16 @@ else
   cmd=$(printf '%s' "$input" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1)
 fi
 
-# Only care about `git commit` invocations (incl. --amend); ignore everything else.
-case "$cmd" in
-  *"git commit"*) ;;
-  *) exit 0 ;;
-esac
+# Only care about `git commit` invocations (incl. --amend). Match `git commit` only
+# as an actual command — at the start or after a shell separator (; && |) — so strings
+# like `echo "git commit"` or `git log --grep="git commit"` don't trigger a false block.
+if ! printf '%s' "$cmd" | grep -Eq '(^|[;&|][[:space:]]*)git[[:space:]]+commit([[:space:]]|$)'; then
+  exit 0
+fi
 
-branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+# Branch is read here; the override is a test-only seam (see block-main-commit.test.sh)
+# so the block path can be exercised without actually being on main. Unset in real use.
+branch="${_BLOCK_MAIN_COMMIT_TEST_BRANCH:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}"
 
 if [ "$branch" = "main" ]; then
   echo "Blocked: don't commit directly to main. Create a branch first, e.g.:" >&2
