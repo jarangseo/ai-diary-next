@@ -42,10 +42,13 @@ jobs:
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # Cost cap: bound agentic turns per review (≈ caps API cost) without truncating
-          # a normal review. Raise toward 12–15 if reviews get cut off on large PRs.
+          # `--max-turns` here is a *runaway backstop*, not the primary cost lever:
+          # the /code-review plugin orchestrates many finder/verifier sub-agents, so a
+          # tight cap fails the WHOLE review with error_max_turns (10 truncated at turn 11,
+          # producing nothing). Real cost control is the dropped `synchronize` trigger
+          # (frequency) + `timeout-minutes` (wall-clock). Keep this generous.
           claude_args: |
-            --max-turns 10
+            --max-turns 40
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
