@@ -1,6 +1,6 @@
 # Emotion Analysis — build tracker
 
-> Created: 2026-06-01 · Status: **in progress** (data layer + AI engine done; trigger + UI next)
+> Created: 2026-06-01 · Updated: 2026-06-02 · Status: **in progress** (data layer + AI engine + trigger done; **UI next**)
 
 Tracks the **emotion analysis** feature — a 🟢 core item in
 [PRODUCT_DIRECTION](./PRODUCT_DIRECTION.md). Goal: after an entry is written, infer the day's
@@ -45,13 +45,14 @@ Source of truth for the taxonomy is `src/lib/emotion.ts` (`EMOTIONS` / `EMOTION_
 - [x] best-effort fallback (returns `null`, never throws)
 - [x] tests — validator + engine with a mocked client
 
-### ⬜ 3. Trigger integration (synchronous)
-- [ ] `api/diary` POST — after `saveDiary` succeeds, `analyzeEmotion(content)` → `updateDiaryEmotion`,
-      then return; failure leaves the entry saved without emotion
-- [ ] `api/chat/summarize` — analyze the generated diary content and store emotion in the same flow
-      (already an OpenAI call site → natural place to combine)
-- [ ] write screen UX — the existing "저장 중…" state should cover the added analysis latency (1–3s)
-- [ ] decide: re-analyze on edit, or only on first save?
+### ✅ 3. Trigger integration (synchronous)
+- [x] `lib/diary.ts` `analyzeAndStoreEmotion(userId, date, content)` — best-effort helper
+      (`analyzeEmotion` → `updateDiaryEmotion`); never throws, shared by both routes
+- [x] `api/diary` POST — after `saveDiary` succeeds, call the helper; returns `{ ok, emotion }`
+- [x] `api/chat/summarize` — analyze the generated diary content in the same flow; returns `{ content, date, emotion }`
+- [x] write screen UX — no change needed; the added `await` is covered by the existing "저장 중…" state (1–3s)
+- [x] **decided: re-analyze on every save** — `saveDiary` upserts, so editing re-runs analysis and
+      `updateDiaryEmotion` overwrites; emotion always reflects the latest content
 
 ### ⬜ 4. UI display
 - [ ] detail page (`diary/[date]`) — emotion badge (color + emoji + label) + `summary` + reflection-question card

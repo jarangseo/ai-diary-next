@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { saveDiary } from '@/lib/diary'
+import { saveDiary, analyzeAndStoreEmotion } from '@/lib/diary'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -23,5 +23,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true })
+  // Synchronously attach emotion analysis (best-effort: the save above already
+  // succeeded, so a null/failed analysis just leaves the entry without emotion).
+  const emotion = await analyzeAndStoreEmotion(session.user.id, date, content)
+
+  return NextResponse.json({ ok: true, emotion })
 }
