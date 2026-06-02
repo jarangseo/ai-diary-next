@@ -11,7 +11,8 @@
 - ✅ **T1 CI 게이트** — `ci.yml`(typecheck/test/lint) 가동 (PR #22). 브랜치 보호 required 지정만 남음.
 - ✅ **T3 리뷰 자동화** — PR 봇 가동(`claude-code-review.yml` + `@claude` 어시스턴트, PR #24).
       실측: 리뷰 1회 ≈ **9턴 / $1.20**, PR당 1회.
-- ⬜ **T5**(권한 정리) · **T2**(훅) · **T4**(CLAUDE.md 보강) · **T6**(서브에이전트) — 미착수
+- ✅ **T5 권한 정리** — `settings.local.json` allowlist를 21개 일회성 → 17 패턴 + 7 `ask` 가드로 큐레이션.
+- ⬜ **T2**(훅) · **T4**(CLAUDE.md 보강) · **T6**(서브에이전트) — 미착수
 
 ---
 
@@ -31,8 +32,8 @@
 |----|------|------|-----|------|
 | **T1** | CI 게이트(test/typecheck/lint) | ✅ 완료 | ★★★ | 브랜치 보호 required만 남음 |
 | **T3** | 리뷰 자동화 (PR 봇) | ✅ 완료 | ★★★ | 수동 호출 → 자동 관문 |
-| **T5** | 권한 allowlist 큐레이션 | ⬜ 다음 | ★★ | 프롬프트 소음↓ |
-| **T2** | 검증 훅 자동화 | ⬜ 다음 | ★★★ | 규칙을 훅으로 |
+| **T5** | 권한 allowlist 큐레이션 | ✅ 완료 | ★★ | 21개 → 17 allow + 7 ask |
+| **T2** | 검증 훅 자동화 | ⬜ **다음** | ★★★ | 규칙을 훅으로 |
 | **T4** | CLAUDE.md 누락 보강 | ⬜ 다음 | ★★ | 컨텍스트 공백 제거 |
 | **T6** | 단계별 adversarial 리뷰 subagent | ⬜ 지속 | ★★ | 제3의 시각 상시 |
 
@@ -75,10 +76,13 @@
 > - 봇 체크의 **"pass"는 품질 보증이 아니다** — "봇이 돌았고 코멘트 없음" = 약한 보조 신호.
 >   진짜 게이트는 결정론적 CI(`verify`) + 사람 판단. 봇은 두 번째 눈이지 권위가 아니다.
 
-### T5. 권한 allowlist 큐레이션 — *다음*
-- [ ] `/fewer-permission-prompts` 실행으로 `.claude/settings.local.json` 정리
-- [ ] 일회성 항목 → 패턴으로 압축: `Bash(git *)`·`Bash(pnpm *)`·`Bash(gh pr *)`·`Bash(grep *)` 등
-- [ ] 위험 명령(force push, branch -D, push --delete)은 패턴에 넣지 말고 매번 확인 유지
+### T5. 권한 allowlist 큐레이션 — ✅ 완료
+- [x] `.claude/settings.local.json` 정리 — 21개 일회성 항목 제거(수동 큐레이션)
+- [x] 패턴으로 압축: `Bash(git add/commit/checkout/...)`·`Bash(pnpm *)`·`Bash(gh pr *)`·`Bash(grep *)`·`Bash(node *)` 등 **17개**
+- [x] 위험 변형은 차단(deny)이 아니라 **`ask`(매번 확인)** 7개로 가로챔
+      (`git push --force*`, `git push * --delete*`, `git branch -D *`, `git reset --hard*` 등) —
+      우선순위 `deny > ask > allow`라 `git push *`는 자동이되 force/delete만 확인
+- 참고: gitignore 대상(로컬 전용)이라 커밋 없음. 적용은 다음 세션부터 반영될 수 있음.
 
 ### T2. 검증 훅 자동화 — *다음*
 - [ ] `Stop` 훅: 작업 종료 시 `pnpm typecheck && pnpm test:run` 자동 실행, 실패면 알림
@@ -103,8 +107,8 @@
 
 ## 로드맵 3구간
 
-1. ✅ **완료** — T1(CI 게이트) · T3(리뷰 봇)
-2. **다음 (지금 당장)** — T5(권한 정리) · T2(훅) · T4(CLAUDE.md 보강)
+1. ✅ **완료** — T1(CI 게이트) · T3(리뷰 봇) · T5(권한 정리)
+2. **다음** — T2(검증 훅) · T4(CLAUDE.md 보강)
 3. **지속** — T6(서브에이전트 교차검증) + 아래 지표로 활용도 측정
 
 ## 활용도 측정 지표 (월 단위 체감)
