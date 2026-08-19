@@ -32,8 +32,51 @@ Two consequences drive the plan:
 1. **`docs/PERFORMANCE.md` states the app is "already fast (all green) because it has little data."**
    Without seeded data there is no baseline to improve. **Seeding is a prerequisite of the whole
    measurement track**, not a nice-to-have.
-2. **218 KB used of a 250 KB budget.** Adding the AI SDK may breach the gate. Dropping/deferring
-   `socket.io-client` offsets it — which turns a constraint into a measurable optimization item.
+2. **218 KB used of a 250 KB budget**, and the AI SDK's client hook does not fit in what is left.
+   Measured, not assumed — see the next section.
+
+## Measured: the transport decision
+
+Taken 2026-08-19 with a throwaway probe route that actually imports `useChat` (installing a package
+changes nothing — only imported code reaches the bundle). All numbers reverted afterwards.
+
+| State | gzip | delta |
+|---|---:|---:|
+| current baseline | **218.2 KB** | — |
+| with `useChat` imported | **324.6 KB** | **+106.4 KB** |
+| with `socket.io-client` removed | **205.4 KB** | **−12.8 KB** |
+| both applied (projected) | ~311.8 KB | +93.6 KB |
+| **CI budget** | **250 KB** | **~62 KB over** |
+
+The cost is **zod**: the new 106 KB chunk contains 480 `zod` references, 55 `JSONSchema`, 103 `nanoid`.
+`useChat` pulls the schema-validation layer all the way into the browser.
+
+> Caveat: `measure:bundle` sums static JS across **all** routes, so this is not "what one page
+> downloads". It is, however, exactly the metric the CI gate uses, so it is the right number for a
+> budget verdict.
+
+### Decision: AI SDK on the server, client transport written by hand
+
+Two claims in the first draft of this plan were wrong and are corrected here:
+
+- *"Removing `socket.io-client` offsets the AI SDK."* It does not — 12.8 KB against 106.4 KB.
+- *"Use the SDK on both sides; the story lives in the optimizations."* The budget says otherwise.
+
+So: `streamText` and tool definitions stay on the server (no client cost, and the tool-calling plumbing
+is still not hand-rolled), while the client hook that consumes the stream is ours. Rationale:
+
+- client bundle growth ≈ 0, so the sprint stays inside the existing 32 KB of headroom
+- the fake-stream benchmark requires client-side stream consumption **either way**, so the extra work
+  is smaller than it looks
+- full control over what re-renders per token, which is exactly what Optimization ① needs
+- `useOptimistic` becomes genuinely usable rather than something the SDK already did
+
+And it converts a constraint into the sprint's strongest sentence: *measured `useChat` at +106 KB gzip
+against a CI-enforced 250 KB budget, traced it to zod reaching the client, kept the SDK server-side and
+wrote the transport myself.* That is a decision with a number behind it, not a library choice.
+
+**Open (Day 1, 30 min timebox):** the probe installed `ai@7.0.66` with `@ai-sdk/react@4.0.69` — a major
+version mismatch. A matched pair may cost less. Check, and if it does not shrink, proceed as decided.
 
 ## Scope
 
@@ -108,7 +151,7 @@ even when written correctly, so there is nothing to fake.
 
 | Time | Task | Check |
 |---|---|---|
-| 09:00–09:30 | branch; attempt Next 16.1.6 → 16.3 upgrade (**30 min timebox**) | roll back immediately if the build breaks — not worth risking the sprint |
+| 09:00–09:30 | branch; attempt Next 16.1.6 → 16.3 upgrade (**30 min timebox**); check whether a matched `ai`/`@ai-sdk/react` pair shrinks the 106 KB | roll back immediately if the build breaks — not worth risking the sprint |
 | 09:30–11:30 | **schema migration**: `Diary` PK → `id`, `date` indexed, `title` added; `threads`/`messages` tables; `lib/diary.ts` create/update split; `/diary/[date]` → `/diary/[id]` | `pnpm typecheck` + `pnpm test:run` green; first `DECISIONS.md` entry |
 | 11:30–12:00 | **seed script** — 60 entries with varied emotions + 60 messages in one thread | ⚠️ never skip: every afternoon number depends on it |
 | 13:00–14:00 | **fake stream + frozen benchmark scenario** | scenario written into `PERF.md` |
@@ -125,7 +168,7 @@ even when written correctly, so there is nothing to fake.
 | Time | Task | Check |
 |---|---|---|
 | 09:00–10:30 | **wire the real AI SDK** (streaming + tool call → emotion cards) | ⏱ **hard stop at 11:00.** If it is not working, keep the fake stream, record why, move on — the demo still runs |
-| 10:30–11:00 | **bundle budget** — measure the AI SDK's cost, offset by deferring/removing `socket.io-client` | before/after KB; stay under the 250 KB gate |
+| 10:30–11:00 | **bundle verification** — confirm the server-only SDK adds ~0 client KB; optionally drop `socket.io-client` (−12.8 KB) for headroom | `pnpm measure:bundle` stays under the 250 KB gate |
 | 11:00–12:00 | 🔵 **Optimization ① INP** — split the streaming message out of the list; transitions / `useDeferredValue` | **re-measure immediately** |
 | 13:00–14:00 | 🔵 **Optimization ② CLS** — reserve space for cards; scroll anchoring via `useEffectEvent` | re-measure immediately |
 | 14:00–15:00 | 🔵 **Optimization ③ LCP/TTFB** — Suspense-stream the history, prefetching | re-measure immediately |
@@ -144,7 +187,7 @@ change can be attributed to a number.
 
 | # | Symptom | Cause | React answer | In Vue |
 |---|---|---|---|---|
-| 1 | composer lag while streaming (INP) | every token re-renders the message list | split the streaming message out; transitions / `useDeferredValue` mark work as non-urgent | fine-grained reactivity means **this mostly does not happen** — appending a token touches that text node only |
+| 1 | composer lag while streaming (INP) | every token re-renders the message list (a hand-written hook makes the cause visible rather than hidden in a library) | split the streaming message out; transitions / `useDeferredValue` mark work as non-urgent | fine-grained reactivity means **this mostly does not happen** — appending a token touches that text node only |
 | 2 | layout jump when a tool card lands (CLS) | a component of unknown height is inserted mid-stream | reserve space + scroll anchoring | identical — **write "no difference" honestly**; this is not a framework problem |
 | 3 | the view yanks down while the user is scrolled up | scroll logic needs the latest state without re-subscribing | `useEffectEvent` — separating reactive from non-reactive logic inside an effect | `watch`'s explicit dependencies make the distinction less necessary; React makes "when does this re-run" visible in the code |
 | 4 | slow initial history load (LCP/TTFB) | client fetches, then renders | server components + Suspense streaming | Nuxt can do this **per page, not per component** — the strongest genuine differentiator |
@@ -167,8 +210,9 @@ Row 1 must concede that Vue simply wins by default. The sentence worth landing:
   Day 1's output demoable regardless.
 - **Company-asset framing.** What is being rebuilt is the *problem class* (abort, rollback, scroll,
   tool-result rendering), not a recognizable internal product. Set that tone in the README's first paragraph.
-- **`useOptimistic` may end up unused** if the SDK's hook already handles optimistic appends. Either
-  apply it to a different action (edit, regenerate, fold-into-entry) or do not claim it — and say why not.
+- **`useOptimistic` is now genuinely in play.** With the client hook hand-written there is no SDK
+  doing optimistic appends for us, so it applies to the user message directly — and to edit,
+  regenerate, and fold-into-entry.
 
 ## Measurement table template
 
@@ -195,7 +239,8 @@ Conditions: production build / 60 entries / 60 messages in thread /
 ## Deliverables
 
 - `perf/baseline` and `perf/optimized` tags — the numbers are verifiable from the diff
-- `DECISIONS.md` — three lines per decision (chose / rejected / why), written **as it happens**
+- `DECISIONS.md` — three lines per decision (chose / rejected / why), written **as it happens**;
+  the transport decision above is the first entry, with its measurement
 - `PERF.md` — conditions, before/after table, cause analysis per optimization
 - `VUE-TO-REACT.md` — the table above with one sentence of personal experience per row
 - A deployed link with a public demo route and a 90-second recording at the top of the README
