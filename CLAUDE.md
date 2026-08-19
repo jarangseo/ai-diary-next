@@ -92,9 +92,10 @@ dynamic calendar home (month nav, entry dots, date click → detail/write), warm
 
 ## Gotchas
 
-- **`pnpm-workspace.yaml`**: must list `@parcel/watcher`, `sharp`, `unrs-resolver` under `onlyBuiltDependencies`,
-  otherwise `pnpm dev` fails at the install step with `ERR_PNPM_IGNORED_BUILDS`. CI installs with `--ignore-scripts`
-  (the bundle check doesn't need those native builds).
+- **`pnpm-workspace.yaml`**: must approve `@parcel/watcher`, `sharp`, `unrs-resolver` under **`allowBuilds`**,
+  otherwise a cold `pnpm install` exits 1 with `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` alone is
+  **no longer sufficient** on pnpm 11 — it is still read, but the install fails anyway. CI installs with
+  `--ignore-scripts` so it never hit this; Vercel does a plain install, so it broke there first.
 - **Socket.IO server is a separate repo** (`ai-diary-chat-server`, port 4000). Run it separately to test realtime chat.
 - On Next.js 16, `src/middleware.ts` emits a deprecation warning (`proxy` migration recommended). Harmless for now.
 - Styling is unified on SCSS design tokens (`variables.scss`, `mixins.scss`). New styles should use tokens.
