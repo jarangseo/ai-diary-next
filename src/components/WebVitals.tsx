@@ -64,6 +64,12 @@ function detail(metric: MetricWithAttribution): Record<string, unknown> | null {
 
 function report(metric: MetricWithAttribution) {
   const { name, value, rating } = metric
+
+  // A CLS report of exactly 0 means nothing has shifted yet, so there is no node to
+  // attribute and nothing to act on. With `reportAllChanges` these arrive on every
+  // update and drown out the reports that do name a culprit.
+  if (name === 'CLS' && value === 0) return
+
   const extra = detail(metric)
   // In production this would POST to a RUM endpoint; console output is the current stage.
   // See docs/PERFORMANCE.md.
@@ -71,10 +77,21 @@ function report(metric: MetricWithAttribution) {
   else console.log(`[web-vitals] ${name} = ${format(name, value)} (${rating})`)
 }
 
+// Registration is process-wide, not per-mount: each on*() call attaches its own
+// observer, so running the effect twice reports every metric twice. React StrictMode
+// does exactly that in development, and a future RUM endpoint would double-count as a
+// result. The guard lives outside the component because that is the scope of the
+// duplication — a ref would reset with the component.
+let registered = false
+
 export function WebVitals() {
   useEffect(() => {
-    // INP and CLS are continuous: they only settle as the user interacts, so `reportAllChanges`
-    // is what makes them observable during a scripted benchmark run rather than only on unload.
+    if (registered) return
+    registered = true
+
+    // INP and CLS are continuous: they only settle as the user interacts, so
+    // `reportAllChanges` is what makes them observable during a benchmark run rather
+    // than only when the page is hidden. Record the *last* reported value.
     onINP(report, { reportAllChanges: true })
     onCLS(report, { reportAllChanges: true })
     onLCP(report)
