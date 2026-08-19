@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "measure:bundle": "find .next/static -name '*.js' -print0 | xargs -0 cat | gzip -c | wc -c | awk '{printf \"shipped JS (gzip): %.1f KB\\n\", $1/1024}'",
-    "check:bundle-budget": "node scripts/check-bundle-budget.mjs"
+    "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
+    "seed": "node --env-file=.env.local scripts/seed.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.1",

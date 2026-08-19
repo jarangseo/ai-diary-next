@@ -37,9 +37,9 @@ Independently checked afterwards against the live PostgREST schema:
   service role passes and the anon key does not)
 
 Not directly observable through PostgREST: that `diaries_user_id_date_key` is gone.
-`drop constraint if exists` reported success and the constraint was confirmed present
-beforehand, so it was dropped. It gets proven for real by the seed script, which writes
-two entries on the same date for the same user — impossible while that constraint stood.
+**Proven by the seed** on the same day — it wrote 60 entries across 55 dates, five of
+them carrying two entries for one user (2026-08-15..19). That insert would have failed
+outright while the constraint stood. The 11 pre-existing entries were untouched.
 
 ## If this outgrows the ledger
 
