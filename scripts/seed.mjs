@@ -90,10 +90,19 @@ const shiftDate = (endIso, daysBack) => {
   return d.toISOString().slice(0, 10)
 }
 
-// Distinct dates: the last `DOUBLED_DAYS` dates each carry a second entry.
+// Distinct dates, newest first.
 const dates = []
 for (let i = 0; i < ENTRY_COUNT - DOUBLED_DAYS; i++) dates.push(shiftDate(END_DATE, i))
-const allDates = [...dates, ...dates.slice(0, DOUBLED_DAYS)].sort((a, b) => (a < b ? -1 : 1))
+
+// The doubled days sit in the middle of the window, deliberately not at the recent end.
+// `/diary/[date]` still resolves an entry by date with `.single()`, which returns a 406
+// once a date holds two rows, and the newest entry is the thread's measurement target —
+// it has to stay reachable. Moving them keeps the proof that migration 001 landed
+// without breaking the page today. See the CLAUDE.md gotcha on date-keyed routing.
+const doubledFrom = Math.floor(dates.length / 2)
+const allDates = [...dates, ...dates.slice(doubledFrom, doubledFrom + DOUBLED_DAYS)].sort((a, b) =>
+  a < b ? -1 : 1
+)
 const WINDOW_START = allDates[0]
 const WINDOW_END = allDates.at(-1)
 

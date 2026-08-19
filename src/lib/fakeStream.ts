@@ -1,5 +1,5 @@
 import type { StreamPart } from '@/types/stream'
-import { encodePart } from './streamProtocol'
+import { partsToNdjsonStream } from './streamResponse'
 
 // A deterministic stand-in for the model's stream.
 //
@@ -81,47 +81,25 @@ export interface FakeStreamOptions {
   signal?: AbortSignal
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 /**
- * The part sequence as an NDJSON body, paced like a real stream.
+ * The part sequence, paced like a real stream.
  *
- * Aborting closes the stream mid-sequence on purpose: the assistant message stays
- * partial, which is exactly the state the UI has to handle after a user hits stop.
+ * Aborting stops mid-sequence on purpose: the assistant message stays partial, which
+ * is exactly the state the UI has to handle after the user hits stop.
  */
-export function fakeStreamResponse(options: FakeStreamOptions = {}): ReadableStream<Uint8Array> {
+export async function* fakeParts(options: FakeStreamOptions = {}): AsyncGenerator<StreamPart> {
   const { intervalMs = BENCH.intervalMs, signal } = options
-  const parts = benchmarkParts()
-  const encoder = new TextEncoder()
-  let index = 0
-  let timer: ReturnType<typeof setTimeout> | undefined
 
-  return new ReadableStream<Uint8Array>({
-    start(controller) {
-      const finish = () => {
-        if (timer) clearTimeout(timer)
-        try {
-          controller.close()
-        } catch {
-          // already closed — an abort that lands between ticks
-        }
-      }
+  for (const part of benchmarkParts()) {
+    if (signal?.aborted) return
+    yield part
+    if (intervalMs > 0) await sleep(intervalMs)
+  }
+}
 
-      if (signal?.aborted) return finish()
-      signal?.addEventListener('abort', finish, { once: true })
-
-      const tick = () => {
-        if (signal?.aborted) return finish()
-        if (index >= parts.length) return finish()
-
-        controller.enqueue(encoder.encode(encodePart(parts[index++])))
-
-        if (intervalMs <= 0) tick()
-        else timer = setTimeout(tick, intervalMs)
-      }
-
-      tick()
-    },
-    cancel() {
-      if (timer) clearTimeout(timer)
-    },
-  })
+/** The same sequence as an NDJSON body. */
+export function fakeStreamResponse(options: FakeStreamOptions = {}): ReadableStream<Uint8Array> {
+  return partsToNdjsonStream(fakeParts(options))
 }
