@@ -109,9 +109,7 @@ describe('useSocket', () => {
     })
 
     // user-typing should be emitted only once
-    const typingCalls = mockSocket.emit.mock.calls.filter(
-      ([event]) => event === 'user-typing'
-    )
+    const typingCalls = mockSocket.emit.mock.calls.filter(([event]) => event === 'user-typing')
     expect(typingCalls).toHaveLength(1)
   })
 

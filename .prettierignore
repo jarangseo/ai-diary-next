@@ -1,0 +1,8 @@
+.next
+node_modules
+pnpm-lock.yaml
+coverage
+
+# Markdown is hand-authored here — tables are aligned for reading in the source, and
+# reformatting them adds diff noise without changing what anyone sees rendered.
+*.md

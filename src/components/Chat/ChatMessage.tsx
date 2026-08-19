@@ -50,18 +50,12 @@ export default function ChatMessage({
               className={styles.userAvatar}
             />
           ) : (
-            <span className={styles.defaultAvatar}>
-              {userName?.charAt(0) ?? '?'}
-            </span>
+            <span className={styles.defaultAvatar}>{userName?.charAt(0) ?? '?'}</span>
           )}
         </div>
       )}
       <div className={styles.body}>
-        {!isMine && (
-          <span className={styles.name}>
-            {type === 'ai' ? 'AI' : userName}
-          </span>
-        )}
+        {!isMine && <span className={styles.name}>{type === 'ai' ? 'AI' : userName}</span>}
         <div className={styles.row}>
           <div
             className={clsx(

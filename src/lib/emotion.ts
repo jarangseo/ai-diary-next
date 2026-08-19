@@ -4,15 +4,7 @@
 // label/emoji/color from EMOTION_META. Keys are stable English ids (DB-safe);
 // user-facing labels stay Korean (the product's language).
 
-export const EMOTIONS = [
-  'joy',
-  'excitement',
-  'calm',
-  'tired',
-  'sad',
-  'anxious',
-  'angry',
-] as const
+export const EMOTIONS = ['joy', 'excitement', 'calm', 'tired', 'sad', 'anxious', 'angry'] as const
 
 export type EmotionPrimary = (typeof EMOTIONS)[number]
 

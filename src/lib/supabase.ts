@@ -18,3 +18,22 @@ export interface DiaryRow {
   created_at: string
   updated_at: string
 }
+
+export interface ThreadRow {
+  id: string
+  user_id: string
+  diary_id: string | null
+  kind: 'diary' | 'question'
+  title: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MessageRow {
+  id: string
+  thread_id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  tool_results: unknown
+  created_at: string
+}

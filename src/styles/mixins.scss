@@ -23,8 +23,11 @@
   font-weight: $font-weight-semibold;
   line-height: 1;
   white-space: nowrap;
-  transition: background-color $transition-normal, color $transition-normal,
-    border-color $transition-normal, opacity $transition-normal;
+  transition:
+    background-color $transition-normal,
+    color $transition-normal,
+    border-color $transition-normal,
+    opacity $transition-normal;
 
   &:focus-visible {
     @include focus-ring;

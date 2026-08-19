@@ -11,10 +11,7 @@ export async function POST(request: Request) {
   const { date, content, isRecordOnly } = await request.json()
 
   if (!date || !content) {
-    return NextResponse.json(
-      { error: 'date and content are required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'date and content are required' }, { status: 400 })
   }
 
   const success = await saveDiary(session.user.id, date, content, isRecordOnly)

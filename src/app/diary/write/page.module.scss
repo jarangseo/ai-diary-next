@@ -20,7 +20,9 @@
   height: 40px;
   border-radius: $radius-full;
   color: $color-text-secondary;
-  transition: background-color $transition-fast, color $transition-fast;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast;
 
   &:hover {
     background-color: $color-bg-hover;
