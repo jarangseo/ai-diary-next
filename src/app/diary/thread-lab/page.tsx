@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { listMessages, getThread } from '@/lib/threads'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { redirect } from 'next/navigation'
+import styles from './page.module.scss'
 
 // Temporary measurement surface, not a product route — the thread lands beside the
 // entry on /diary/[id] once the date-keyed routing debt is paid (see CLAUDE.md).
@@ -26,12 +27,12 @@ export default async function ThreadLabPage() {
   const initialMessages = await listMessages(thread.id)
 
   return (
-    <div style={{ height: 'calc(100vh - 60px)', display: 'flex' }}>
-      <div style={{ flex: 1, padding: 24 }}>
-        <h1 style={{ fontSize: 18 }}>{thread.title}</h1>
-        <p style={{ fontSize: 13, opacity: 0.7 }}>메시지 {initialMessages.length}개</p>
+    <div className={styles.lab}>
+      <div className={styles.entry}>
+        <h1 className={styles.entryTitle}>{thread.title}</h1>
+        <p className={styles.entryMeta}>메시지 {initialMessages.length}개</p>
       </div>
-      <div style={{ width: 460 }}>
+      <div className={styles.panelWrap}>
         <ThreadPanel threadId={thread.id} initialMessages={initialMessages} />
       </div>
     </div>

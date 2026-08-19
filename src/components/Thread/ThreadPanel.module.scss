@@ -3,7 +3,9 @@
 .panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  // Fills its flex parent instead of asking for a percentage of it — the ancestor chain
+  // here has no definite height (see the diary layout), so 100% would collapse.
+  flex: 1;
   min-height: 0;
   border-left: 1px solid $color-border;
   background: $color-bg-primary;

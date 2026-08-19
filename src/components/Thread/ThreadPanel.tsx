@@ -92,6 +92,17 @@ export function ThreadPanel({ threadId, initialMessages }: Props) {
         ))}
       </div>
 
+      {!pinned && (
+        <button
+          className={styles.jump}
+          type="button"
+          onClick={() => setPinned(true)}
+          aria-label="최신 메시지로 이동"
+        >
+          ↓ 최신 메시지
+        </button>
+      )}
+
       {status === 'error' && (
         <div className={styles.error}>전송에 실패했어요. 다시 시도해 주세요.</div>
       )}
