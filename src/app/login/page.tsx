@@ -18,12 +18,7 @@ export default function LoginPage() {
             }}
           >
             <button type="submit" className={styles.googleBtn}>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   fill="#4285F4"
                   d="M22.56
@@ -78,9 +73,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className={styles.notice}>
-          By continuing, you agree to our Terms of Service
-        </p>
+        <p className={styles.notice}>By continuing, you agree to our Terms of Service</p>
       </div>
     </div>
   )

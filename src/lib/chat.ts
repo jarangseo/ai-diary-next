@@ -30,21 +30,14 @@ export async function getMyRooms(userId: string) {
 }
 
 export async function getRoomByInviteCode(code: string) {
-  const { data } = await supabase
-    .from('chat_rooms')
-    .select('*')
-    .eq('invite_code', code)
-    .single()
+  const { data } = await supabase.from('chat_rooms').select('*').eq('invite_code', code).single()
   return data ?? null
 }
 
 export async function joinRoom(userId: string, roomId: string) {
   const { error } = await supabase
     .from('room_members')
-    .upsert(
-      { room_id: roomId, user_id: userId },
-      { onConflict: 'room_id,user_id' }
-    )
+    .upsert({ room_id: roomId, user_id: userId }, { onConflict: 'room_id,user_id' })
   return !error
 }
 
@@ -73,10 +66,6 @@ export async function getMessages(roomId: string) {
 }
 
 export async function getRoom(roomId: string) {
-  const { data } = await supabase
-    .from('chat_rooms')
-    .select('*')
-    .eq('id', roomId)
-    .single()
+  const { data } = await supabase.from('chat_rooms').select('*').eq('id', roomId).single()
   return data ?? null
 }

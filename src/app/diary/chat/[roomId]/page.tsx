@@ -10,11 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { chatApi } from '@/services/chatServices'
 import toast from 'react-hot-toast'
 
-export default function ChatRoomPage({
-  params,
-}: {
-  params: Promise<{ roomId: string }>
-}) {
+export default function ChatRoomPage({ params }: { params: Promise<{ roomId: string }> }) {
   // TODO: Get roomId from params
   const { roomId } = use(params)
   const { data: session } = useSession()
@@ -42,9 +38,7 @@ export default function ChatRoomPage({
       }, 50)
     },
     onUserTyping: (userName) => {
-      setTypingUsers((prev) =>
-        prev.includes(userName) ? prev : [...prev, userName]
-      )
+      setTypingUsers((prev) => (prev.includes(userName) ? prev : [...prev, userName]))
       setTimeout(() => {
         setTypingUsers((prev) => prev.filter((u) => u !== userName))
       }, 2000)
@@ -56,9 +50,7 @@ export default function ChatRoomPage({
       })
     },
     onUserLeft: (userId) => {
-      setOnlineUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, isOnline: false } : u))
-      )
+      setOnlineUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, isOnline: false } : u)))
     },
     onOnlineUsers: (users) => {
       setOnlineUsers(users.map((u) => ({ ...u, isOnline: true, image: '' })))

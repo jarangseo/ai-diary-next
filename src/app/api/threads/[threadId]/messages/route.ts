@@ -52,7 +52,12 @@ export async function POST(
   const stream = partsToNdjsonStream(source, {
     onComplete: async (content, toolResults) => {
       if (!content) return
-      await appendMessage(threadId, 'assistant', content, toolResults.length ? toolResults : undefined)
+      await appendMessage(
+        threadId,
+        'assistant',
+        content,
+        toolResults.length ? toolResults : undefined
+      )
     },
   })
 

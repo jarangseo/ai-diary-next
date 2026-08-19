@@ -66,7 +66,9 @@ export function ThreadPanel({ threadId, initialMessages }: Props) {
         ))}
       </div>
 
-      {status === 'error' && <div className={styles.error}>전송에 실패했어요. 다시 시도해 주세요.</div>}
+      {status === 'error' && (
+        <div className={styles.error}>전송에 실패했어요. 다시 시도해 주세요.</div>
+      )}
 
       <div className={styles.composer}>
         <input

@@ -59,11 +59,7 @@ export async function saveDiary(
 }
 
 export async function deleteDiary(userId: string, date: string) {
-  const { error } = await supabase
-    .from('diaries')
-    .delete()
-    .eq('user_id', userId)
-    .eq('date', date)
+  const { error } = await supabase.from('diaries').delete().eq('user_id', userId).eq('date', date)
 
   return !error
 }

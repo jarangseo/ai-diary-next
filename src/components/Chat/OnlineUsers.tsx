@@ -28,9 +28,7 @@ export default function OnlineUsers({ users }: OnlineUsersProps) {
                   className={styles.avatar}
                 />
               ) : (
-                <span className={styles.defaultAvatar}>
-                  {user.name.charAt(0)}
-                </span>
+                <span className={styles.defaultAvatar}>{user.name.charAt(0)}</span>
               )}
               <span className={styles.status} data-online={user.isOnline} />
             </div>

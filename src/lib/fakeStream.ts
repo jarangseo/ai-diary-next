@@ -25,11 +25,46 @@ export const BENCH = {
 // Cycled to build the body. Kept short and fixed — the exact words are irrelevant,
 // their count and width are not.
 const PHRASES = [
-  '오늘 ', '하루를 ', '읽어보니 ', '회의가 ', '길었던 ', '것에 ', '대한 ', '피로가 ',
-  '먼저 ', '보여요. ', '그런데 ', '그 ', '뒤에 ', '적어둔 ', '문장에서는 ', '조금 ',
-  '다른 ', '결이 ', '느껴집니다. ', '스스로 ', '정리한 ', '부분을 ', '다시 ', '언급했고, ',
-  '그때 ', '표현이 ', '한결 ', '차분해졌어요. ', '지난 ', '주에 ', '쓴 ', '기록과 ',
-  '비교하면 ', '같은 ', '상황을 ', '설명하는 ', '방식이 ', '달라진 ', '지점이 ', '있습니다. ',
+  '오늘 ',
+  '하루를 ',
+  '읽어보니 ',
+  '회의가 ',
+  '길었던 ',
+  '것에 ',
+  '대한 ',
+  '피로가 ',
+  '먼저 ',
+  '보여요. ',
+  '그런데 ',
+  '그 ',
+  '뒤에 ',
+  '적어둔 ',
+  '문장에서는 ',
+  '조금 ',
+  '다른 ',
+  '결이 ',
+  '느껴집니다. ',
+  '스스로 ',
+  '정리한 ',
+  '부분을 ',
+  '다시 ',
+  '언급했고, ',
+  '그때 ',
+  '표현이 ',
+  '한결 ',
+  '차분해졌어요. ',
+  '지난 ',
+  '주에 ',
+  '쓴 ',
+  '기록과 ',
+  '비교하면 ',
+  '같은 ',
+  '상황을 ',
+  '설명하는 ',
+  '방식이 ',
+  '달라진 ',
+  '지점이 ',
+  '있습니다. ',
 ]
 
 const EMOTION_RESULTS: StreamPart[] = [
@@ -62,10 +97,7 @@ export function benchmarkParts(): StreamPart[] {
 
   for (let i = 0; i < BENCH.textDeltas; i++) {
     parts.push({ type: 'text-delta', delta: PHRASES[i % PHRASES.length] })
-    if (
-      toolIndex < BENCH.toolResultAfter.length &&
-      i + 1 === BENCH.toolResultAfter[toolIndex]
-    ) {
+    if (toolIndex < BENCH.toolResultAfter.length && i + 1 === BENCH.toolResultAfter[toolIndex]) {
       parts.push(EMOTION_RESULTS[toolIndex % EMOTION_RESULTS.length])
       toolIndex++
     }

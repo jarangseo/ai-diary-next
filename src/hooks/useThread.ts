@@ -1,7 +1,5 @@
-import {type Thread } from "@/types/thread"
-import { useState ,useEffect} from "react"
-
-
+import { type Thread } from '@/types/thread'
+import { useState, useEffect } from 'react'
 
 export function useThreadStream(threadId: string | null) {
   const [thread, setThread] = useState<Thread | null>(null)
@@ -11,12 +9,11 @@ export function useThreadStream(threadId: string | null) {
   useEffect(() => {
     let ignore = false
     const fetchThread = async () => {
-    if (!threadId) {
+      if (!threadId) {
         return
       }
       setIsLoading(true)
       try {
-        
         const response = await fetch(`/api/threads/${threadId}`)
         if (!response.ok) {
           throw new Error(`Failed to fetch thread: ${response.statusText}`)
@@ -27,19 +24,24 @@ export function useThreadStream(threadId: string | null) {
           setThread(data as Thread)
         }
       } catch (error) {
-        if (!ignore) { setError(error as Error) }
+        if (!ignore) {
+          setError(error as Error)
+        }
       } finally {
-        if (!ignore) { setIsLoading(false) }
+        if (!ignore) {
+          setIsLoading(false)
+        }
       }
     }
     fetchThread()
-    return () => {ignore = true}
+    return () => {
+      ignore = true
+    }
   }, [threadId])
 
-    return {
-      thread,
-      isLoading,
-      error,
-    }
-
+  return {
+    thread,
+    isLoading,
+    error,
+  }
 }

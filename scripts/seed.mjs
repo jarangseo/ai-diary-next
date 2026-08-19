@@ -55,7 +55,8 @@ if (!USER_ID) {
 const ENTRY_COUNT = 60
 const DOUBLED_DAYS = 5 // days carrying two entries — impossible before migration 001
 const THREAD_MESSAGES = 60
-const END_DATE = args.find((a) => a.startsWith('--end='))?.slice(6) ?? new Date().toISOString().slice(0, 10)
+const END_DATE =
+  args.find((a) => a.startsWith('--end='))?.slice(6) ?? new Date().toISOString().slice(0, 10)
 
 const EMOTIONS = ['joy', 'excitement', 'calm', 'tired', 'sad', 'anxious', 'angry']
 const SUMMARIES = [
@@ -68,15 +69,28 @@ const SUMMARIES = [
   '참다가 결국 말한 하루',
 ]
 const TITLES = [
-  '퇴근길에 본 노을', '오래 미룬 일을 끝냄', '회의가 너무 길었다', '오랜만에 운동함',
-  '점심에 혼자 걸었다', '리뷰에서 막힌 부분', '주말 계획을 세웠다', '문득 떠오른 생각',
-  '커피를 두 잔 마신 날', '이유 없이 피곤했다', '작은 칭찬을 받았다', '정리하다 하루가 감',
+  '퇴근길에 본 노을',
+  '오래 미룬 일을 끝냄',
+  '회의가 너무 길었다',
+  '오랜만에 운동함',
+  '점심에 혼자 걸었다',
+  '리뷰에서 막힌 부분',
+  '주말 계획을 세웠다',
+  '문득 떠오른 생각',
+  '커피를 두 잔 마신 날',
+  '이유 없이 피곤했다',
+  '작은 칭찬을 받았다',
+  '정리하다 하루가 감',
 ]
 const BODY = [
-  '아침부터 일정이 밀렸다. ', '생각보다 오래 걸렸고 중간에 한 번 처음부터 다시 했다. ',
-  '그래도 마무리는 지었다. ', '점심 이후로는 집중이 잘 됐다. ',
-  '오후에 이야기를 나누면서 정리가 됐다. ', '저녁에는 조금 걸었다. ',
-  '내일은 하나만 덜어내고 싶다. ', '기록으로 남겨두면 나중에 도움이 될 것 같다. ',
+  '아침부터 일정이 밀렸다. ',
+  '생각보다 오래 걸렸고 중간에 한 번 처음부터 다시 했다. ',
+  '그래도 마무리는 지었다. ',
+  '점심 이후로는 집중이 잘 됐다. ',
+  '오후에 이야기를 나누면서 정리가 됐다. ',
+  '저녁에는 조금 걸었다. ',
+  '내일은 하나만 덜어내고 싶다. ',
+  '기록으로 남겨두면 나중에 도움이 될 것 같다. ',
 ]
 const QUESTIONS = [
   ['오늘 가장 무겁게 느껴진 건 뭐였어?', '내일 하나만 덜어낸다면 뭘 덜어낼까?'],
@@ -146,7 +160,9 @@ const entries = allDates.map((date, i) => {
 
 const { data: inserted, error: insErr } = await db.from('diaries').insert(entries).select('id,date')
 if (insErr) throw insErr
-console.log(`inserted ${inserted.length} diaries (${WINDOW_START}..${WINDOW_END}, ${DOUBLED_DAYS} days doubled)`)
+console.log(
+  `inserted ${inserted.length} diaries (${WINDOW_START}..${WINDOW_END}, ${DOUBLED_DAYS} days doubled)`
+)
 
 // ---------------------------------------------------------------------------
 // One thread on the most recent entry — the INP measurement target
@@ -172,7 +188,12 @@ const messages = Array.from({ length: THREAD_MESSAGES }, (_, i) => {
     // something to render on a freshly loaded thread rather than only mid-stream.
     tool_results:
       i === 1
-        ? [{ tool: 'emotion', data: { primary: 'tired', score: 68, summary: SUMMARIES[3], questions: QUESTIONS[0] } }]
+        ? [
+            {
+              tool: 'emotion',
+              data: { primary: 'tired', score: 68, summary: SUMMARIES[3], questions: QUESTIONS[0] },
+            },
+          ]
         : null,
     created_at: new Date(Date.parse(`${latest.date}T10:00:00Z`) + i * 60_000).toISOString(),
   }

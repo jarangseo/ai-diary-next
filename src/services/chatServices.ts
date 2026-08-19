@@ -28,6 +28,5 @@ export const chatApi = {
       method: 'POST',
       body: JSON.stringify({ inviteCode }),
     }),
-  getMessages: (roomId: string) =>
-    request<ChatMessage[]>(`/rooms/${roomId}/messages`),
+  getMessages: (roomId: string) => request<ChatMessage[]>(`/rooms/${roomId}/messages`),
 }

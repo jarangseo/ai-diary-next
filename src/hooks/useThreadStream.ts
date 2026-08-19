@@ -47,8 +47,20 @@ export function useThreadStream({ threadId, initialMessages, bench = true }: Opt
 
       setMessages((prev) => [
         ...prev,
-        { id: userId, threadId, role: 'user', content: trimmed, createdAt: now },
-        { id: assistantId, threadId, role: 'assistant', content: '', createdAt: now },
+        {
+          id: userId,
+          threadId,
+          role: 'user',
+          content: trimmed,
+          createdAt: now,
+        },
+        {
+          id: assistantId,
+          threadId,
+          role: 'assistant',
+          content: '',
+          createdAt: now,
+        },
       ])
       setStatus('streaming')
 
@@ -96,7 +108,8 @@ export function useThreadStream({ threadId, initialMessages, bench = true }: Opt
         const apply = (parts: ReturnType<typeof parser.push>) => {
           for (const part of parts) {
             if (part.type === 'text-delta') applyDelta(part.delta)
-            else if (part.type === 'tool-result') applyToolResult({ tool: part.tool, data: part.data })
+            else if (part.type === 'tool-result')
+              applyToolResult({ tool: part.tool, data: part.data })
             else if (part.type === 'error') failed = true
           }
         }

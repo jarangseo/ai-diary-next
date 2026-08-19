@@ -34,7 +34,8 @@ export function partsToNdjsonStream(
           if (cancelled) break
 
           if (part.type === 'text-delta') text += part.delta
-          else if (part.type === 'tool-result') toolResults.push({ tool: part.tool, data: part.data })
+          else if (part.type === 'tool-result')
+            toolResults.push({ tool: part.tool, data: part.data })
 
           controller.enqueue(encoder.encode(encodePart(part)))
         }

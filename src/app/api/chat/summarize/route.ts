@@ -24,10 +24,7 @@ export async function POST(request: Request) {
 
   const conversation = messages
     .filter((message) => message.type !== 'system')
-    .map(
-      (message) =>
-        `${message.type === 'user' ? 'User: ' : 'AI: '}${message.content}`
-    )
+    .map((message) => `${message.type === 'user' ? 'User: ' : 'AI: '}${message.content}`)
     .join('\n')
 
   const response = await openai.chat.completions.create({

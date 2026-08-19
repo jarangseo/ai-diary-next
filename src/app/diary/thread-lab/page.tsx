@@ -18,7 +18,9 @@ export default async function ThreadLabPage() {
 
   const thread = await getThread(session.user.id, LAB_THREAD_ID)
   if (!thread) {
-    return <p style={{ padding: 24 }}>스레드를 찾을 수 없어요. `pnpm seed` 를 먼저 실행해 주세요.</p>
+    return (
+      <p style={{ padding: 24 }}>스레드를 찾을 수 없어요. `pnpm seed` 를 먼저 실행해 주세요.</p>
+    )
   }
 
   const initialMessages = await listMessages(thread.id)

@@ -11,13 +11,7 @@ import styles from './DiaryHome.module.scss'
 
 type View = 'calendar' | 'list'
 
-export function DiaryHome({
-  diaries,
-  view,
-}: {
-  diaries: Diary[]
-  view: View
-}) {
+export function DiaryHome({ diaries, view }: { diaries: Diary[]; view: View }) {
   const router = useRouter()
   const pathname = usePathname()
   const todayKey = toDateKey(new Date())
@@ -37,10 +31,7 @@ export function DiaryHome({
           <button
             role="tab"
             aria-selected={view === 'calendar'}
-            className={clsx(
-              styles.toggleItem,
-              view === 'calendar' && styles.active
-            )}
+            className={clsx(styles.toggleItem, view === 'calendar' && styles.active)}
             onClick={() => selectView('calendar')}
           >
             캘린더
@@ -61,11 +52,7 @@ export function DiaryHome({
         </Link>
       </div>
 
-      {view === 'list' ? (
-        <DiaryList diaries={diaries} />
-      ) : (
-        <Calendar entryDates={entryDates} />
-      )}
+      {view === 'list' ? <DiaryList diaries={diaries} /> : <Calendar entryDates={entryDates} />}
     </section>
   )
 }

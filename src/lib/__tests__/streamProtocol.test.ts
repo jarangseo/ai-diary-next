@@ -5,7 +5,11 @@ import type { StreamPart } from '@/types/stream'
 const parts: StreamPart[] = [
   { type: 'text-delta', delta: '오늘 ' },
   { type: 'text-delta', delta: '하루는 ' },
-  { type: 'tool-result', tool: 'emotion', data: { primary: 'calm', score: 62, summary: '차분한 하루' } },
+  {
+    type: 'tool-result',
+    tool: 'emotion',
+    data: { primary: 'calm', score: 62, summary: '차분한 하루' },
+  },
   { type: 'done' },
 ]
 
