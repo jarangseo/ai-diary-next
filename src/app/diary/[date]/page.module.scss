@@ -39,11 +39,38 @@
   color: $color-text-primary;
 }
 
+.actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.editButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  transition: background-color $transition-fast, color $transition-fast;
+
+  &:hover {
+    background-color: $color-bg-hover;
+    color: $color-text-primary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
 .emotion {
   display: inline-flex;
   align-items: center;
   gap: $spacing-xs;
-  margin-left: auto;
   padding: $spacing-xs $spacing-md;
   border-radius: $radius-lg;
   font-size: $font-size-sm;
