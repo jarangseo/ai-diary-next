@@ -1,6 +1,6 @@
 name: CI
 
-# Run typecheck + tests + lint on every PR and on main pushes → block broken code before merge.
+# Run format + typecheck + tests + lint on every PR and on main pushes → block broken code before merge.
 # Complements bundle-budget.yml (which guards shipped JS size); this guards correctness.
 on:
   pull_request:
@@ -21,8 +21,9 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # Native builds (sharp/@parcel/watcher, etc.) aren't needed for typecheck/test/lint.
-      # --ignore-scripts skips dependency build scripts to avoid ERR_PNPM_IGNORED_BUILDS.
+      # Native builds (sharp/@parcel/watcher, etc.) aren't needed for typecheck/test/lint,
+      # so --ignore-scripts skips them. They are approved in pnpm-workspace.yaml under
+      # allowBuilds for the environments that do need them (Vercel).
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
       # Separate steps so a failure points at the exact check.
@@ -34,6 +35,11 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      # Formatting is enforced by format-on-save locally, which only helps people who
+      # opened the repo in the configured editor. Fix with `pnpm format`.
+      - name: Format
+        run: pnpm format:check
 
       - name: Hook tests
         run: bash .claude/hooks/block-main-commit.test.sh
