@@ -106,3 +106,16 @@
   color: $color-error;
   font-size: $font-size-xs;
 }
+
+.jump {
+  align-self: center;
+  margin-bottom: $spacing-sm;
+  padding: $spacing-xs $spacing-md;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-full;
+  background: $color-surface;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  cursor: pointer;
+  box-shadow: $shadow-sm;
+}

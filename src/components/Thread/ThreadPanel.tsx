@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useThreadStream } from '@/hooks/useThreadStream'
 import { getEmotionMeta } from '@/lib/emotion'
 import type { Message } from '@/types/thread'
@@ -36,9 +36,35 @@ function EmotionCard({ message }: { message: Message }) {
   )
 }
 
+// How close to the bottom still counts as "following". Not zero: sub-pixel rounding and
+// the growing last line mean an exact match never holds while text streams in.
+const PIN_THRESHOLD_PX = 40
+
 export function ThreadPanel({ threadId, initialMessages }: Props) {
   const { messages, status, send, stop } = useThreadStream({ threadId, initialMessages })
   const [text, setText] = useState('')
+
+  const listRef = useRef<HTMLDivElement>(null)
+  // Whether the view follows new content. State rather than a ref because it also drives
+  // the jump-to-bottom button.
+  const [pinned, setPinned] = useState(true)
+
+  // Reading the distance instead of remembering "we scrolled it ourselves" is what makes
+  // this safe: a programmatic scroll to the bottom lands at distance ~0, so it re-reports
+  // pinned and nothing has to distinguish our scrolls from the user's.
+  const handleScroll = () => {
+    const el = listRef.current
+    if (!el) return
+    setPinned(el.scrollHeight - el.scrollTop - el.clientHeight < PIN_THRESHOLD_PX)
+  }
+
+  // Runs per token while streaming. `pinned` is a dependency on purpose — scrolling back
+  // down should resume following immediately, not on the next token.
+  useEffect(() => {
+    const el = listRef.current
+    if (!el || !pinned) return
+    el.scrollTop = el.scrollHeight
+  }, [messages, pinned])
 
   const streaming = status === 'streaming'
 
@@ -54,7 +80,7 @@ export function ThreadPanel({ threadId, initialMessages }: Props) {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.list}>
+      <div className={styles.list} ref={listRef} onScroll={handleScroll}>
         {messages.map((m) => (
           <div
             key={m.id}
