@@ -1,0 +1,108 @@
+@use '@/styles/variables' as *;
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border-left: 1px solid $color-border;
+  background: $color-bg-primary;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.message {
+  max-width: 80%;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.user {
+  align-self: flex-end;
+  background: $color-accent-light;
+  color: $color-text-primary;
+}
+
+.assistant {
+  align-self: flex-start;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  color: $color-text-primary;
+}
+
+.card {
+  margin-top: $spacing-sm;
+  padding: $spacing-md;
+  border-radius: $radius-sm;
+  background: $color-bg-tertiary;
+}
+
+.cardTitle {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.cardQuestions {
+  margin: $spacing-sm 0 0;
+  padding-left: $spacing-lg;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+}
+
+.composer {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border-top: 1px solid $color-border;
+  background: $color-surface;
+}
+
+.input {
+  flex: 1;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-sm;
+  font-family: $font-sans;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-bg-primary;
+
+  &:focus {
+    outline: none;
+    border-color: $color-accent;
+  }
+}
+
+.button {
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  border-radius: $radius-sm;
+  background: $color-accent;
+  color: $color-text-inverse;
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:disabled {
+    background: $color-disabled;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  padding: $spacing-sm $spacing-lg;
+  color: $color-error;
+  font-size: $font-size-xs;
+}
