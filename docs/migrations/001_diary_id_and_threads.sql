@@ -1,5 +1,7 @@
 -- 001 — multiple entries per day + threads
 --
+-- STATUS: APPLIED 2026-08-19 to `main` (production). See ./README.md for the ledger.
+--
 -- Verified against the live database on 2026-08-19, so the guesswork in the first
 -- draft is gone:
 --   diaries.id                is already `uuid PRIMARY KEY` (diaries_pkey)
