@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { listMessages, getThread } from '@/lib/threads'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { redirect } from 'next/navigation'
+import { startTiming } from '@/lib/serverTiming'
 import styles from './page.module.scss'
 
 // Temporary measurement surface, not a product route — the thread lands beside the
@@ -14,17 +15,24 @@ import styles from './page.module.scss'
 const LAB_THREAD_ID = 'e1016e9c-6668-4fe1-b973-f4bfa4cebc94'
 
 export default async function ThreadLabPage() {
+  const timing = startTiming('thread-lab')
+
   const session = await auth()
+  timing.mark('auth')
   if (!session?.user?.id) redirect('/login')
 
   const thread = await getThread(session.user.id, LAB_THREAD_ID)
+  timing.mark('thread')
   if (!thread) {
     return (
       <p style={{ padding: 24 }}>스레드를 찾을 수 없어요. `pnpm seed` 를 먼저 실행해 주세요.</p>
     )
   }
 
+  // Sequential on purpose for now: this is the baseline the timing is meant to expose.
   const initialMessages = await listMessages(thread.id)
+  timing.mark('messages')
+  timing.log()
 
   return (
     <div className={styles.lab}>
