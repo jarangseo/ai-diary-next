@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  EMOTIONS,
-  EMOTION_META,
-  isEmotionPrimary,
-  getEmotionMeta,
-} from '../emotion'
+import { EMOTIONS, EMOTION_META, isEmotionPrimary, getEmotionMeta } from '../emotion'
 
 describe('emotion taxonomy', () => {
   it('has exactly the fixed 7-emotion set with no duplicates', () => {

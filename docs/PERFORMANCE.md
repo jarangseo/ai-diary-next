@@ -42,6 +42,14 @@ Work is split into the 4 bundles below and committed bundle-by-bundle (to keep P
 
 For each bundle applied, record the relevant metric's **before → after** in this doc.
 
+### Streaming thread (2026-08-19)
+
+The conversation thread has its own baseline, conditions, and findings in
+[`STREAMING_PERF.md`](./STREAMING_PERF.md) — measured against a deterministic fake stream
+so before/after numbers are comparable at all. Headline: INP 48 ms (good) with 83 % of it
+in browser layout rather than React, and TTFB 1061 ms as the one metric outside its
+threshold. Tagged `perf/baseline`.
+
 ### CI budget gate (installed — shift left)
 - `.github/workflows/bundle-budget.yml`: every PR runs build → `check:bundle-budget`, **fails if gzip JS > 250KB**.
 - `scripts/check-bundle-budget.mjs` (`pnpm check:bundle-budget`): same check locally. Adjust the budget via `BUNDLE_BUDGET_KB`.

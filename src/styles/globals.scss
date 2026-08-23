@@ -9,7 +9,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   min-height: 100dvh;
 }
 
@@ -37,20 +38,33 @@ img {
   height: auto;
 }
 
-ol, ul {
+ol,
+ul {
   list-style: none;
 }
 
-button, dialog, fieldset, hr, iframe, input, select, textarea {
+button,
+dialog,
+fieldset,
+hr,
+iframe,
+input,
+select,
+textarea {
   border: 0;
   font-family: inherit;
 }
 
-input, textarea {
+input,
+textarea {
   border-radius: 0;
 }
 
-button, input, mark, meter, progress {
+button,
+input,
+mark,
+meter,
+progress {
   background-color: transparent;
 }
 
@@ -69,10 +83,18 @@ table {
   border-spacing: 0;
 }
 
-button, input, meter, progress, select, textarea {
+button,
+input,
+meter,
+progress,
+select,
+textarea {
   appearance: none;
 }
 
-button, label, [type='checkbox'], [type='radio'] {
+button,
+label,
+[type='checkbox'],
+[type='radio'] {
   cursor: pointer;
 }

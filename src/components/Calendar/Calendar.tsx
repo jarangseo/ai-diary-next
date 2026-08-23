@@ -43,21 +43,13 @@ export function Calendar({ entryDates = [] }: CalendarProps) {
   return (
     <div className={styles.calendar}>
       <header className={styles.header}>
-        <button
-          className={styles.navButton}
-          onClick={goPrev}
-          aria-label="이전 달"
-        >
+        <button className={styles.navButton} onClick={goPrev} aria-label="이전 달">
           <ChevronLeftIcon size={20} />
         </button>
         <h2 className={styles.title}>
           {view.year}년 {view.month + 1}월
         </h2>
-        <button
-          className={styles.navButton}
-          onClick={goNext}
-          aria-label="다음 달"
-        >
+        <button className={styles.navButton} onClick={goNext} aria-label="다음 달">
           <ChevronRightIcon size={20} />
         </button>
       </header>
@@ -81,13 +73,9 @@ export function Calendar({ entryDates = [] }: CalendarProps) {
               type="button"
               className={clsx(styles.day, isToday && styles.today)}
               onClick={() =>
-                router.push(
-                  hasEntry ? `/diary/${dateKey}` : `/diary/write?date=${dateKey}`
-                )
+                router.push(hasEntry ? `/diary/${dateKey}` : `/diary/write?date=${dateKey}`)
               }
-              aria-label={`${view.month + 1}월 ${day}일${
-                hasEntry ? ', 일기 있음' : ', 일기 작성'
-              }`}
+              aria-label={`${view.month + 1}월 ${day}일${hasEntry ? ', 일기 있음' : ', 일기 작성'}`}
             >
               <span className={styles.dayNum}>{day}</span>
               {hasEntry && <span className={styles.dot} aria-hidden />}

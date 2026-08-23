@@ -35,11 +35,7 @@ export default function ChatListPage() {
     <div className={styles.page}>
       <h1 className={styles.title}>Chat Rooms</h1>
 
-      <button
-        type="button"
-        className={styles.createBtn}
-        onClick={() => createRoom.mutate()}
-      >
+      <button type="button" className={styles.createBtn} onClick={() => createRoom.mutate()}>
         <PlusIcon size={18} />
         Create New Chat Room
       </button>

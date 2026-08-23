@@ -10,7 +10,9 @@
   @include card;
   display: block;
   padding: $spacing-lg;
-  transition: border-color $transition-fast, box-shadow $transition-fast;
+  transition:
+    border-color $transition-fast,
+    box-shadow $transition-fast;
 
   &:hover {
     border-color: $color-border-strong;

@@ -24,7 +24,9 @@ describe('parseEmotionResponse', () => {
   })
 
   it('returns null when primary is not a known emotion key', () => {
-    expect(parseEmotionResponse(JSON.stringify({ ...validPayload, primary: 'ecstatic' }))).toBeNull()
+    expect(
+      parseEmotionResponse(JSON.stringify({ ...validPayload, primary: 'ecstatic' }))
+    ).toBeNull()
     expect(parseEmotionResponse(JSON.stringify({ ...validPayload, primary: '기쁨' }))).toBeNull()
   })
 

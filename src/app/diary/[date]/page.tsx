@@ -8,11 +8,7 @@ import { formatDateLabel } from '@/lib/date'
 import { getEmotionMeta } from '@/lib/emotion'
 import styles from './page.module.scss'
 
-export default async function DiaryDetailPage({
-  params,
-}: {
-  params: Promise<{ date: string }>
-}) {
+export default async function DiaryDetailPage({ params }: { params: Promise<{ date: string }> }) {
   const session = await auth()
   if (!session?.user?.id) return notFound()
 

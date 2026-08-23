@@ -8,12 +8,8 @@ export default async function DiaryPage({
   searchParams: Promise<{ view?: string }>
 }) {
   const session = await auth()
-  const diaries = session?.user?.id
-    ? await getAllDiaries(session.user.id)
-    : []
+  const diaries = session?.user?.id ? await getAllDiaries(session.user.id) : []
 
   const { view } = await searchParams
-  return (
-    <DiaryHome diaries={diaries} view={view === 'list' ? 'list' : 'calendar'} />
-  )
+  return <DiaryHome diaries={diaries} view={view === 'list' ? 'list' : 'calendar'} />
 }

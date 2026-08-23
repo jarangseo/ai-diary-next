@@ -8,11 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "measure:bundle": "find .next/static -name '*.js' -print0 | xargs -0 cat | gzip -c | wc -c | awk '{printf \"shipped JS (gzip): %.1f KB\\n\", $1/1024}'",
-    "check:bundle-budget": "node scripts/check-bundle-budget.mjs"
+    "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
+    "seed": "node --env-file=.env.local scripts/seed.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.1",
@@ -26,6 +29,7 @@
     "react-dom": "19.2.3",
     "react-hot-toast": "^2.6.0",
     "socket.io-client": "^4.8.3",
+    "web-vitals": "^6.1.1",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -37,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "jsdom": "^29.0.0",
+    "prettier": "^3.9.6",
     "sass": "^1.97.3",
     "typescript": "^5",
     "vitest": "^4.1.0"

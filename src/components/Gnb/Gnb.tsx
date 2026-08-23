@@ -21,11 +21,7 @@ export default function Gnb() {
         <nav className={styles.actions}>
           {session ? (
             <>
-              <Link
-                className={styles.iconButton}
-                href="/settings"
-                aria-label="설정"
-              >
+              <Link className={styles.iconButton} href="/settings" aria-label="설정">
                 <SettingsIcon size={20} />
               </Link>
               <button

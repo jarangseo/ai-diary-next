@@ -1,0 +1,37 @@
+@use '@/styles/variables' as *;
+
+// The diary layout's <main> is `min-height`, not `height`, and carries the top-bar
+// padding. A percentage height inside it has nothing definite to resolve against, so
+// the panel is sized from the viewport here instead — otherwise the message list never
+// becomes a scroll container and the whole page scrolls instead.
+.lab {
+  display: flex;
+  gap: $spacing-lg;
+  height: calc(100dvh - #{$topbar-height} - #{$spacing-xl} - #{$spacing-3xl});
+  min-height: 0;
+}
+
+.entry {
+  flex: 1;
+  min-width: 0;
+}
+
+.entryTitle {
+  font-family: $font-serif;
+  font-size: $font-size-lg;
+}
+
+.entryMeta {
+  margin-top: $spacing-xs;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+// A flex container rather than a plain box, so the panel fills it without a percentage.
+.panelWrap {
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  flex-shrink: 0;
+  min-height: 0;
+}
