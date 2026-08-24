@@ -21,7 +21,12 @@ export function startTiming(label: string) {
     },
     log() {
       const total = Math.round(performance.now() - start)
-      console.log(`[server-timing] ${label} — ${phases.join(' · ')} · awaited ${total}ms`)
+      // `startedAt` is process-relative, so two timers in the same request can be
+      // ordered against each other. Without it there is no way to tell a slow await
+      // from a component that was simply invoked late.
+      console.log(
+        `[server-timing] ${label} — startedAt ${Math.round(start)}ms · ${phases.join(' · ')} · awaited ${total}ms`
+      )
     },
   }
 }
