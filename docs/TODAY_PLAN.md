@@ -38,7 +38,7 @@ That makes spend caps and a data-handling notice requirements, not polish.
       do not, which is the discriminator to use.
       *Done when:* a unit test covers cleaning with an `--end` different from the seed date.
 
-- [ ] **6. Stop blocking saves on emotion analysis.**
+- [x] **6. Stop blocking saves on emotion analysis.**
       `POST /api/diary` awaits an OpenAI call before responding, so every save waits on a
       model. Move it after the response.
       *Done when:* the save assertion in `e2e/diary.spec.ts` passes without its 20s timeout.

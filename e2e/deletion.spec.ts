@@ -9,8 +9,7 @@ test('an entry can be deleted, and stays deleted', async ({ page }) => {
   await page.goto(`/diary/write?date=${DATE}`)
   await page.getByPlaceholder('오늘 하루는 어땠나요?').fill(body)
   await page.getByRole('button', { name: /저장|수정/ }).click()
-  // Saving awaits an OpenAI call (item 6).
-  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`), { timeout: 20_000 })
+  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`))
   await expect(page.getByText(body)).toBeVisible()
 
   // Two steps on purpose — a native confirm() would be dismissed by automation, leaving
@@ -35,7 +34,7 @@ test('cancelling leaves the entry alone', async ({ page }) => {
   await page.goto(`/diary/write?date=${DATE}`)
   await page.getByPlaceholder('오늘 하루는 어땠나요?').fill(body)
   await page.getByRole('button', { name: /저장|수정/ }).click()
-  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`), { timeout: 20_000 })
+  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`))
 
   await page.getByRole('button', { name: '삭제', exact: true }).click()
   await page.getByRole('button', { name: '취소' }).click()

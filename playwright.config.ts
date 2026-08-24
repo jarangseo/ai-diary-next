@@ -44,7 +44,14 @@ export default defineConfig({
     // hour of debugging a problem that was never in the app.
     reuseExistingServer: false,
     timeout: 120_000,
-    // The gate that makes the E2E sign-in provider exist at all. Absent everywhere else.
-    env: { E2E_AUTH_SECRET: process.env.E2E_AUTH_SECRET ?? 'local-e2e-secret' },
+    env: {
+      // The gate that makes the E2E sign-in provider exist at all. Absent everywhere else.
+      E2E_AUTH_SECRET: process.env.E2E_AUTH_SECRET ?? 'local-e2e-secret',
+      // Without this, NextAuth resolves redirects against the AUTH_URL in .env.local —
+      // which points at the development server — and signing out walks the test straight
+      // off the server under test.
+      AUTH_URL: BASE_URL,
+      NEXTAUTH_URL: BASE_URL,
+    },
   },
 })

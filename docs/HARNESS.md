@@ -55,6 +55,10 @@ Two things this cost, worth not re-learning:
   and Playwright's request context both work.
 - **The run owns its server** (`reuseExistingServer: false`). Reusing whatever is
   listening let tests start against a socket that was still shutting down.
+- **Optimistic UI needs an explicit wait before asserting persistence.** A message is
+  painted the instant it is sent, so seeing it proves nothing about the server having it.
+  A test that reloads on the strength of that render is racing the insert — and will pass
+  until the app gets faster, which is a memorable way to find out.
 - **Deleting a route needs `rm -rf .next` before `verify`.** Next generates a type
   validator that imports every route it knew about; after a deletion the stale copy
   still references the missing file and `typecheck` fails on a file nobody wrote.

@@ -3,6 +3,7 @@ import { getDiary } from '@/lib/diary'
 import { getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { DeleteEntryButton } from '@/components/Diary/DeleteEntryButton'
+import { EmotionPending } from '@/components/Diary/EmotionPending'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
@@ -61,6 +62,12 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
       </header>
 
       <div className={styles.content}>{diary.content}</div>
+
+      {/* Analysis runs after the save responds, so a just-written entry arrives without it
+          and gains it a moment later. Record-only entries never get one and must not sit
+          here waiting. Refreshing is safe for the conversation below: ThreadPanel seeds
+          its state once, so a re-render does not disturb a reply in progress. */}
+      {!emotion && !diary.isRecordOnly && <EmotionPending />}
 
       {emotion && (emotion.summary || questions.length > 0) && (
         <section className={styles.reflection} aria-label="감정 분석">

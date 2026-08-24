@@ -1,0 +1,6 @@
+@use '@/styles/variables' as *;
+
+.pending {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
