@@ -16,7 +16,7 @@ That makes spend caps and a data-handling notice requirements, not polish.
       passes. (The word boundary matters — a bare `useThread` also matches the real
       `useThreadStream`, so the check could never have passed as first written.)
 
-- [ ] **2. Put the thread on the diary detail page.**
+- [x] **2. Put the thread on the diary detail page.**
       Create a thread when an entry is saved; render `ThreadPanel` beside the entry.
       *Done when:* `test.fixme` is removed from `e2e/thread.spec.ts` and it passes.
 
@@ -51,6 +51,12 @@ That makes spend caps and a data-handling notice requirements, not polish.
 - [ ] **9. Deploy and smoke test**, including mobile.
 
 ## Known debt, not scheduled
+
+- The detail page makes three sequential round trips (entry → thread → messages), each
+  genuinely needing the previous one's id. One embedded read
+  (`diaries?select=*,threads(*,messages(*))`) would collapse them, at the cost of not
+  being able to express "create the thread if absent" — so it helps the common case only.
+  Round trips cost ~250ms each here (docs/STREAMING_PERF.md).
 
 - `/diary/[date]` returns 406 on dates holding more than one entry — no longer reachable now the seed is gone; the real fix is id-based routing.
 - `?bench=1` is documented in the messages route but does not branch yet (item 3).

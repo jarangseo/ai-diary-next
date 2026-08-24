@@ -1,5 +1,7 @@
 import { auth } from '@/auth'
 import { getDiary } from '@/lib/diary'
+import { getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
+import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
@@ -15,6 +17,14 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
   const { date } = await params
   const diary = await getDiary(session.user.id, date)
   if (!diary) return notFound()
+
+  // Sequential on purpose, unlike the parallel queries elsewhere: each call genuinely
+  // needs the previous one's id. Collapsing all three into one embedded read
+  // (`diaries?select=*,threads(*,messages(*))`) is the obvious follow-up — see the note
+  // in docs/TODAY_PLAN.md — but it cannot express "create if absent", so it only helps
+  // the common case.
+  const thread = await getOrCreateThreadForDiary(session.user.id, diary.id, diary.title ?? '대화')
+  const messages = thread ? await listMessages(thread.id) : []
 
   const emotion = diary.emotion
   const meta = emotion ? getEmotionMeta(emotion.primary) : undefined
@@ -63,6 +73,12 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
               </ul>
             </div>
           )}
+        </section>
+      )}
+
+      {thread && (
+        <section className={styles.thread} aria-label="이 일기에 대한 대화">
+          <ThreadPanel threadId={thread.id} initialMessages={messages} />
         </section>
       )}
     </article>

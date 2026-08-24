@@ -91,3 +91,40 @@ export async function appendMessage(
 
   return rowToMessage(data)
 }
+
+/**
+ * The thread for an entry, created on first sight if it does not exist yet.
+ *
+ * Lazy rather than created alongside the entry, for two reasons: entries written before
+ * threads existed still need one, so the lazy path has to exist regardless, and the save
+ * request is already the slowest thing in the app (see TODAY_PLAN item 6) without adding
+ * a write to it.
+ *
+ * It is a write during a page render, which is normally a smell. It is safe here because
+ * `threads_diary_uniq` makes a duplicate impossible: a concurrent render loses the insert
+ * and reads the winner's row instead.
+ */
+export async function getOrCreateThreadForDiary(
+  userId: string,
+  diaryId: string,
+  title: string
+): Promise<Thread | null> {
+  const existing = await getThreadForDiary(userId, diaryId)
+  if (existing) return existing
+
+  const { data, error } = await supabase
+    .from('threads')
+    .insert({ user_id: userId, diary_id: diaryId, kind: 'diary', title })
+    .select('*')
+    .single()
+
+  if (error) {
+    // 23505 is the unique violation: someone else created it between the read and the
+    // insert, so their row is the answer.
+    if (error.code === '23505') return getThreadForDiary(userId, diaryId)
+    console.error('getOrCreateThreadForDiary failed:', error.message)
+    return null
+  }
+
+  return rowToThread(data)
+}
