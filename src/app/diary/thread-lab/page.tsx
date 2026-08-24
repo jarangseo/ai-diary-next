@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { listMessages, getThread } from '@/lib/threads'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { redirect } from 'next/navigation'
+import { startTiming } from '@/lib/serverTiming'
 import styles from './page.module.scss'
 
 // Temporary measurement surface, not a product route — the thread lands beside the
@@ -14,17 +15,31 @@ import styles from './page.module.scss'
 const LAB_THREAD_ID = 'e1016e9c-6668-4fe1-b973-f4bfa4cebc94'
 
 export default async function ThreadLabPage() {
+  const timing = startTiming('thread-lab')
+
   const session = await auth()
+  timing.mark('auth')
   if (!session?.user?.id) redirect('/login')
 
-  const thread = await getThread(session.user.id, LAB_THREAD_ID)
+  // Both queries are issued together rather than one after the other. `listMessages`
+  // takes the constant, not `thread.id` — passing the id from the first result would
+  // make the second wait for it, which is the waterfall this removes. Each Supabase
+  // call is ~250ms of round trip and almost no query time (see the commit that added
+  // this timing), so the two overlap into roughly the cost of the slower one.
+  const [thread, initialMessages] = await Promise.all([
+    getThread(session.user.id, LAB_THREAD_ID),
+    listMessages(LAB_THREAD_ID),
+  ])
+  // One mark, because parallel phases can no longer be attributed separately — two
+  // labels here would report whichever resolved second as free.
+  timing.mark('queries')
+  timing.log()
+
   if (!thread) {
     return (
       <p style={{ padding: 24 }}>스레드를 찾을 수 없어요. `pnpm seed` 를 먼저 실행해 주세요.</p>
     )
   }
-
-  const initialMessages = await listMessages(thread.id)
 
   return (
     <div className={styles.lab}>

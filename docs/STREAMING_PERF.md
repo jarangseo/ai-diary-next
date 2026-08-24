@@ -1,6 +1,6 @@
 # Streaming thread — baseline and findings
 
-> Measured 2026-08-19 · Commit tagged `perf/baseline`
+> Baseline measured 2026-08-19 (`perf/baseline`) · optimisations 2026-08-24 (`perf/optimized`)
 > Companion to [`PERFORMANCE.md`](./PERFORMANCE.md), which covers the app's overall
 > performance budget. This file covers one surface: the streaming conversation thread.
 
@@ -117,6 +117,112 @@ shell can be streamed before the messages resolve.
 
 **Fix the card's layout shift.** Small, but the cause is unambiguous and reserving space
 is cheap.
+
+## Optimisation 1 — parallel queries (kept)
+
+TTFB was the one metric outside its threshold, and splitting it with
+[`serverTiming.ts`](../src/lib/serverTiming.ts) showed where it was not:
+
+```
+auth 27ms · thread 758ms · messages 427ms · awaited 1212ms   (cold)
+auth  6ms · thread 255ms · messages 567ms · awaited  828ms
+auth  5ms · thread 246ms · messages 231ms · awaited  483ms
+```
+
+`auth` is 5–8ms warm. The two Supabase calls are 246–325ms and 231–583ms — and a
+primary-key lookup returning one row cannot spend 250ms *in the database*. What was
+being measured was round-trip latency. That reframed the fix: not faster queries, fewer
+round trips.
+
+The page awaited the thread, then awaited its messages. The second call never needed the
+first — the thread id is a constant here — so passing the constant instead of `thread.id`
+breaks the dependency and lets the round trips overlap.
+
+| | before | after |
+| --- | ---: | ---: |
+| server phases | `thread 255ms · messages 567ms` | `queries 263ms` |
+| awaited total | 828 ms | **270 ms** |
+| TTFB | 1061 ms | **291 ms** |
+| FCP | 1376 ms | **360 ms** |
+
+TTFB crosses from needs-improvement into good. The saving is larger than the round trip
+removed — `queries` lands near the cost of *one* call rather than the slower of two — so
+part of the 567ms previously attributed to `messages` was the cost of waiting, not of
+querying.
+
+## Optimisation 2 — Suspense streaming (attempted, rejected)
+
+The remaining ~270ms of TTFB is still the page awaiting its data before the first byte.
+Moving the awaits into a child wrapped in `<Suspense>` sends the shell immediately.
+
+It works, and the shell is fast:
+
+```
+[server-timing] thread-lab shell   — startedAt 14018ms · auth 19ms · awaited 19ms
+[server-timing] thread-lab section — startedAt 14038ms · queries 5521ms
+```
+
+**And LCP collapsed.** Matched conditions, three runs each:
+
+| CPU 4× + Slow 4G | parallel only | + Suspense |
+| --- | ---: | ---: |
+| TTFB | 295 ms | **16 ms** |
+| FCP | 592 ms | **204 ms** |
+| **LCP** | **592 ms** | **5,640 ms** |
+| CLS | 0.000 | 0.00 |
+
+| No throttling at all | parallel only | + Suspense |
+| --- | ---: | ---: |
+| **LCP** | **690 ms** | **5,620 ms** |
+
+Unthrottled and throttled land in the same place, so this is not bandwidth contention
+between the deferred chunk and the subresources the early shell requests — which was the
+first hypothesis, and it was wrong.
+
+### What the delay actually is
+
+Per-query probes inside the boundary, alongside a sibling boundary that suspends on
+nothing but a 50ms timer:
+
+```
+[probe] tiny await resumed at    60ms     ← a trivial suspension resumes normally
+[probe] getThread    resolved at 519ms
+[probe] listMessages resolved at 521ms
+[server-timing] section — queries 5521ms  ← the await resumes 5s after both settled
+```
+
+So: the queries are fast, the boundary machinery is not generally broken, and the shell
+and section start 20ms apart. The `await` in `ThreadSection` simply does not resume for
+five seconds after its promises have settled. Reproducible on two machines, across every
+throttling combination, at ~5.5s every time.
+
+**The cause is not identified.** Next steps if it is picked up again: a minimal
+reproduction outside this app, to tell a Next 16.3 behaviour from something this page
+does.
+
+### Decision: not adopted
+
+Not because Suspense is wrong here in principle, but because **a five-second delay with
+no explanation is not something to ship**. The metric it was meant to improve was already
+fixed by optimisation 1 — TTFB 1061 → 291ms — and the remaining upside was ~270ms
+against a 10× LCP regression.
+
+Worth stating plainly: for this page Suspense was a poor fit anyway. The messages *are*
+the page, so deferring them defers everything; a boundary earns its keep around content a
+page can do without (comments, recommendations), not around its subject.
+
+## Measurement protocol — learned the hard way
+
+- **LCP is not final until you interact.** web-vitals finalises on `keydown`, `click`, or
+  the page being hidden (`onLCP.js`), and until then the value keeps changing as larger
+  elements paint. Mid-load it read 0.20s here and settled at 5.6s. Click, then record.
+  DevTools' own "Local metrics" panel updates live and is a different reading from the
+  `[web-vitals]` console line — do not mix them.
+- **Match throttling across compared runs.** Three separate comparisons in this
+  investigation were invalid because CPU throttling differed between before and after.
+- **Keep the tab foregrounded.** A hidden tab has FCP and LCP suppressed entirely.
+- **Watch the LCP *element*, not just the number.** Streaming changed it from a message
+  to the top bar's heading — a "better" LCP that measured something else.
 
 ## Limitations of this baseline — read before trusting it
 
