@@ -128,3 +128,31 @@ export async function getOrCreateThreadForDiary(
 
   return rowToThread(data)
 }
+
+/**
+ * How many messages the user has sent today, used as the spend guard's meter
+ * (`lib/usage.ts`). Derived from the messages already stored rather than kept in a table
+ * of its own: one less thing to keep in sync, and it cannot drift from what happened.
+ *
+ * The day boundary is UTC. Someone near midnight in their own zone gets a window that
+ * does not match their calendar — acceptable for a spend guard, wrong for anything shown
+ * to a user.
+ */
+export async function countUserMessagesToday(userId: string): Promise<number | null> {
+  const startOfDay = new Date()
+  startOfDay.setUTCHours(0, 0, 0, 0)
+
+  const { count, error } = await supabase
+    .from('messages')
+    .select('id, threads!inner(user_id)', { count: 'exact', head: true })
+    .eq('threads.user_id', userId)
+    .eq('role', 'user')
+    .gte('created_at', startOfDay.toISOString())
+
+  if (error) {
+    console.error('countUserMessagesToday failed:', error.message)
+    return null
+  }
+
+  return count ?? 0
+}

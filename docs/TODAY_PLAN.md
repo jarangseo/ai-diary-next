@@ -26,7 +26,7 @@ That makes spend caps and a data-handling notice requirements, not polish.
       must keep serving the deterministic stream — the performance numbers depend on it.
       *Done when:* the route branches on `bench`, and E2E still passes against the fake path.
 
-- [ ] **4. Spend caps.**
+- [x] **4. Spend caps.**
       Per-user daily request limit; over it, fall back to the fake stream with an honest
       notice rather than an error.
       *Done when:* a unit test asserts the N+1th request is refused.
@@ -51,6 +51,10 @@ That makes spend caps and a data-handling notice requirements, not polish.
 - [ ] **9. Deploy and smoke test**, including mobile.
 
 ## Known debt, not scheduled
+
+- The daily cap is per account, and accounts are free to create — someone determined
+  spends 20 replies per Google account. A per-IP or global daily ceiling is the next layer
+  if the link travels further than expected.
 
 - **The live model path has never actually run.** `modelParts` is covered by unit tests
   with an injected client, so the chunk-to-StreamPart transformation is verified, but no

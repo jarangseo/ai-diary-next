@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
-import { appendMessage, getThread, listMessages } from '@/lib/threads'
+import { appendMessage, countUserMessagesToday, getThread, listMessages } from '@/lib/threads'
+import { cappedParts, isOverDailyLimit, DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { fakeParts } from '@/lib/fakeStream'
 import { modelParts } from '@/lib/modelStream'
 import { partsToNdjsonStream } from '@/lib/streamResponse'
@@ -54,14 +55,27 @@ export async function POST(
   // the source mid-sequence and leaves a partial assistant message — the state the UI
   // has to handle either way.
   const bench = new URL(request.url).searchParams.get('bench') === '1'
-  const source = bench
-    ? fakeParts({ signal: request.signal })
-    : modelParts({
-        history,
-        text: text.trim(),
-        withEmotion: history.length === 0,
-        signal: request.signal,
-      })
+
+  // Whoever opens the public link spends the owner's OpenAI budget, and nothing else
+  // stands between a stranger and that bill. A failed count is treated as over the limit:
+  // an unreadable meter is not a reason to hand out unmetered model calls, and the
+  // fallback still answers.
+  const used = bench ? 0 : await countUserMessagesToday(session.user.id)
+  const overLimit = used === null || isOverDailyLimit(used, DAILY_MESSAGE_LIMIT)
+
+  let source
+  if (bench) {
+    source = fakeParts({ signal: request.signal })
+  } else if (overLimit) {
+    source = cappedParts(request.signal)
+  } else {
+    source = modelParts({
+      history,
+      text: text.trim(),
+      withEmotion: history.length === 0,
+      signal: request.signal,
+    })
+  }
 
   const stream = partsToNdjsonStream(source, {
     onComplete: async (content, toolResults) => {
