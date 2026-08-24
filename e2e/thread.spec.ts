@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-// The oracle for "put the thread on the diary detail page". It fails today because the
-// panel only exists on /diary/thread-lab against a hard-coded id — that is the point.
+// The oracle for "put the thread on the diary detail page". It fails today because
+// nothing renders ThreadPanel outside of tests — that is the point.
 // Remove `fixme` as part of that task; if it passes, the task is done.
 //
 // Written against the fake stream (`?bench=1` is what the client uses in development),

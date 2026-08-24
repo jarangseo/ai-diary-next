@@ -8,11 +8,13 @@ That makes spend caps and a data-handling notice requirements, not polish.
 
 ## Delegable
 
-- [ ] **1. Remove the lab route.**
+- [x] **1. Remove the lab route.**
       Delete `/diary/thread-lab` and the unused `useThread.ts` practice hook. The seeded
       rows are already gone from the database (done by hand — writes there are outside the
       loop's remit).
-      *Done when:* `grep -r "thread-lab\|useThread" src/` returns nothing and `pnpm verify` passes.
+      *Done when:* `grep -rE "thread-lab|useThread\b" src/` returns nothing and `pnpm verify`
+      passes. (The word boundary matters — a bare `useThread` also matches the real
+      `useThreadStream`, so the check could never have passed as first written.)
 
 - [ ] **2. Put the thread on the diary detail page.**
       Create a thread when an entry is saved; render `ThreadPanel` beside the entry.
