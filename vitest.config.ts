@@ -7,7 +7,7 @@ export default defineConfig({
     // Unit tests live in src/. Without this, Vitest also collects e2e/*.spec.ts and
     // fails on them — Playwright's `test` is a different runner with a different API,
     // and two runners sharing one glob is a confusing way to find that out.
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'scripts/**/*.{test,spec}.mjs'],
   },
   resolve: {
     alias: {

@@ -11,6 +11,7 @@
 // existing data in this database (which ends 2026-06-02). Cleanup is scoped to that
 // window, so real entries are never touched.
 import { createClient } from '@supabase/supabase-js'
+import { SEED_TITLES, isSeededEntry, buildSeedDates } from './seedData.mjs'
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -68,20 +69,6 @@ const SUMMARIES = [
   '결정을 앞두고 흔들린 하루',
   '참다가 결국 말한 하루',
 ]
-const TITLES = [
-  '퇴근길에 본 노을',
-  '오래 미룬 일을 끝냄',
-  '회의가 너무 길었다',
-  '오랜만에 운동함',
-  '점심에 혼자 걸었다',
-  '리뷰에서 막힌 부분',
-  '주말 계획을 세웠다',
-  '문득 떠오른 생각',
-  '커피를 두 잔 마신 날',
-  '이유 없이 피곤했다',
-  '작은 칭찬을 받았다',
-  '정리하다 하루가 감',
-]
 const BODY = [
   '아침부터 일정이 밀렸다. ',
   '생각보다 오래 걸렸고 중간에 한 번 처음부터 다시 했다. ',
@@ -98,40 +85,38 @@ const QUESTIONS = [
   ['비슷한 하루가 최근에 또 있었을까?', '그때는 어떻게 넘겼어?'],
 ]
 
-const shiftDate = (endIso, daysBack) => {
-  const d = new Date(`${endIso}T00:00:00Z`)
-  d.setUTCDate(d.getUTCDate() - daysBack)
-  return d.toISOString().slice(0, 10)
-}
-
-// Distinct dates, newest first.
-const dates = []
-for (let i = 0; i < ENTRY_COUNT - DOUBLED_DAYS; i++) dates.push(shiftDate(END_DATE, i))
-
-// The doubled days sit in the middle of the window, deliberately not at the recent end.
-// `/diary/[date]` still resolves an entry by date with `.single()`, which returns a 406
-// once a date holds two rows, and the newest entry is the thread's measurement target —
-// it has to stay reachable. Moving them keeps the proof that migration 001 landed
-// without breaking the page today. See the CLAUDE.md gotcha on date-keyed routing.
-const doubledFrom = Math.floor(dates.length / 2)
-const allDates = [...dates, ...dates.slice(doubledFrom, doubledFrom + DOUBLED_DAYS)].sort((a, b) =>
-  a < b ? -1 : 1
-)
+const allDates = buildSeedDates({
+  endDate: END_DATE,
+  entryCount: ENTRY_COUNT,
+  doubledDays: DOUBLED_DAYS,
+})
 const WINDOW_START = allDates[0]
 const WINDOW_END = allDates.at(-1)
 
 // ---------------------------------------------------------------------------
 // Clean first — makes re-seeding between measurements safe and repeatable.
 // Deleting diaries cascades to their threads and messages.
+//
+// Rows are identified by being the seed's, not by falling inside a date range. The range
+// version deleted a window computed from *today*, so cleaning on a later day than seeding
+// left the earliest entries behind — five survived a clean on 2026-08-24 after seeding on
+// 08-19.
 // ---------------------------------------------------------------------------
-const { error: delErr, count: deleted } = await db
+const { data: existing, error: readErr } = await db
   .from('diaries')
-  .delete({ count: 'exact' })
+  .select('id,title')
   .eq('user_id', USER_ID)
-  .gte('date', WINDOW_START)
-  .lte('date', WINDOW_END)
-if (delErr) throw delErr
-console.log(`cleaned ${deleted ?? 0} rows in ${WINDOW_START}..${WINDOW_END}`)
+if (readErr) throw readErr
+
+const seededIds = existing.filter(isSeededEntry).map((r) => r.id)
+
+if (seededIds.length) {
+  const { error: delErr } = await db.from('diaries').delete().in('id', seededIds)
+  if (delErr) throw delErr
+}
+console.log(
+  `cleaned ${seededIds.length} seeded rows (left ${existing.length - seededIds.length} written by hand)`
+)
 
 if (flag('clean')) process.exit(0)
 
@@ -146,7 +131,7 @@ const entries = allDates.map((date, i) => {
   return {
     user_id: USER_ID,
     date,
-    title: TITLES[i % TITLES.length],
+    title: SEED_TITLES[i % SEED_TITLES.length],
     content: body,
     is_record_only: recordOnly,
     emotion_primary: recordOnly ? null : emotion,
