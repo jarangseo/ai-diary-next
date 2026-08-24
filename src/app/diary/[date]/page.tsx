@@ -78,7 +78,15 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
 
       {thread && (
         <section className={styles.thread} aria-label="이 일기에 대한 대화">
-          <ThreadPanel threadId={thread.id} initialMessages={messages} />
+          <ThreadPanel
+            threadId={thread.id}
+            initialMessages={messages}
+            // The deterministic stream in the test environment, the model everywhere
+            // else. E2E_AUTH_SECRET is already the "this is a test run" gate (it is what
+            // makes the test sign-in provider exist), and reusing it keeps the suite from
+            // spending a model call per run.
+            bench={Boolean(process.env.E2E_AUTH_SECRET)}
+          />
         </section>
       )}
     </article>

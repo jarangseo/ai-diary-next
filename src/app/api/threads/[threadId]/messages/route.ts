@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
-import { appendMessage, getThread } from '@/lib/threads'
+import { appendMessage, getThread, listMessages } from '@/lib/threads'
 import { fakeParts } from '@/lib/fakeStream'
+import { modelParts } from '@/lib/modelStream'
 import { partsToNdjsonStream } from '@/lib/streamResponse'
 import { NextResponse } from 'next/server'
 
@@ -39,6 +40,11 @@ export async function POST(
     return NextResponse.json({ error: 'text is required' }, { status: 400 })
   }
 
+  // Read before appending: the model needs the conversation so far to reply coherently,
+  // and the count doubles as "is this the first exchange", which decides whether the
+  // emotion card is emitted.
+  const history = await listMessages(threadId)
+
   const stored = await appendMessage(threadId, 'user', text.trim())
   if (!stored) {
     return NextResponse.json({ error: 'Failed to store message' }, { status: 500 })
@@ -47,7 +53,15 @@ export async function POST(
   // request.signal aborts when the client calls stop() or navigates away, which ends
   // the source mid-sequence and leaves a partial assistant message — the state the UI
   // has to handle either way.
-  const source = fakeParts({ signal: request.signal })
+  const bench = new URL(request.url).searchParams.get('bench') === '1'
+  const source = bench
+    ? fakeParts({ signal: request.signal })
+    : modelParts({
+        history,
+        text: text.trim(),
+        withEmotion: history.length === 0,
+        signal: request.signal,
+      })
 
   const stream = partsToNdjsonStream(source, {
     onComplete: async (content, toolResults) => {

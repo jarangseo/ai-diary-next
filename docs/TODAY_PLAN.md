@@ -20,7 +20,7 @@ That makes spend caps and a data-handling notice requirements, not polish.
       Create a thread when an entry is saved; render `ThreadPanel` beside the entry.
       *Done when:* `test.fixme` is removed from `e2e/thread.spec.ts` and it passes.
 
-- [ ] **3. Connect the real model.**
+- [x] **3. Connect the real model.**
       Stream text from OpenAI through the existing `StreamPart` protocol; emit the
       emotion card from the existing `analyzeEmotion` once the text completes. `?bench=1`
       must keep serving the deterministic stream — the performance numbers depend on it.
@@ -51,6 +51,11 @@ That makes spend caps and a data-handling notice requirements, not polish.
 - [ ] **9. Deploy and smoke test**, including mobile.
 
 ## Known debt, not scheduled
+
+- **The live model path has never actually run.** `modelParts` is covered by unit tests
+  with an injected client, so the chunk-to-StreamPart transformation is verified, but no
+  request has been sent to OpenAI — deliberately, to keep the loop from spending money.
+  Exercise it by hand once before launch.
 
 - The detail page makes three sequential round trips (entry → thread → messages), each
   genuinely needing the previous one's id. One embedded read

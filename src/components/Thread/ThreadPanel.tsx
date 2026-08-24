@@ -8,6 +8,8 @@ import styles from './ThreadPanel.module.scss'
 interface Props {
   threadId: string
   initialMessages: Message[]
+  /** Deterministic stream instead of the model — set by the page in test runs. */
+  bench?: boolean
 }
 
 // The generative-UI half: a tool result becomes a component, not text. Because the
@@ -40,8 +42,8 @@ function EmotionCard({ message }: { message: Message }) {
 // the growing last line mean an exact match never holds while text streams in.
 const PIN_THRESHOLD_PX = 40
 
-export function ThreadPanel({ threadId, initialMessages }: Props) {
-  const { messages, status, send, stop } = useThreadStream({ threadId, initialMessages })
+export function ThreadPanel({ threadId, initialMessages, bench }: Props) {
+  const { messages, status, send, stop } = useThreadStream({ threadId, initialMessages, bench })
   const [text, setText] = useState('')
 
   const listRef = useRef<HTMLDivElement>(null)
