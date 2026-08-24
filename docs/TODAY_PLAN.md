@@ -8,9 +8,10 @@ That makes spend caps and a data-handling notice requirements, not polish.
 
 ## Delegable
 
-- [ ] **1. Remove the seed and the lab route.**
-      `pnpm seed -- <userId> --clean`, delete `/diary/thread-lab`, delete the unused
-      `useThread.ts` practice hook.
+- [ ] **1. Remove the lab route.**
+      Delete `/diary/thread-lab` and the unused `useThread.ts` practice hook. The seeded
+      rows are already gone from the database (done by hand — writes there are outside the
+      loop's remit).
       *Done when:* `grep -r "thread-lab\|useThread" src/` returns nothing and `pnpm verify` passes.
 
 - [ ] **2. Put the thread on the diary detail page.**
@@ -28,21 +29,27 @@ That makes spend caps and a data-handling notice requirements, not polish.
       notice rather than an error.
       *Done when:* a unit test asserts the N+1th request is refused.
 
-- [ ] **5. Stop blocking saves on emotion analysis.**
+- [ ] **5. Fix `pnpm seed --clean`.**
+      It deletes a window computed from *today*, not the rows it created, so cleaning on a
+      later day than seeding leaves the earliest entries behind (five survived a clean on
+      2026-08-24 after seeding on 08-19). Seeded rows carry a `title` and hand-written ones
+      do not, which is the discriminator to use.
+      *Done when:* a unit test covers cleaning with an `--end` different from the seed date.
+
+- [ ] **6. Stop blocking saves on emotion analysis.**
       `POST /api/diary` awaits an OpenAI call before responding, so every save waits on a
       model. Move it after the response.
       *Done when:* the save assertion in `e2e/diary.spec.ts` passes without its 20s timeout.
 
 ## Needs a person
 
-- [ ] **6. Landing page.** `/` redirects into a login wall; a visitor cannot tell what this is.
-- [ ] **7. Privacy notice.** Diaries are sensitive personal data and OAuth collects account
+- [ ] **7. Landing page.** `/` redirects into a login wall; a visitor cannot tell what this is.
+- [ ] **8. Privacy notice.** Diaries are sensitive personal data and OAuth collects account
       identity. What is stored, that entries are sent to OpenAI, and how to delete them.
-- [ ] **8. Deploy and smoke test**, including mobile.
+- [ ] **9. Deploy and smoke test**, including mobile.
 
 ## Known debt, not scheduled
 
-- `/diary/[date]` returns 406 on dates holding more than one entry — item 1 hides it by
-  removing the seed; the real fix is id-based routing.
+- `/diary/[date]` returns 406 on dates holding more than one entry — no longer reachable now the seed is gone; the real fix is id-based routing.
 - `?bench=1` is documented in the messages route but does not branch yet (item 3).
 - Settings page is a placeholder.
