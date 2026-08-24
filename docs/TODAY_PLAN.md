@@ -52,6 +52,10 @@ That makes spend caps and a data-handling notice requirements, not polish.
 
 ## Known debt, not scheduled
 
+- Withdrawal is two deletes and PostgREST has no transaction across them, so a failure
+  between diaries and standalone threads leaves the latter behind. Both are idempotent,
+  so a retry is safe, but nothing retries automatically.
+
 - The daily cap is per account, and accounts are free to create — someone determined
   spends 20 replies per Google account. A per-IP or global daily ceiling is the next layer
   if the link travels further than expected.

@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { getDiary } from '@/lib/diary'
 import { getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
+import { DeleteEntryButton } from '@/components/Diary/DeleteEntryButton'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
@@ -55,6 +56,7 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
             <PencilIcon size={16} />
             수정
           </Link>
+          <DeleteEntryButton date={diary.date} />
         </div>
       </header>
 
