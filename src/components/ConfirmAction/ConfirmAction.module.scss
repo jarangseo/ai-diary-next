@@ -1,0 +1,60 @@
+@use '@/styles/variables' as *;
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-bg-hover;
+    color: $color-text-primary;
+  }
+}
+
+.danger:hover {
+  color: $color-error;
+  background: $color-error-light;
+}
+
+.confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.question {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.yes {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  background: $color-error;
+  color: $color-text-inverse;
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:disabled {
+    background: $color-disabled;
+    cursor: not-allowed;
+  }
+}
+
+.no {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-bg-hover;
+  }
+}

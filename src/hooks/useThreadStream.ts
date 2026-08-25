@@ -8,7 +8,7 @@ export type ThreadStatus = 'idle' | 'streaming' | 'error'
 interface Options {
   threadId: string
   initialMessages: Message[]
-  /** Measurement path: the deterministic fake stream instead of the model. */
+  /** Measurement and test path: the deterministic fake stream instead of the model. */
   bench?: boolean
 }
 
@@ -19,7 +19,7 @@ interface Options {
 // rebuilt on every token. It is what most code does, it is what the baseline in
 // docs/PERFORMANCE.md measures, and it is the thing the INP work then fixes. Do not
 // "improve" it before the baseline is recorded.
-export function useThreadStream({ threadId, initialMessages, bench = true }: Options) {
+export function useThreadStream({ threadId, initialMessages, bench = false }: Options) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [status, setStatus] = useState<ThreadStatus>('idle')
 

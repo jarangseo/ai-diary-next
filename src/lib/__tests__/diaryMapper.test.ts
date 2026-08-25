@@ -8,6 +8,7 @@ function baseRow(overrides: Partial<DiaryRow> = {}): DiaryRow {
     id: 'row-1',
     user_id: 'user-1',
     date: '2026-06-01',
+    title: null,
     content: 'a calm day',
     is_record_only: false,
     emotion_primary: null,
@@ -68,6 +69,7 @@ describe('rowToDiary', () => {
 
 describe('diaryToRow', () => {
   const diary: Diary = {
+    id: 'diary-1',
     date: '2026-06-01',
     content: 'a calm day',
     isRecordOnly: false,
@@ -79,6 +81,7 @@ describe('diaryToRow', () => {
     expect(diaryToRow(diary, 'user-1')).toEqual({
       user_id: 'user-1',
       date: '2026-06-01',
+      title: null,
       content: 'a calm day',
       is_record_only: false,
       emotion_primary: null,

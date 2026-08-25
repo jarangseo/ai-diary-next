@@ -10,7 +10,9 @@ export function rowToDiary(row: DiaryRow): Diary {
   // values fall back to undefined rather than producing a broken badge.
   const emotionMeta = getEmotionMeta(row.emotion_primary)
   return {
+    id: row.id,
     date: row.date,
+    title: row.title ?? undefined,
     content: row.content,
     isRecordOnly: row.is_record_only,
     emotion: emotionMeta
@@ -33,6 +35,7 @@ export function diaryToRow(
   return {
     user_id: userId,
     date: diary.date,
+    title: diary.title ?? null,
     content: diary.content,
     is_record_only: diary.isRecordOnly,
     emotion_primary: diary.emotion?.primary ?? null,

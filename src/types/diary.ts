@@ -8,7 +8,11 @@ export interface DiaryEmotion {
 }
 
 export interface Diary {
-  date: string // YYYY-MM-DD format (primary key)
+  /** Primary key since migration 001; `date` is an ordinary attribute now. */
+  id: string
+  date: string // YYYY-MM-DD
+  /** Generated alongside the emotion analysis; absent on entries written before it. */
+  title?: string
   content: string
   isRecordOnly: boolean
   emotion?: DiaryEmotion

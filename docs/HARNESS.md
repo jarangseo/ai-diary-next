@@ -55,6 +55,13 @@ Two things this cost, worth not re-learning:
   and Playwright's request context both work.
 - **The run owns its server** (`reuseExistingServer: false`). Reusing whatever is
   listening let tests start against a socket that was still shutting down.
+- **Optimistic UI needs an explicit wait before asserting persistence.** A message is
+  painted the instant it is sent, so seeing it proves nothing about the server having it.
+  A test that reloads on the strength of that render is racing the insert — and will pass
+  until the app gets faster, which is a memorable way to find out.
+- **Deleting a route needs `rm -rf .next` before `verify`.** Next generates a type
+  validator that imports every route it knew about; after a deletion the stale copy
+  still references the missing file and `typecheck` fails on a file nobody wrote.
 
 ## Running a loop
 
@@ -68,9 +75,28 @@ deployment, or anything that spends money.
 State lives in the plan file rather than in context, so a loop that loses its context can
 pick up where it stopped.
 
+**Which makes the plan file load-bearing.** Editing it with unchecked string replacement
+went wrong quietly and repeatedly: a replacement whose pattern no longer matched did
+nothing and reported success, so two finished items stayed unticked, and a bulk renumber
+dropped an item entirely — the deletion work was implemented and committed while the queue
+no longer listed it. A corrupted state file makes every progress report a guess. Assert
+that an edit matched, and read the file back after changing it.
+
 **Stop after two failures.** Unbounded retry is the characteristic failure of this setup:
 an agent that cannot pass the check will keep changing things until the check passes for
 the wrong reason.
+
+## The gap: CI is weaker than the oracle
+
+`pnpm verify` runs E2E. CI does not — it has no Supabase credentials — so the strongest
+check in this repo exists only on one machine.
+
+That is not theoretical. Both bugs the E2E caught this week passed typecheck, unit tests,
+lint and format without complaint, because none of those opens a browser. Until CI runs
+the suite, a pull request can break the product and be told it is fine.
+
+Tracked as item 8 in the plan. The fix is a separate Supabase project for development and
+CI, which the repo wants anyway.
 
 ## What stays with a person
 

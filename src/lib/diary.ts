@@ -105,3 +105,30 @@ export async function analyzeAndStoreEmotion(
   if (emotion) await updateDiaryEmotion(userId, date, emotion)
   return emotion
 }
+
+/**
+ * Everything belonging to a user, for account withdrawal.
+ *
+ * Diaries go first: their threads and messages follow through the cascade, so there is no
+ * window where a message outlives the entry it belongs to. Standalone threads — the
+ * `question` kind, which has no diary — are not reachable that way and are removed after.
+ *
+ * Not transactional. PostgREST has no multi-statement transaction, so a failure between
+ * the two leaves the standalone threads behind. The caller is told, and a retry is safe
+ * because both deletes are idempotent.
+ */
+export async function deleteAllUserData(userId: string): Promise<boolean> {
+  const { error: diaryError } = await supabase.from('diaries').delete().eq('user_id', userId)
+  if (diaryError) {
+    console.error('deleteAllUserData (diaries) failed:', diaryError.message)
+    return false
+  }
+
+  const { error: threadError } = await supabase.from('threads').delete().eq('user_id', userId)
+  if (threadError) {
+    console.error('deleteAllUserData (threads) failed:', threadError.message)
+    return false
+  }
+
+  return true
+}

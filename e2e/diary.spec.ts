@@ -18,11 +18,7 @@ test('writing an entry saves it and shows it on the detail page', async ({ page 
 
   // Saving replaces the write page in history, so the detail page is where it lands.
   //
-  // The generous timeout is not flakiness padding: POST /api/diary awaits the OpenAI
-  // emotion analysis before it responds, so the user waits on a model call every time
-  // they save. Worth fixing — the analysis is best-effort and could happen after the
-  // response — and this assertion will get faster when it is.
-  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`), { timeout: 20_000 })
+  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`))
   await expect(page.getByText(body)).toBeVisible()
 })
 

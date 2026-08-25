@@ -135,3 +135,17 @@
   font-weight: $font-weight-bold;
   color: $color-text-primary;
 }
+
+// Stacked below the entry rather than beside it. The v1 sketch puts the thread in a right
+// pane, but the shared diary layout is a centred 720px column, and the traffic this is
+// being opened up to arrives from a phone — a side pane would be the wrong bet for the
+// screen most people will read it on. The panel keeps its own scroll, so the page does not
+// grow with the conversation.
+.thread {
+  display: flex;
+  flex-direction: column;
+  height: min(70vh, 560px);
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+}

@@ -1,5 +1,9 @@
 import { auth } from '@/auth'
 import { getDiary } from '@/lib/diary'
+import { getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
+import { ThreadPanel } from '@/components/Thread/ThreadPanel'
+import { DeleteEntryButton } from '@/components/Diary/DeleteEntryButton'
+import { EmotionPending } from '@/components/Diary/EmotionPending'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
@@ -15,6 +19,14 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
   const { date } = await params
   const diary = await getDiary(session.user.id, date)
   if (!diary) return notFound()
+
+  // Sequential on purpose, unlike the parallel queries elsewhere: each call genuinely
+  // needs the previous one's id. Collapsing all three into one embedded read
+  // (`diaries?select=*,threads(*,messages(*))`) is the obvious follow-up — see the note
+  // in docs/TODAY_PLAN.md — but it cannot express "create if absent", so it only helps
+  // the common case.
+  const thread = await getOrCreateThreadForDiary(session.user.id, diary.id, diary.title ?? '대화')
+  const messages = thread ? await listMessages(thread.id) : []
 
   const emotion = diary.emotion
   const meta = emotion ? getEmotionMeta(emotion.primary) : undefined
@@ -45,10 +57,17 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
             <PencilIcon size={16} />
             수정
           </Link>
+          <DeleteEntryButton date={diary.date} />
         </div>
       </header>
 
       <div className={styles.content}>{diary.content}</div>
+
+      {/* Analysis runs after the save responds, so a just-written entry arrives without it
+          and gains it a moment later. Record-only entries never get one and must not sit
+          here waiting. Refreshing is safe for the conversation below: ThreadPanel seeds
+          its state once, so a re-render does not disturb a reply in progress. */}
+      {!emotion && !diary.isRecordOnly && <EmotionPending />}
 
       {emotion && (emotion.summary || questions.length > 0) && (
         <section className={styles.reflection} aria-label="감정 분석">
@@ -63,6 +82,20 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
               </ul>
             </div>
           )}
+        </section>
+      )}
+
+      {thread && (
+        <section className={styles.thread} aria-label="이 일기에 대한 대화">
+          <ThreadPanel
+            threadId={thread.id}
+            initialMessages={messages}
+            // The deterministic stream in the test environment, the model everywhere
+            // else. E2E_AUTH_SECRET is already the "this is a test run" gate (it is what
+            // makes the test sign-in provider exist), and reusing it keeps the suite from
+            // spending a model call per run.
+            bench={Boolean(process.env.E2E_AUTH_SECRET)}
+          />
         </section>
       )}
     </article>

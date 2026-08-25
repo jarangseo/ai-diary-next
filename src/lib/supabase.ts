@@ -9,6 +9,7 @@ export interface DiaryRow {
   id: string
   user_id: string
   date: string
+  title: string | null
   content: string
   is_record_only: boolean
   emotion_primary: string | null

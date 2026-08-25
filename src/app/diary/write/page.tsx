@@ -23,7 +23,11 @@ function WriteForm() {
       .then((res) => (res.ok ? res.json() : null))
       .then((diary) => {
         if (!active) return
-        setContent(diary?.content ?? '')
+        // Never overwrite what is already typed. The prefill is a late arrival — anyone
+        // who starts writing before it lands would otherwise watch their text vanish,
+        // which is the worst thing a diary app can do. The functional form is required:
+        // `content` here is the value captured when this effect ran, not the current one.
+        setContent((current) => (current ? current : (diary?.content ?? '')))
         setHasExisting(Boolean(diary))
       })
     return () => {
