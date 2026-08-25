@@ -75,9 +75,28 @@ deployment, or anything that spends money.
 State lives in the plan file rather than in context, so a loop that loses its context can
 pick up where it stopped.
 
+**Which makes the plan file load-bearing.** Editing it with unchecked string replacement
+went wrong quietly and repeatedly: a replacement whose pattern no longer matched did
+nothing and reported success, so two finished items stayed unticked, and a bulk renumber
+dropped an item entirely — the deletion work was implemented and committed while the queue
+no longer listed it. A corrupted state file makes every progress report a guess. Assert
+that an edit matched, and read the file back after changing it.
+
 **Stop after two failures.** Unbounded retry is the characteristic failure of this setup:
 an agent that cannot pass the check will keep changing things until the check passes for
 the wrong reason.
+
+## The gap: CI is weaker than the oracle
+
+`pnpm verify` runs E2E. CI does not — it has no Supabase credentials — so the strongest
+check in this repo exists only on one machine.
+
+That is not theoretical. Both bugs the E2E caught this week passed typecheck, unit tests,
+lint and format without complaint, because none of those opens a browser. Until CI runs
+the suite, a pull request can break the product and be told it is fine.
+
+Tracked as item 8 in the plan. The fix is a separate Supabase project for development and
+CI, which the repo wants anyway.
 
 ## What stays with a person
 
