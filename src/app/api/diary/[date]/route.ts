@@ -9,7 +9,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
   }
 
   const { date } = await params
-  const diary = await getDiary(session.user.id, date)
+
+  let diary
+  try {
+    diary = await getDiary(session.user.id, date)
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Failed to load' }, { status: 500 })
+  }
 
   if (!diary) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
