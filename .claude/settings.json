@@ -1,4 +1,16 @@
 {
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./.env.production)",
+      "Bash(vercel deploy:*)",
+      "Bash(vercel --prod:*)",
+      "Bash(npx vercel deploy:*)",
+      "Bash(npx vercel --prod:*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {

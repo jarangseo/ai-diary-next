@@ -41,5 +41,11 @@ jobs:
       - name: Format
         run: pnpm format:check
 
+      # Every hook ships with a *.test.sh next to it; a new one is picked up without
+      # editing this file (docs/HARNESS.md, "Hooks are code").
       - name: Hook tests
-        run: bash .claude/hooks/block-main-commit.test.sh
+        run: |
+          for t in .claude/hooks/*.test.sh; do
+            echo "== $t"
+            bash "$t" || exit 1
+          done

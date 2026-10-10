@@ -35,7 +35,7 @@ fi
 
 # Rewriting published history. Local history is fine to amend; pushing over shared refs
 # is not recoverable for anyone who already pulled.
-if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+push[[:space:]].*(--force([[:space:]]|$)|--force-with-lease|[[:space:]]-f([[:space:]]|$))'; then
+if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+push.*(--force([[:space:]]|$)|--force-with-lease|[[:space:]]-f([[:space:]]|$))'; then
   deny "force-pushing rewrites history other clones already have."
 fi
 

@@ -1,0 +1,12 @@
+# Changes here alter how everyone's agents behave or what reaches production, so they
+# are routed to a named reviewer. Add teammates as they take ownership of an area.
+
+# Harness: rules every loop runs under
+/CLAUDE.md          @jarangseo
+/CONTRIBUTING.md    @jarangseo
+/docs/HARNESS.md    @jarangseo
+/.claude/           @jarangseo
+/.github/           @jarangseo
+
+# Database schema
+/docs/migrations/   @jarangseo

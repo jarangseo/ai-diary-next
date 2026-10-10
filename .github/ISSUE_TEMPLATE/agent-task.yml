@@ -1,0 +1,41 @@
+name: Agent task
+description: A task an agent loop can take on its own. Needs a check a machine can run.
+labels: [agent-ready]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A loop is only as good as its check (see docs/HARNESS.md). If you can't fill in
+        **Done when** with something a machine can verify, use a blank issue instead.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be different when this is done, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: done-when
+    attributes:
+      label: Done when
+      description: |
+        A check a machine can run. A spec that must pass, a grep that must return nothing,
+        a status code. "Looks right" is not a check.
+      placeholder: |
+        `test.fixme` is removed from `e2e/thread.spec.ts` and `pnpm verify` passes.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Out of scope
+      description: What the loop must not touch, beyond the standing rules in docs/HARNESS.md.
+    validations:
+      required: false
+  - type: textarea
+    id: pointers
+    attributes:
+      label: Pointers
+      description: Files, prior pull requests, or docs worth reading first.
+    validations:
+      required: false

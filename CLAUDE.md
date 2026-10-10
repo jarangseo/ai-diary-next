@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-Guide for getting context quickly in future sessions. For detailed setup see `README.md`; for product direction see `docs/PRODUCT_DIRECTION.md`.
+Guide for getting context quickly in future sessions. For detailed setup see `README.md`; for product direction see `docs/PRODUCT_DIRECTION.md`;
+for how the team and agent workflow fits together see `docs/GUIDE.en.md`.
 
 ## Project overview
 
@@ -110,6 +111,8 @@ dynamic calendar home (month nav, entry dots, date click → detail/write), warm
 
 How to carry out a change (keep each step small and verifiable):
 
+0. **Start from an issue, assigned to you** — the assignee is the lock that keeps two people
+   (or two loops) off the same task. Team rules: `CONTRIBUTING.md`; loops: `docs/HARNESS.md`.
 1. **Branch from `main`** — name as `type/short-desc` (e.g. `feat/emotion-analysis`,
    `fix/...`, `perf/...`, `docs/...`). Never commit directly to `main`.
 2. **Read before you write** — for a new feature, first read the relevant code and explain
@@ -128,7 +131,8 @@ How to carry out a change (keep each step small and verifiable):
    `feat fix perf refactor style test docs ci chore`. End AI-authored commits with the
    `Co-Authored-By: Claude ...` footer.
 7. **Review before merge** — run `/code-review` for correctness/cleanup; `/security-review`
-   when touching auth, API input, or the service-role DB path. Open a small PR into `main`.
+   when touching auth, API input, or the service-role DB path. Open a small PR into `main`;
+   it needs an approval from someone else (for a loop's PR, not the person who ran it).
 
 Code-style conventions (English artifacts, `services/`/`lib/` layering, SCSS tokens) are in
 **Conventions** below.
@@ -140,4 +144,6 @@ Code-style conventions (English artifacts, `services/`/`lib/` layering, SCSS tok
 - Keep technical terms and code identifiers in their original form.
 - Clients go through the `services/` wrapper rather than calling `fetch` directly.
 - Server-side DB access goes through functions in `lib/`.
+- Personal preferences go in `CLAUDE.local.md` (gitignored), not here — this file is shared
+  by every teammate's agent and changes by pull request.
 ```
