@@ -1,5 +1,8 @@
 # Contributing
 
+> New here? Start with [`docs/GUIDE.md`](./docs/GUIDE.md) ([English](./docs/GUIDE.en.md)) —
+> how the whole system fits together, and what every file is for.
+
 How we work on this repo together. Code conventions live in [`CLAUDE.md`](./CLAUDE.md);
 how agent loops are run, and why these rules exist, is in
 [`docs/HARNESS.md`](./docs/HARNESS.md).

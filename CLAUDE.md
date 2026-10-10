@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-Guide for getting context quickly in future sessions. For detailed setup see `README.md`; for product direction see `docs/PRODUCT_DIRECTION.md`.
+Guide for getting context quickly in future sessions. For detailed setup see `README.md`; for product direction see `docs/PRODUCT_DIRECTION.md`;
+for how the team and agent workflow fits together see `docs/GUIDE.en.md`.
 
 ## Project overview
 

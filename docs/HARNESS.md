@@ -2,6 +2,8 @@
 
 How work gets handed to an autonomous loop, and what must never be.
 
+> For the overall picture without the jargon, read [`GUIDE.md`](./GUIDE.md) first.
+
 ## The premise: a loop is only as good as its oracle
 
 Two assumptions were refuted by measurement on this project in a single day: that
