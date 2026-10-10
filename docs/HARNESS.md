@@ -66,21 +66,25 @@ Two things this cost, worth not re-learning:
 ## Running a loop
 
 ```
-/loop Take the first unchecked item in docs/TODAY_PLAN.md. Implement it, run
-`pnpm verify`, and only if it passes, commit and tick the box. On failure, fix and
-retry at most twice, then stop and report. Never touch the production database,
-deployment, or anything that spends money.
+/loop Work on GitHub issue #<n> (label agent-ready, assigned to me). Branch as
+type/short-desc from main. Implement it, run `pnpm verify`, and only if it passes,
+commit and push. When the issue's "Done when" check passes, open a draft PR that
+closes #<n>, labelled agent. On failure, fix and retry at most twice, then stop,
+comment on the issue with what failed, and report. Never touch the production
+database, deployment, or anything that spends money.
 ```
 
-State lives in the plan file rather than in context, so a loop that loses its context can
-pick up where it stopped.
+State lives in the issue and the branch rather than in context, so a loop that loses its
+context can pick up where it stopped. See [Working as a team](#working-as-a-team) for why
+the queue moved out of the plan file.
 
-**Which makes the plan file load-bearing.** Editing it with unchecked string replacement
-went wrong quietly and repeatedly: a replacement whose pattern no longer matched did
-nothing and reported success, so two finished items stayed unticked, and a bulk renumber
-dropped an item entirely — the deletion work was implemented and committed while the queue
-no longer listed it. A corrupted state file makes every progress report a guess. Assert
-that an edit matched, and read the file back after changing it.
+**A state file is load-bearing.** While the queue lived in `docs/TODAY_PLAN.md`, editing it
+with unchecked string replacement went wrong quietly and repeatedly: a replacement whose
+pattern no longer matched did nothing and reported success, so two finished items stayed
+unticked, and a bulk renumber dropped an item entirely — the deletion work was implemented
+and committed while the queue no longer listed it. A corrupted state file makes every
+progress report a guess. Wherever a loop keeps state in a file, assert that an edit
+matched, and read the file back after changing it.
 
 **Stop after two failures.** Unbounded retry is the characteristic failure of this setup:
 an agent that cannot pass the check will keep changing things until the check passes for
@@ -105,6 +109,90 @@ CI, which the repo wants anyway.
 - Anything that spends money (a public link means strangers spend it)
 - Reading performance numbers and deciding what *not* to fix
 - Product copy and tone
+- Numbering and applying database migrations (two branches each adding `002_…` is a
+  conflict nobody sees until both are applied)
+- Changing the harness itself — `CLAUDE.md`, this file, `.claude/settings.json`, the hooks.
+  Each changes how every teammate's agent behaves.
+- Approving a pull request a loop opened
+
+## Working as a team
+
+Everything above was written for one person running one loop on one machine. With several
+people, the same setup fails in specific places. The rules below close them; the
+human-facing version is in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+### The queue is GitHub Issues, not a file
+
+A shared file queue lets two loops take the same "first unchecked item", and every branch
+carries its own copy of the checkboxes, so ticking one is a merge conflict. Issues give
+each task an owner and a state that lives outside every branch.
+
+- An issue is **`agent-ready`** only when it has a *Done when* line a machine can check —
+  a spec that must pass, a grep that must return nothing, a status code. The
+  [agent task template](../.github/ISSUE_TEMPLATE/agent-task.yml) makes that field
+  required. The delegable / not-delegable table above is the test for the label.
+- **Assign before starting.** The assignee is the lock. An unassigned `agent-ready` issue
+  is free; an assigned one is not, whoever's loop it is.
+- **One issue, one branch, one pull request.** A loop that finds a second problem files it
+  as an issue instead of fixing it in passing.
+
+`docs/TODAY_PLAN.md` stays as the record of what was done before the move; new work goes
+to Issues.
+
+### Passing is not approving
+
+`block-main-commit.sh` stops Claude from committing to `main` on one machine. It does not
+stop a person, another tool, or a teammate without the hook. The rule that matters is
+enforced by GitHub:
+
+- `main` is protected: the `verify` and `bundle-budget` checks must pass and one review
+  must approve. No force-pushes.
+- **A pull request a loop opened is approved by someone other than the person who ran the
+  loop.** The person who ran it has already decided the result is fine; that is the
+  judgement a review exists to check.
+- Loop pull requests open as drafts with the `agent` label. The person who ran the loop
+  marks it ready once they have read it; a teammate approves it.
+
+### Shared environments
+
+- **One shared database is a single point of failure.** When the Supabase project behind
+  `.env.local` disappeared, every page returned 404 for everyone at once (see
+  [the 404 that was a DNS failure](#the-404-that-was-a-dns-failure)). Development and CI
+  use a separate Supabase project from production, with a named owner. Production keys
+  are not in anyone's `.env.local`.
+- **E2E runs share one user, so two runs at once interfere.** Every spec writes as
+  `e2e-test-user`, and `withdrawal.spec.ts` deletes *all* of that user's rows — a teammate's
+  run that reaches it wipes yours mid-flight. Until the user is namespaced per run, run E2E
+  against your own database or not at the same time as someone else against the shared one.
+- **Claude settings are split by who they apply to.** `.claude/settings.json` (committed)
+  holds the hooks and the denies everyone needs. `.claude/settings.local.json` and
+  `CLAUDE.local.md` (both gitignored) hold personal permissions and preferences — anything
+  only true for you goes there, not into the shared files.
+
+### Improving the harness is part of the work
+
+The harness is the set of rules every loop runs under. It gets better only if what goes
+wrong is fed back into it:
+
+- **The first time** someone — person or agent — hits a trap, record it: here under
+  *worth not re-learning*, or in `CLAUDE.md` under Gotchas. By pull request, like code.
+- **The second time**, a note has failed. Turn it into something mechanical: a hook, a
+  lint rule, a test, a CI step. A rule that is only written down is followed by whoever
+  read it.
+- **Every two weeks**, look at the loop pull requests that were closed unmerged or needed
+  heavy rework and sort them by cause: the *Done when* was too weak, the issue was too
+  big, or the context (`CLAUDE.md`, this file) was missing something. Each cause has a
+  different fix.
+
+Harness changes go through review like any other change; `CODEOWNERS` routes them.
+
+### The 404 that was a DNS failure
+
+`GET /api/diary/<date>` returned 404 while the server was healthy. The Supabase host no
+longer resolved, the query failed, and `getDiary` treats "no data" and "query failed" the
+same way — so a dead database looked like an empty diary. The rule of the section above
+applies: this is a trap worth a mechanism, not a note. `lib/` query functions should
+surface Supabase errors so routes answer 500, not 404.
 
 ## When this is worth it
 

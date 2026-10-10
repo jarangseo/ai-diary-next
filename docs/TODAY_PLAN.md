@@ -1,5 +1,9 @@
 # Plan — toward a link worth sharing
 
+> **Superseded as the queue.** New work is tracked as GitHub Issues labelled `agent-ready`
+> (see [`HARNESS.md`](./HARNESS.md#working-as-a-team)). This file is kept as the record of
+> the work done before the team started; open items below should be moved to issues.
+
 Working queue for the loop (see [`HARNESS.md`](./HARNESS.md)). One item at a time; tick
 only after `pnpm verify` passes.
 
