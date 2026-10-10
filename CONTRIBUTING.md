@@ -8,7 +8,9 @@ how agent loops are run, and why these rules exist, is in
 
 1. `pnpm install` (see the `allowBuilds` gotcha in `CLAUDE.md` if it exits 1).
 2. Copy `.env.example` to `.env.local` and fill it with the **development** Supabase
-   project's keys — never production's. Ask the database owner for access.
+   project's keys — never production's. Ask the database owner for access. If the shared
+   project is down, or you want E2E runs no one else can disturb, run your own with
+   `supabase start` (see *Shared environments* in `docs/HARNESS.md`).
 3. `pnpm dev`. Realtime chat also needs `ai-diary-chat-server` on port 4000.
 4. Optional, personal: `.claude/settings.local.json` and `CLAUDE.local.md` for your own
    permissions and preferences. Both are gitignored.
@@ -26,7 +28,8 @@ how agent loops are run, and why these rules exist, is in
 5. **Open a pull request that closes the issue.** Fill in the template. Keep it small; split
    it if the description needs headings.
 6. **One approval from someone else, then merge.** For a pull request an agent loop
-   opened, the approver is not the person who ran the loop.
+   opened, the approver is not the person who ran the loop. Pull requests that change the
+   harness — `CLAUDE.md`, `CONTRIBUTING.md`, `docs/HARNESS.md`, `.claude/` — need **two**.
 
 `main` is protected: no direct pushes, no force-pushes, `verify` and `bundle-budget` must
 pass.
@@ -40,8 +43,19 @@ pass.
   ready; you are vouching for it to the reviewer.
 - A loop stops after two failed attempts and comments on the issue. Look at why before
   restarting it — retrying the same prompt rarely changes the outcome.
-- Loops cost money on your account. Don't leave one running unattended overnight on a task
-  without a bound.
+- Loops cost money on your account. Keep to the team's daily budget per person (set as a
+  spend limit on your account; the amount is in `docs/HARNESS.md`), and never leave a
+  loop running without a stop condition.
+
+## Hooks
+
+Changing a hook in `.claude/hooks/` means changing its `<name>.test.sh` too — what it must
+block and what it must let through. A new hook comes with a new suite; CI runs all of them.
+Run them locally with:
+
+```bash
+for t in .claude/hooks/*.test.sh; do bash "$t" || break; done
+```
 
 ## Decided by a person, not a loop
 
@@ -89,3 +103,6 @@ EOF
 
 Then add the development Supabase keys and `E2E_AUTH_SECRET` as repository secrets so CI
 can run E2E (tracked in `docs/HARNESS.md`, *The gap*).
+
+Branch protection counts approvals per branch, not per path, so the second approval on
+harness pull requests is a reviewers' rule rather than a GitHub setting.

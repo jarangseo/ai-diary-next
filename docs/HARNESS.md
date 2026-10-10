@@ -99,8 +99,9 @@ That is not theoretical. Both bugs the E2E caught this week passed typecheck, un
 lint and format without complaint, because none of those opens a browser. Until CI runs
 the suite, a pull request can break the product and be told it is fine.
 
-Tracked as item 8 in the plan. The fix is a separate Supabase project for development and
-CI, which the repo wants anyway.
+The fix is a separate Supabase project for development and CI, which the repo wants
+anyway. Until it lands, the rule in [Shared environments](#shared-environments) applies:
+the pull request author runs `pnpm verify` locally and says so in the pull request.
 
 ## What stays with a person
 
@@ -112,7 +113,7 @@ CI, which the repo wants anyway.
 - Numbering and applying database migrations (two branches each adding `002_…` is a
   conflict nobody sees until both are applied)
 - Changing the harness itself — `CLAUDE.md`, this file, `.claude/settings.json`, the hooks.
-  Each changes how every teammate's agent behaves.
+  Each changes how every teammate's agent behaves, so these take **two** approvals.
 - Approving a pull request a loop opened
 
 ## Working as a team
@@ -155,19 +156,62 @@ enforced by GitHub:
 
 ### Shared environments
 
-- **One shared database is a single point of failure.** When the Supabase project behind
+- **Three databases, not one.** Production; a shared development project that CI also
+  uses; and, optionally, your own local one. When the single Supabase project behind
   `.env.local` disappeared, every page returned 404 for everyone at once (see
-  [the 404 that was a DNS failure](#the-404-that-was-a-dns-failure)). Development and CI
-  use a separate Supabase project from production, with a named owner. Production keys
-  are not in anyone's `.env.local`.
-- **E2E runs share one user, so two runs at once interfere.** Every spec writes as
-  `e2e-test-user`, and `withdrawal.spec.ts` deletes *all* of that user's rows — a teammate's
-  run that reaches it wipes yours mid-flight. Until the user is namespaced per run, run E2E
-  against your own database or not at the same time as someone else against the shared one.
+  [the 404 that was a DNS failure](#the-404-that-was-a-dns-failure)). The development
+  project has a named owner who creates it, holds its keys and answers when it is down.
+  Production keys are not in anyone's `.env.local`.
+- **A local database is the fallback.** `supabase start` (Supabase CLI, needs Docker) runs
+  the whole stack on your machine; apply the schema from `README.md` and
+  `docs/migrations/` in order, and point `.env.local` at the URL and service-role key it
+  prints. The repo has no `supabase/` config yet — whoever sets it up first commits it,
+  so the second person gets one command.
+- **CI runs E2E.** A green check is what a reviewer trusts, so it has to include the only
+  check that opens a browser. CI gets the development project's URL, service-role key and
+  `E2E_AUTH_SECRET` as repository secrets and runs `pnpm test:e2e` after the build. Until
+  then, see [the gap](#the-gap-ci-is-weaker-than-the-oracle).
+- **Each E2E run owns its data.** Today every spec writes as `e2e-test-user`, and
+  `withdrawal.spec.ts` deletes *all* of that user's rows — a teammate's run, or CI, that
+  reaches it wipes yours mid-flight, and the failure looks like flakiness. The rule:
+  the E2E user id carries a run id (`e2e-<run>`), each run cleans up only its own user,
+  and new specs never rely on a fixed shared row. Until that change lands, don't run E2E
+  against the shared database at the same time as someone else.
 - **Claude settings are split by who they apply to.** `.claude/settings.json` (committed)
-  holds the hooks and the denies everyone needs. `.claude/settings.local.json` and
-  `CLAUDE.local.md` (both gitignored) hold personal permissions and preferences — anything
-  only true for you goes there, not into the shared files.
+  holds the hooks and the `permissions.deny` list everyone needs: reading `.env` files and
+  deploying. The deny list and `block-risky-commands.sh` overlap on purpose — the deny
+  rules also cover the Read tool, which no Bash hook sees; the hook catches commands the
+  deny patterns miss. `.claude/settings.local.json` and `CLAUDE.local.md` (both
+  gitignored) hold personal permissions and preferences — anything only true for you goes
+  there, not into the shared files.
+
+### Hooks are code
+
+A hook runs on every teammate's machine on every tool call, and a wrong one fails in one
+of two ways: it blocks real work, or it silently stops blocking what it was written for.
+The second is invisible until the day it matters.
+
+- Every hook in `.claude/hooks/` ships with a `<name>.test.sh` beside it, covering what it
+  must block **and** what it must let through. CI runs every `*.test.sh` in that
+  directory, so a new suite needs no CI change.
+- A hook change comes with a test change. Writing the suite for `block-risky-commands.sh`
+  found that a force-push with `-f` as the first argument was not blocked.
+- Hooks match text, not intent: the same hook blocks a commit message or a heredoc that
+  merely *quotes* a blocked command. Pass such text through a file (`git commit -F`)
+  rather than weakening the pattern.
+- Hooks are harness: two approvals, routed by `CODEOWNERS`.
+
+### Loops have a budget
+
+A loop spends model tokens on the account of whoever runs it, and an agent that cannot
+pass its check keeps spending until something stops it.
+
+- **Daily budget per person: _to be set by the team_.** Set it as a spend limit on your own
+  account, so it is enforced rather than remembered.
+- A loop always has a stop condition: the two-failure rule above, plus a bound on
+  iterations or time. No unattended loop without one.
+- Automated spend in CI is bounded too: Claude review runs once per pull request, not per
+  push, with a 15-minute timeout (`.github/workflows/claude-code-review.yml`).
 
 ### Improving the harness is part of the work
 
@@ -184,7 +228,9 @@ wrong is fed back into it:
   big, or the context (`CLAUDE.md`, this file) was missing something. Each cause has a
   different fix.
 
-Harness changes go through review like any other change; `CODEOWNERS` routes them.
+Harness changes go through review like any other change, with **two** approvals instead
+of one; `CODEOWNERS` routes them. GitHub sets the approval count per branch, not per path,
+so the second approval is the reviewers' rule: the pull request template asks for it.
 
 ### The 404 that was a DNS failure
 
