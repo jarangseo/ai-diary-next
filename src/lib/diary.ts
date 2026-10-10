@@ -3,13 +3,22 @@ import type { DiaryEmotion } from '@/types/diary'
 import { rowToDiary } from './diaryMapper'
 import { analyzeEmotion } from './emotionAnalysis'
 
+/**
+ * The entry for a date, or null if there is none. Throws when the query fails, so a dead
+ * database is not mistaken for an empty diary.
+ *
+ * `maybeSingle`, not `single`: `single` reports zero rows as an error (PGRST116), which is
+ * what made "no entry" and "query failed" impossible to tell apart.
+ */
 export async function getDiary(userId: string, date: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('diaries')
     .select('*')
     .eq('user_id', userId)
     .eq('date', date)
-    .single()
+    .maybeSingle()
+
+  if (error) throw new Error(`getDiary failed: ${error.message}`)
 
   return data ? rowToDiary(data) : null
 }
@@ -34,7 +43,15 @@ export async function saveDiary(
 
   // If an entry exists for the date, update it (preserving created_at); otherwise insert.
   // The previous upsert overwrote created_at on every save, losing the original creation time.
-  const existing = await getDiary(userId, date)
+  // A failed lookup is a failed save, not "no entry": inserting then would put a second row
+  // on a date that already has one.
+  let existing
+  try {
+    existing = await getDiary(userId, date)
+  } catch (error) {
+    console.error(error)
+    return false
+  }
 
   if (existing) {
     const { error } = await supabase
