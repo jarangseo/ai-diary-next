@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { removeEntries, writeEntry } from './entries'
 
 // The acceptance test for putting the thread on the diary detail page.
 //
@@ -8,17 +9,12 @@ test('a saved entry gets a thread beside it that streams a reply', async ({ page
   const DATE = '2020-01-02'
   const body = `Thread E2E ${Date.now()}`
 
-  await page.goto(`/diary/write?date=${DATE}`)
-  await page.getByPlaceholder('오늘 하루는 어땠나요?').fill(body)
-  await page.getByRole('button', { name: /저장|수정/ }).click()
-  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`))
+  const id = await writeEntry(page, DATE, body)
 
   const composer = page.getByLabel('메시지 입력')
   await expect(composer, 'the entry should have a thread beside it').toBeVisible()
 
-  // Unique per run. The entry is updated in place each time, but messages append, so a
-  // fixed string matches every previous run's copy too and the assertion below stops
-  // being about this run. Cleaning the thread instead needs the deletion work in item 5.
+  // Unique per run, so the assertion below is about this run's message only.
   const message = `오늘 힘들었어 ${Date.now()}`
   await composer.fill(message)
 
@@ -40,4 +36,7 @@ test('a saved entry gets a thread beside it that streams a reply', async ({ page
   await expect(page.getByText(message)).toBeVisible()
   await page.reload()
   await expect(page.getByText(message)).toBeVisible()
+
+  // The thread and its messages cascade with the entry.
+  await removeEntries(page, [id])
 })

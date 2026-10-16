@@ -53,6 +53,8 @@ Source of truth for the taxonomy is `src/lib/emotion.ts` (`EMOTIONS` / `EMOTION_
 - [x] write screen UX — no change needed; the added `await` is covered by the existing "저장 중…" state (1–3s)
 - [x] **decided: re-analyze on every save** — `saveDiary` upserts, so editing re-runs analysis and
       `updateDiaryEmotion` overwrites; emotion always reflects the latest content
+      (since #47: create is `POST /api/diary`, edit is `PATCH /api/diary/[id]`, both
+      re-analyze; the emotion writes are keyed by id)
 
 ### 🔵 4. UI display (in progress)
 - [x] detail page (`diary/[date]`) — emotion badge (emoji + Korean label, tinted with the emotion color) +

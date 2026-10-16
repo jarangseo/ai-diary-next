@@ -169,7 +169,7 @@ AI title. Merging entries is deferred.
   safety net. This is a new migration; numbering and applying it is a human
   decision per `docs/HARNESS.md`.
 - `/diary/[date]` → `/diary/[id]` (already planned in v1) becomes a prerequisite, since every entry is
-  opened by id.
+  opened by id. Done in #47.
 
 ### Process for v2
 

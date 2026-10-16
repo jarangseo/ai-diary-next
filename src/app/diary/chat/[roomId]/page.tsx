@@ -99,7 +99,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ roomId: str
     }
 
     const data = await res.json()
-    router.push(`/diary/${data.date}`)
+    router.push(`/diary/${data.id}`)
   }
 
   return (
