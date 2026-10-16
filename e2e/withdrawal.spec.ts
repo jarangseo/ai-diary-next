@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { writeEntry } from './entries'
 
 // Runs last by filename, which matters: it removes every row belonging to the shared E2E
 // user. The other specs create what they need, so the order is safe rather than merely
@@ -8,13 +9,10 @@ const DATE = '2020-01-04'
 test('withdrawing removes the account’s entries', async ({ page }) => {
   const body = `Withdrawal E2E ${Date.now()}`
 
-  await page.goto(`/diary/write?date=${DATE}`)
-  await page.getByPlaceholder('오늘 하루는 어땠나요?').fill(body)
-  await page.getByRole('button', { name: /저장|수정/ }).click()
-  await expect(page).toHaveURL(new RegExp(`/diary/${DATE}$`))
+  const id = await writeEntry(page, DATE, body)
 
   // Confirm it is really there before claiming withdrawal removed it.
-  expect((await page.request.get(`/api/diary/${DATE}`)).status()).toBe(200)
+  expect((await page.request.get(`/api/diary/${id}`)).status()).toBe(200)
 
   await page.goto('/settings')
   await page.getByRole('button', { name: '탈퇴하기' }).click()
@@ -29,6 +27,6 @@ test('withdrawing removes the account’s entries', async ({ page }) => {
 
   // The data is gone even to an authenticated request — the session cookie was cleared in
   // the browser, so this asks the server directly with the stored state.
-  const after = await page.request.get(`/api/diary/${DATE}`)
+  const after = await page.request.get(`/api/diary/${id}`)
   expect(after.status()).not.toBe(200)
 })
