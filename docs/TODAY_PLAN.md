@@ -113,6 +113,5 @@ That makes spend caps and a data-handling notice requirements, not polish.
   being able to express "create the thread if absent" — so it helps the common case only.
   Round trips cost ~250ms each here (docs/STREAMING_PERF.md).
 
-- `/diary/[date]` returns 406 on dates holding more than one entry — no longer reachable now the seed is gone; the real fix is id-based routing.
 - `?bench=1` is documented in the messages route but does not branch yet (item 3).
 - Settings page is a placeholder.

@@ -68,12 +68,13 @@ src/
 
 ```ts
 // types/diary.ts
-Diary { date(YYYY-MM-DD, PK), content, isRecordOnly, emotion?, createdAt, updatedAt }
+Diary { id(uuid, PK), date(YYYY-MM-DD), title?, content, isRecordOnly, emotion?, createdAt, updatedAt }
 DiaryEmotion { primary, score, summary, questions? }   // DB columns reserved; analysis not implemented
 ```
 
 DB tables: `diaries`, `chat_rooms`, `room_members`, `chat_messages` (schema in README).
-Diary upsert conflict key: `(user_id, date)`. `saveDiary` updates if a row exists (preserving `created_at`), inserts otherwise.
+Entries are identified by `id`; `date` is a filter (a date can hold several entries). `createDiary` always inserts,
+`updateDiary(userId, id, …)` edits. Routes: `/diary/[id]`, `/api/diary/[id]` (GET/PATCH/DELETE), `GET /api/diary?date=` lists a day.
 
 ## Current status
 
@@ -97,11 +98,9 @@ dynamic calendar home (month nav, entry dots, date click → detail/write), warm
   otherwise a cold `pnpm install` exits 1 with `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` alone is
   **no longer sufficient** on pnpm 11 — it is still read, but the install fails anyway. CI installs with
   `--ignore-scripts` so it never hit this; Vercel does a plain install, so it broke there first.
-- **`/diary/[date]` breaks on dates with more than one entry** (known debt). Migration 001 removed the
-  one-entry-per-day constraint, but `getDiary` still resolves by `(user_id, date)` with `.single()`,
-  which returns PGRST116 (406) once a date holds two rows. The route has to move to `/diary/[id]`
-  with a separate date-based *list* endpoint. Until then the seed keeps its doubled days away from
-  the dates in active use. See `docs/migrations/001_diary_id_and_threads.sql`.
+- **Never resolve an entry by date.** A date holds any number of entries since migration 001;
+  `.single()`/`.maybeSingle()` on `(user_id, date)` errors (PGRST116, 406) once it holds two. Use
+  `getDiaryById`, or `listDiariesByDate` for a day. Old `/diary/YYYY-MM-DD` links redirect to the list.
 - **Socket.IO server is a separate repo** (`ai-diary-chat-server`, port 4000). Run it separately to test realtime chat.
 - On Next.js 16, `src/middleware.ts` emits a deprecation warning (`proxy` migration recommended). Harmless for now.
 - Styling is unified on SCSS design tokens (`variables.scss`, `mixins.scss`). New styles should use tokens.

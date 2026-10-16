@@ -44,8 +44,9 @@ them a poor oracle for "implement X".
   set**, which is nowhere but the test run. Unset, the provider is not registered, so
   there is no path to authenticate through it. It also checks the value, not just the
   presence: if it were ever set in a deployed environment it would be account takeover.
-- Writes under a dedicated `e2e-test-user` on a fixed far-past date, so runs update one
-  row instead of accumulating, and never touch a real account's entries.
+- Writes under a dedicated `e2e-test-user` on far-past dates, so it never touches a real
+  account's entries. Every save is a new row, so each spec deletes what it wrote
+  (`e2e/entries.ts`); `withdrawal.spec.ts` runs last and wipes the rest.
 - `test.fixme` marks the oracle for work not yet done. `thread.spec.ts` is the acceptance
   test for putting the thread on the diary detail page: remove `fixme` as part of that
   task, and if it passes, the task is done.
