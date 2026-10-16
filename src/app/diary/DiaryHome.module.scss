@@ -47,3 +47,21 @@
   padding: 0 $spacing-lg;
   font-size: $font-size-sm;
 }
+
+.filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.filterClear {
+  color: $color-text-secondary;
+  font-weight: $font-weight-normal;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}

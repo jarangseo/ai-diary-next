@@ -22,8 +22,8 @@ export function DiaryList({ diaries, className }: DiaryListProps) {
   return (
     <ul className={clsx(styles.list, className)}>
       {diaries.map((diary) => (
-        <li key={diary.date}>
-          <Link className={styles.item} href={`/diary/${diary.date}`}>
+        <li key={diary.id}>
+          <Link className={styles.item} href={`/diary/${diary.id}`}>
             <div className={styles.itemHead}>
               <span className={styles.date}>{formatDateLabel(diary.date)}</span>
               {diary.emotion?.primary && (

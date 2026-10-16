@@ -7,15 +7,27 @@ import styles from './Calendar.module.scss'
 import { WEEKDAYS_KO, toDateKey } from '@/lib/date'
 
 type CalendarProps = {
-  /** dates that have an entry ('YYYY-MM-DD') */
-  entryDates?: string[]
+  /** every entry's id and date ('YYYY-MM-DD'); a date may appear more than once */
+  entries?: { id: string; date: string }[]
 }
 
-export function Calendar({ entryDates = [] }: CalendarProps) {
+export function Calendar({ entries = [] }: CalendarProps) {
   const router = useRouter()
   const today = new Date()
   const todayKey = toDateKey(today)
-  const entrySet = new Set(entryDates)
+  const idsByDate = new Map<string, string[]>()
+  for (const { id, date } of entries) {
+    idsByDate.set(date, [...(idsByDate.get(date) ?? []), id])
+  }
+
+  // One entry opens it; several open that day's list, since there is no single entry
+  // the date could mean.
+  const hrefFor = (dateKey: string) => {
+    const ids = idsByDate.get(dateKey) ?? []
+    if (ids.length === 0) return `/diary/write?date=${dateKey}`
+    if (ids.length === 1) return `/diary/${ids[0]}`
+    return `/diary?view=list&date=${dateKey}`
+  }
 
   const [view, setView] = useState({
     year: today.getFullYear(),
@@ -65,16 +77,14 @@ export function Calendar({ entryDates = [] }: CalendarProps) {
             return <div key={`blank-${i}`} className={styles.empty} />
           }
           const dateKey = `${view.year}-${pad(view.month + 1)}-${pad(day)}`
-          const hasEntry = entrySet.has(dateKey)
+          const hasEntry = idsByDate.has(dateKey)
           const isToday = dateKey === todayKey
           return (
             <button
               key={dateKey}
               type="button"
               className={clsx(styles.day, isToday && styles.today)}
-              onClick={() =>
-                router.push(hasEntry ? `/diary/${dateKey}` : `/diary/write?date=${dateKey}`)
-              }
+              onClick={() => router.push(hrefFor(dateKey))}
               aria-label={`${view.month + 1}월 ${day}일${hasEntry ? ', 일기 있음' : ', 일기 작성'}`}
             >
               <span className={styles.dayNum}>{day}</span>

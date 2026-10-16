@@ -5,17 +5,24 @@ import clsx from 'clsx'
 import { PlusIcon } from 'lucide-react'
 import { Calendar } from '@/components/Calendar/Calendar'
 import { DiaryList } from '@/components/DiaryList/DiaryList'
-import { toDateKey } from '@/lib/date'
+import { formatDateLabel, toDateKey } from '@/lib/date'
 import type { Diary } from '@/types/diary'
 import styles from './DiaryHome.module.scss'
 
 type View = 'calendar' | 'list'
 
-export function DiaryHome({ diaries, view }: { diaries: Diary[]; view: View }) {
+type DiaryHomeProps = {
+  diaries: Diary[]
+  view: View
+  /** 'YYYY-MM-DD' — narrows the list to one day (the calendar sends days with several entries here) */
+  dateFilter?: string
+}
+
+export function DiaryHome({ diaries, view, dateFilter }: DiaryHomeProps) {
   const router = useRouter()
   const pathname = usePathname()
   const todayKey = toDateKey(new Date())
-  const entryDates = diaries.map((d) => d.date)
+  const listed = dateFilter ? diaries.filter((d) => d.date === dateFilter) : diaries
 
   // Reflect view state in the URL → going back from a detail page restores list/calendar
   const selectView = (next: View) => {
@@ -52,7 +59,16 @@ export function DiaryHome({ diaries, view }: { diaries: Diary[]; view: View }) {
         </Link>
       </div>
 
-      {view === 'list' ? <DiaryList diaries={diaries} /> : <Calendar entryDates={entryDates} />}
+      {view === 'list' && dateFilter && (
+        <div className={styles.filter}>
+          <span>{formatDateLabel(dateFilter)}</span>
+          <Link href={`${pathname}?view=list`} className={styles.filterClear}>
+            전체 보기
+          </Link>
+        </div>
+      )}
+
+      {view === 'list' ? <DiaryList diaries={listed} /> : <Calendar entries={diaries} />}
     </section>
   )
 }
