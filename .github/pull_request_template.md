@@ -42,7 +42,8 @@ few files a reviewer must read. Reviewer: tick each item once you have checked i
 ## Agent loop
 
 - [ ] This pull request was opened by an agent loop — run by: @
-      (approver must be someone else; see CONTRIBUTING.md)
+      (approver must be someone else; see CONTRIBUTING.md — in the *Solo phase*, the
+      owner ticks the Human review checklist instead)
 
 ## Harness
 

@@ -137,6 +137,8 @@ How to carry out a change (keep each step small and verifiable):
 7. **Review before merge** — run `/code-review` for correctness/cleanup; `/security-review`
    when touching auth, API input, or the service-role DB path. Open a small PR into `main`;
    it needs an approval from someone else (for a loop's PR, not the person who ran it).
+   While the repo is in the *Solo phase* (`CONTRIBUTING.md`), the owner merges after
+   ticking the checklist.
    **Fill in the template's *Human review* checklist**: point each item at where it
    applies or mark it `N/A — <why>`, and name at most three files the reviewer must read.
 

@@ -39,6 +39,23 @@ how agent loops are run, and why these rules exist, is in
 `main` is protected: no direct pushes, no force-pushes, `verify` and `bundle-budget` must
 pass.
 
+### Solo phase (now — until the first teammate joins)
+
+The rules above are the team's target state. With one person, "approval from someone else"
+cannot happen, and GitHub does not let anyone approve their own pull request, so for now:
+
+- **Branch protection is off.** The owner merges their own pull requests.
+- **The *Human review* checklist stands in for the approver.** Fill in every item, then
+  tick each one yourself before merging. Never merge with an item left blank.
+- **Everything else still applies**: issue, worktree, `pnpm verify`, small pull requests,
+  hook tests.
+
+**The day the first teammate joins**, end this phase:
+
+1. Run the branch-protection command under *Repository setup* below.
+2. Add the teammate to `.github/CODEOWNERS`.
+3. Delete this section in a pull request — the teammate's approval is its first.
+
 ## Agent loops
 
 - Only on issues labelled **`agent-ready`**: those with a *Done when* a machine can check.

@@ -180,6 +180,12 @@ enforced by GitHub:
 - Loop pull requests open as drafts with the `agent` label. The person who ran the loop
   marks it ready once they have read it; a teammate approves it.
 
+**Until the first teammate joins, none of this is enforced.** Branch protection is off,
+and the owner merges their own pull requests after ticking the *Human review* checklist.
+The checklist is the only gate in this phase, so a loop's pull request is never merged
+with an item left blank. Ending this phase is a checklist in `CONTRIBUTING.md`, *Solo
+phase*.
+
 ### Shared environments
 
 - **Three databases, not one.** Production; a shared development project that CI also
