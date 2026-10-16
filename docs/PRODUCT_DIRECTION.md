@@ -32,8 +32,8 @@ and gives every entry an **AI summary** that pulls everything about that entry i
 |---|---|---|
 | Home | one input box, `Diary ⟷ Question` toggle | new-entry screen, `대화로 쓰기 ⟷ 직접 쓰기` tabs |
 | How an entry starts | user writes the body | **either** a conversation **or** the body |
-| Entry screen | entry + side thread | chat: 2 panes · write: 3 panes (below) |
-| Final diary text | the user's body | an auto-updating **summary** of everything in the entry |
+| Entry screen | entry + side thread | chat: chat → chat + summary · write: body → body + thread + summary (below) |
+| Final diary text | the user's body | a **summary** made when the conversation is wrapped up |
 | `Question` mode | its own toggle position | folded into the chat tab (see below) |
 
 ### Home screen
@@ -57,38 +57,60 @@ and gives every entry an **AI summary** that pulls everything about that entry i
 
 ### Entry screens — **Decision**
 
+Both modes start with a single wide pane and grow panes only when there is something to put in them.
+
 ```
-대화로 쓰기 — 2 panes                 직접 쓰기 — 3 panes
-┌────────┬──────────┬───────┐        ┌────────┬───────┬────────┬───────┐
-│sidebar │ AI chat  │summary│        │sidebar │ body  │ thread │summary│
-└────────┴──────────┴───────┘        └────────┴───────┴────────┴───────┘
+대화로 쓰기                            after wrap-up
+┌────────┬──────────────────────┐    ┌────────┬──────────┬───────┐
+│sidebar │ AI chat (full width) │ →  │sidebar │ AI chat  │summary│
+│        │      [일기로 정리하기] │    └────────┴──────────┴───────┘
+└────────┴──────────────────────┘
+
+직접 쓰기 — after save                 after the first thread message
+┌────────┬──────────────────────┐    ┌────────┬───────┬────────┬───────┐
+│sidebar │ body (full width)    │ →  │sidebar │ body  │ thread │summary│
+│        │ 💬 이 일기로 AI와 얘기하기 │    └────────┴───────┴────────┴───────┘
+│        │ [question chip] [chip]│
+└────────┴──────────────────────┘
 ```
 
-- **대화로 쓰기** — the user and the AI talk about the day; beside the chat, the **summary** turns the
-  conversation into a diary text. The summary *is* this entry's diary.
-- **직접 쓰기** — the user's **body** (the original, exactly as written), a **thread** with the AI
-  about that body, and a **summary** of the body and the thread together.
-- The summary is the one thing both modes share: it is what the entry "says" once everything is in.
+- **대화로 쓰기** — while talking, the chat takes the full width, like any chat app. When the
+  conversation is wrapped up, the **summary** appears beside it. The summary *is* this entry's diary.
+- **직접 쓰기** — after save, the detail screen shows only the user's **body** (the original, exactly as
+  written), with an invitation to talk about it below. Only when the user starts that conversation do
+  the **thread** and, once wrapped up, the **summary** of body and thread appear.
+- Most written entries never open a thread, so most of them never need three panes.
 
 ### Decision records (v2)
 
-**How does the summary update?** — **Decision: automatically.**
-It regenerates in the background after AI replies, debounced over a few turns rather than on every
-message (cost, and a text that keeps shifting is hard to read). There is no "wrap up" button and no
-user editing of the summary for now. Before there is enough to summarize (the first one or two turns),
-the pane shows an empty state such as "대화를 더 나누면 여기에 일기가 정리돼요".
+**When is the summary made?** — **Decision: when a conversation is wrapped up, not continuously.**
+Regenerating while the user talks costs a call per few turns and gives a text that keeps shifting; a
+summary made at the end is cheaper, stable, and lets the chat use the full width while it lasts.
+- **Explicit wrap-up**: a "일기로 정리하기" button. After a few turns the AI may offer it in the
+  conversation ("오늘 이야기 정리해 둘까요?").
+- **Safety net**: chats rarely end cleanly — people just leave. A conversation left without wrapping up
+  is summarized the next time the entry is opened or listed, so no entry stays without a summary,
+  title or emotion color for long.
+- **Re-wrap**: talking more after a summary exists marks it outdated and shows "다시 정리".
+- No user editing of the summary for now.
+
 This does not break v1's ownership rule: the summary is its own field and never overwrites anything
 the user wrote — the body (write mode) and the user's messages (chat mode) stay as they were.
+
+**What happens when a written entry is saved?** — **Decision: title, emotion and question chips — no summary.**
+One analysis call on save produces the title, the emotion and the question chips. A summary of the body
+alone would be a near-copy of it, so the summary waits until a thread adds something and is wrapped up
+like any conversation.
 
 **What do the sidebar title and emotion color follow?** — **Decision: the summary.**
 When a written entry has no conversation yet, there is no summary, so they follow the body.
 
-**Summary pane before a written entry has a thread** — **Decision: collapsed.**
-Summarizing the body alone would put a near-copy of it right beside it. The pane stays collapsed until
-the first thread message, and the thread pane takes the space.
+**Thread UI on a written entry** — **Decision: hidden until the user starts a conversation.**
+The detail screen shows the body full width with "이 일기로 AI와 얘기하기" and the question chips below
+it. Tapping a chip or the button opens the thread pane; the summary pane follows on wrap-up.
 
 **Screen width for three panes** — **Decision: collapsible sidebar on desktop, tabs when narrow.**
-Write mode is four columns including the sidebar, which is tight on a 1280–1440px laptop. The sidebar
+A written entry with a thread is four columns including the sidebar, which is tight on a 1280–1440px laptop. The sidebar
 collapses on desktop; on narrow screens `원본 | 대화 | 요약` become tabs, and on mobile they always are.
 This is a screen the design stage must draw and check, not one to settle in code.
 
@@ -99,8 +121,8 @@ first person; keep the user's own words and phrasing wherever possible; never ad
 say; length proportional to what was said. A diary only stays worth rereading if it sounds like its writer.
 
 **Does the AI start the thread after a written entry?** — **Decision: no — it offers question chips.**
-On save the thread pane shows two or three question chips about the entry ("회의가 길어진 게 왜 신경
-쓰였어요?"); tapping one sends it as the first message, ignoring them costs nothing. An unprompted AI
+Below the saved body sit two or three question chips about the entry ("회의가 길어진 게 왜 신경
+쓰였어요?"); tapping one opens the thread with it as the first message, ignoring them costs nothing. An unprompted AI
 message would feel like homework to someone who just chose to write alone, while an empty thread gives
 no place to start. The chips come from the emotion analysis that already runs on save
 (`DiaryEmotion.questions`), so they add no API call. Chip tap rate later shows whether the AI should
@@ -131,8 +153,8 @@ Mostly questions that help the user say more (what happened, how it felt, what s
 acknowledgement, no praise or consolation by default — the same reasoning as v1's analysis cards.
 
 **When does emotion analysis run?** — **Decision: on the text the sidebar follows.**
-On save for a written entry (the body), and again when its summary first appears; for a chat entry,
-when the summary updates. It shares the summary's debounce so it never runs per message.
+On save for a written entry (the body), and again whenever a summary is made; for a chat entry, whenever
+its summary is made (wrap-up, re-wrap or the safety net). It never runs per message.
 
 **List edit mode scope** — **Decision: delete and rename for v2.** Multi-select delete and renaming the
 AI title. Merging entries is deferred.
@@ -142,8 +164,9 @@ AI title. Merging entries is deferred.
 - A `kind = 'diary'` thread requires a `diary_id` (`threads_diary_kind_ck`), but a chat entry has no
   body. **Create the `diaries` row when the entry starts** — one entry = one row, constraint intact.
 - New columns on `diaries`: `mode` (`'chat' | 'write'`) and `summary` (the AI text, separate from
-  `content`, which stays the user's own body and is empty for chat entries). Possibly a summary
-  timestamp to drive the debounce. This is a new migration; numbering and applying it is a human
+  `content`, which stays the user's own body and is empty for chat entries). Plus a way to tell an
+  outdated summary (e.g. when it was made vs. the thread's last message), for "다시 정리" and the
+  safety net. This is a new migration; numbering and applying it is a human
   decision per `docs/HARNESS.md`.
 - `/diary/[date]` → `/diary/[id]` (already planned in v1) becomes a prerequisite, since every entry is
   opened by id.
@@ -155,8 +178,8 @@ Plan → design → review → build, each stage closed before the next:
 1. **This section** — agreed 2026-10-16.
 2. **Design** in Claude Design — a design system first (color incl. the 7-emotion palette in
    `src/lib/emotion.ts`, type, spacing, components), then the key screens: home (both tabs, empty and
-   mid-entry), the 2-pane chat entry, the 3-pane write entry (incl. collapsed summary and narrow-width
-   tabs), sidebar, calendar dialog, list edit, mobile, empty/loading/error, light and dark.
+   mid-entry), the chat entry before and after wrap-up, the written entry before and after a thread
+   opens (incl. narrow-width tabs), sidebar, calendar dialog, list edit, mobile, empty/loading/error, light and dark.
 3. **Review** — Claude Code checks the design against the code (token mapping to `variables.scss`,
    reusable `Calendar` / `Thread` / `SplitPanel`, schema fit, the 250 KB bundle budget) and the result
    is written up as a handoff spec.
