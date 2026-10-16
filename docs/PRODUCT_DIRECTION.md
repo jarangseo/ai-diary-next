@@ -1,6 +1,9 @@
 # Product Direction
 
-> Created: 2026-05-31 · Updated: 2026-08-19 · Status: **v1 (direction + v1 screen structure agreed)**
+> Created: 2026-05-31 · Updated: 2026-10-16 · Status: **v1 agreed · v2 draft (pending owner review)**
+>
+> v2 revises v1's entry screen and core loop; where they conflict, the [v2 section](#v2--two-ways-to-write-draft)
+> wins once it leaves draft. Everything else in v1 still stands.
 
 This document records the **product north star** for ai-diary-next. It is the reference point for feature priority and design decisions.
 
@@ -13,6 +16,125 @@ This document records the **product north star** for ai-diary-next. It is the re
 The first draft started as a "shared diary chat for multiple people" (see README). v0 redefined it as
 **personal-AI-diary-centric**. v1 keeps that definition and changes **how the user reaches it**:
 from a calendar-first app to a **single-input, thread-based app**.
+
+## v2 — two ways to write (draft)
+
+> Drafted 2026-10-16. Recommendations below are proposals until the owner signs off; each
+> decision marked **Proposed** becomes **Decision** when agreed.
+
+### What changes from v1
+
+v1 assumed every user starts by writing alone and talks to the AI afterwards. In practice there are
+two kinds of days — days you want to talk it out, and days you want to write quietly — and the same
+person has both. v2 makes the **home screen a "new entry" screen with two tabs**, one per way of writing.
+
+| | v1 | v2 |
+|---|---|---|
+| Home | one input box, `Diary ⟷ Question` toggle | new-entry screen, `대화로 쓰기 ⟷ 직접 쓰기` tabs |
+| How an entry starts | user writes the body | **either** a conversation **or** the body |
+| AI after writing | analysis cards → wrap-up thread | same, for written entries; for chat entries the conversation *is* the start |
+| `Question` mode | its own toggle position | folded into the chat tab (see below) |
+
+### Home screen
+
+```
+┌─────────────┬──────────────────────────────────┐
+│ + 새 일기   │      자랑님, 오늘은 어땠어요?     │
+│ 📅 캘린더   │   [ 대화로 쓰기 | 직접 쓰기 ]     │
+│ ─ 오늘 ──── │                                  │
+│ 😌 퇴근길.. │   chat: messages + bottom input  │
+│ ─ 어제 ──── │   write: large textarea + save   │
+│ 🙂 운동..   │                                  │
+│ [편집]      │                                  │
+└─────────────┴──────────────────────────────────┘
+```
+
+- Opening the app lands here — no calendar, no "오늘 쓰기" button. The screen *is* the new entry.
+- A greeting above the tabs invites the day ("자랑님, 오늘은 어땠어요?"). Copy varies by time of day
+  and by whether today already has an entry; it is a prompt, never a form label.
+- Sidebar, calendar dialog and list edit mode follow the v1 sections below unchanged.
+
+### One entry, two starting orders
+
+Both tabs produce the **same kind of item**: one `Diary` row (the canonical text) with one thread
+beside it. The tabs differ only in which half comes first.
+
+- **대화로 쓰기** — the conversation comes first. The AI asks about the day, follows up, and keeps the
+  user talking. When the user presses **"일기로 정리"**, the AI drafts a body from the conversation; the
+  user edits and saves it. The conversation stays attached as the entry's thread.
+- **직접 쓰기** — the body comes first, exactly like the v1 editor. On save, analysis cards and the
+  wrap-up thread appear as in v1's diary detail.
+
+The sidebar, the calendar and the detail screen therefore never need to know which tab an entry came
+from — but the origin is recorded, so the default tab can later be decided from usage data.
+
+### Decision records (v2)
+
+**What does a chat entry keep?** — **Proposed: both the conversation and a body.**
+The conversation is the source; a body exists only after the user presses "일기로 정리" and accepts
+the draft. This keeps v1's ownership rule (the AI never rewrites an entry on its own) while removing the
+blank-page friction. A chat that is never wrapped up still appears in the sidebar, marked as unwrapped.
+
+**When can the user switch tabs?** — **Proposed: freely until the entry starts, then fixed.**
+Switching preserves whatever is typed (carrying v1's toggle rule over). Once the first message is sent
+or the body is saved, the entry's origin is fixed — switching mid-conversation would leave the screen
+with no clear thing to show. Starting the other way means starting a new entry.
+
+**Default tab** — **Proposed: `대화로 쓰기` on first use, then the last-used tab.**
+The first impression should match the product's identity ("a diary you write *with* AI"). After that,
+respect habit. Revisit with origin data.
+
+**Where did `Question` mode go?** — **Proposed: into the chat tab's AI.**
+The v1 non-negotiable still stands: the AI must be able to answer from the user's own past entries
+("you've mentioned overtime every Wednesday for two weeks"). In v2 that ability lives inside the chat
+tab rather than behind a separate toggle. Without it the chat tab is "one more GPT" — so it is part of
+the chat tab's definition, not a later add-on. The retrieval approach (full context vs. retrieval)
+remains open.
+
+**What is one entry?** — **Proposed: one conversation or one written body = one entry.**
+A day can hold several entries (v1 already allows this). Coming back to an existing entry continues its
+thread rather than creating a new one; "+ 새 일기" always starts a fresh one. No automatic merging per day.
+
+**AI tone in the chat tab** — **Proposed: curious, not flattering.**
+Mostly questions that help the user say more (what happened, how it felt, what stayed with them); brief
+acknowledgement, no praise or consolation by default — the same reasoning as v1's analysis cards. It
+should also recognize when the user is done and offer "일기로 정리" rather than asking forever.
+
+**When do emotion analysis and the title run?** — **Proposed: when the body is saved, for both tabs.**
+Analysis reads the canonical text, so a chat entry is analyzed at "일기로 정리". Until then an unwrapped
+chat shows a neutral icon and a provisional title from the first message.
+
+**List edit mode scope** — **Proposed: delete and rename for v2.** Multi-select delete and renaming the
+AI title. Merging entries is deferred.
+
+### Schema implications (v2)
+
+- A `kind = 'diary'` thread requires a `diary_id` (`threads_diary_kind_ck`), but a chat entry has no body
+  yet. **Create the `diaries` row when the conversation starts**, with empty content, and fill it at
+  "일기로 정리" — this keeps one entry = one row and leaves the constraint intact.
+- Add an origin column on `diaries` (`'chat' | 'write'`) and a way to tell an unwrapped entry
+  (empty body or an explicit flag). This is a new migration; numbering and applying it is a human
+  decision per `docs/HARNESS.md`.
+- `/diary/[date]` → `/diary/[id]` (already planned in v1) becomes a prerequisite, since every entry,
+  chat or written, is opened by id.
+
+### Process for v2
+
+Plan → design → review → build, each stage closed before the next:
+
+1. **This section** — owner reviews and turns every **Proposed** into a **Decision**.
+2. **Design** in Claude Design — a design system first (color incl. the 7-emotion palette in
+   `src/lib/emotion.ts`, type, spacing, components), then the key screens: home (both tabs, empty and
+   mid-entry), wrap-up draft, sidebar, calendar dialog, list edit, mobile drawer, empty/loading/error,
+   light and dark.
+3. **Review** — Claude Code checks the design against the code (token mapping to `variables.scss`,
+   reusable `Calendar` / `Thread` / `SplitPanel`, schema fit, the 250 KB bundle budget) and the result
+   is written up as a handoff spec.
+4. **Build** — one issue per stage, small PRs: tokens → app shell (sidebar + layout) → write tab →
+   chat tab → "일기로 정리" → calendar dialog → list edit → remove the calendar home and `/diary/write`.
+
+No in-app versioning: v2 replaces v1's screens progressively on `main`, and this document plus git
+history is the record of what changed.
 
 ## What changed in v1 (and why)
 
