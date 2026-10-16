@@ -1,9 +1,9 @@
 # Product Direction
 
-> Created: 2026-05-31 · Updated: 2026-10-16 · Status: **v1 agreed · v2 draft (pending owner review)**
+> Created: 2026-05-31 · Updated: 2026-10-16 · Status: **v1 agreed · v2 agreed**
 >
-> v2 revises v1's entry screen and core loop; where they conflict, the [v2 section](#v2--two-ways-to-write-draft)
-> wins once it leaves draft. Everything else in v1 still stands.
+> v2 revises v1's entry screen and core loop; where they conflict, the [v2 section](#v2--two-ways-to-write)
+> wins. Everything else in v1 still stands.
 
 This document records the **product north star** for ai-diary-next. It is the reference point for feature priority and design decisions.
 
@@ -17,10 +17,9 @@ The first draft started as a "shared diary chat for multiple people" (see README
 **personal-AI-diary-centric**. v1 keeps that definition and changes **how the user reaches it**:
 from a calendar-first app to a **single-input, thread-based app**.
 
-## v2 — two ways to write (draft)
+## v2 — two ways to write
 
-> Drafted 2026-10-16. Items marked **Decision** were agreed by the owner; items marked
-> **Proposed** are recommendations still awaiting sign-off.
+> Agreed 2026-10-16.
 
 ### What changes from v1
 
@@ -93,13 +92,13 @@ Write mode is four columns including the sidebar, which is tight on a 1280–144
 collapses on desktop; on narrow screens `원본 | 대화 | 요약` become tabs, and on mobile they always are.
 This is a screen the design stage must draw and check, not one to settle in code.
 
-**How the summary is written** — **Proposed.**
+**How the summary is written** — **Decision.**
 The existing chat-room summarizer (`src/app/api/chat/summarize/route.ts`) is not reused as is — it
 saves immediately, caps output at 3–5 sentences, and asks for a "warm" tone that embellishes. Instead:
 first person; keep the user's own words and phrasing wherever possible; never add facts the user did not
 say; length proportional to what was said. A diary only stays worth rereading if it sounds like its writer.
 
-**Does the AI start the thread after a written entry?** — **Proposed: no — it offers question chips.**
+**Does the AI start the thread after a written entry?** — **Decision: no — it offers question chips.**
 On save the thread pane shows two or three question chips about the entry ("회의가 길어진 게 왜 신경
 쓰였어요?"); tapping one sends it as the first message, ignoring them costs nothing. An unprompted AI
 message would feel like homework to someone who just chose to write alone, while an empty thread gives
@@ -107,35 +106,35 @@ no place to start. The chips come from the emotion analysis that already runs on
 (`DiaryEmotion.questions`), so they add no API call. Chip tap rate later shows whether the AI should
 speak first.
 
-**When can the user switch tabs?** — **Proposed: freely until the entry starts, then fixed.**
+**When can the user switch tabs?** — **Decision: freely until the entry starts, then fixed.**
 Switching preserves whatever is typed (carrying v1's toggle rule over). Once the first message is sent
 or the body is saved, the entry's mode is fixed — the two modes have different layouts. Starting the
 other way means starting a new entry.
 
-**Default tab** — **Proposed: `대화로 쓰기` on first use, then the last-used tab.**
+**Default tab** — **Decision: `대화로 쓰기` on first use, then the last-used tab.**
 The first impression should match the product's identity ("a diary you write *with* AI"). After that,
 respect habit. Record each entry's mode so this can be revisited with data.
 
-**Where did `Question` mode go?** — **Proposed: into the chat tab's AI.**
+**Where did `Question` mode go?** — **Decision: into the chat tab's AI.**
 The v1 non-negotiable still stands: the AI must be able to answer from the user's own past entries
 ("you've mentioned overtime every Wednesday for two weeks"). In v2 that ability lives inside the chat
 tab rather than behind a separate toggle. Without it the chat tab is "one more GPT" — so it is part of
 the chat tab's definition, not a later add-on. The retrieval approach (full context vs. retrieval)
 remains open.
 
-**What is one entry?** — **Proposed: one conversation or one written body = one entry.**
+**What is one entry?** — **Decision: one conversation or one written body = one entry.**
 A day can hold several entries (v1 already allows this). Coming back to an existing entry continues its
 thread rather than creating a new one; "+ 새 일기" always starts a fresh one. No automatic merging per day.
 
-**AI tone in conversation** — **Proposed: curious, not flattering.**
+**AI tone in conversation** — **Decision: curious, not flattering.**
 Mostly questions that help the user say more (what happened, how it felt, what stayed with them); brief
 acknowledgement, no praise or consolation by default — the same reasoning as v1's analysis cards.
 
-**When does emotion analysis run?** — **Proposed: on the text the sidebar follows.**
+**When does emotion analysis run?** — **Decision: on the text the sidebar follows.**
 On save for a written entry (the body), and again when its summary first appears; for a chat entry,
 when the summary updates. It shares the summary's debounce so it never runs per message.
 
-**List edit mode scope** — **Proposed: delete and rename for v2.** Multi-select delete and renaming the
+**List edit mode scope** — **Decision: delete and rename for v2.** Multi-select delete and renaming the
 AI title. Merging entries is deferred.
 
 ### Schema implications (v2)
@@ -153,7 +152,7 @@ AI title. Merging entries is deferred.
 
 Plan → design → review → build, each stage closed before the next:
 
-1. **This section** — owner turns every **Proposed** into a **Decision**.
+1. **This section** — agreed 2026-10-16.
 2. **Design** in Claude Design — a design system first (color incl. the 7-emotion palette in
    `src/lib/emotion.ts`, type, spacing, components), then the key screens: home (both tabs, empty and
    mid-entry), the 2-pane chat entry, the 3-pane write entry (incl. collapsed summary and narrow-width
