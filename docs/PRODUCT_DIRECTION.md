@@ -186,7 +186,7 @@ completion moment. Details: the design system README.
   `emotion_source` (`'ai' | 'user'`) so re-analysis never overwrites a user choice. Accepted additions
   are appended to `content`.
 - A per-user `memory_enabled` setting.
-- `/diary/[date]` → `/diary/[id]` is a prerequisite. One migration (002); numbering and applying it is a
+- `/diary/[date]` → `/diary/[id]` is done (#47). One migration (002); numbering and applying it is a
   human decision per `docs/HARNESS.md`.
 
 ### Release plan

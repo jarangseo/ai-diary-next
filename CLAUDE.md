@@ -68,12 +68,13 @@ src/
 
 ```ts
 // types/diary.ts
-Diary { date(YYYY-MM-DD, PK), content, isRecordOnly, emotion?, createdAt, updatedAt }
+Diary { id(uuid, PK), date(YYYY-MM-DD), title?, content, isRecordOnly, emotion?, createdAt, updatedAt }
 DiaryEmotion { primary, score, summary, questions? }   // DB columns reserved; analysis not implemented
 ```
 
 DB tables: `diaries`, `chat_rooms`, `room_members`, `chat_messages` (schema in README).
-Diary upsert conflict key: `(user_id, date)`. `saveDiary` updates if a row exists (preserving `created_at`), inserts otherwise.
+Entries are identified by `id`; `date` is a filter (a date can hold several entries). `createDiary` always inserts,
+`updateDiary(userId, id, …)` edits. Routes: `/diary/[id]`, `/api/diary/[id]` (GET/PATCH/DELETE), `GET /api/diary?date=` lists a day.
 
 ## Current status
 
@@ -97,11 +98,9 @@ dynamic calendar home (month nav, entry dots, date click → detail/write), warm
   otherwise a cold `pnpm install` exits 1 with `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` alone is
   **no longer sufficient** on pnpm 11 — it is still read, but the install fails anyway. CI installs with
   `--ignore-scripts` so it never hit this; Vercel does a plain install, so it broke there first.
-- **`/diary/[date]` breaks on dates with more than one entry** (known debt). Migration 001 removed the
-  one-entry-per-day constraint, but `getDiary` still resolves by `(user_id, date)` with `.single()`,
-  which returns PGRST116 (406) once a date holds two rows. The route has to move to `/diary/[id]`
-  with a separate date-based *list* endpoint. Until then the seed keeps its doubled days away from
-  the dates in active use. See `docs/migrations/001_diary_id_and_threads.sql`.
+- **Never resolve an entry by date.** A date holds any number of entries since migration 001;
+  `.single()`/`.maybeSingle()` on `(user_id, date)` errors (PGRST116, 406) once it holds two. Use
+  `getDiaryById`, or `listDiariesByDate` for a day. Old `/diary/YYYY-MM-DD` links redirect to the list.
 - **Socket.IO server is a separate repo** (`ai-diary-chat-server`, port 4000). Run it separately to test realtime chat.
 - On Next.js 16, `src/middleware.ts` emits a deprecation warning (`proxy` migration recommended). Harmless for now.
 - Styling is unified on SCSS design tokens (`variables.scss`, `mixins.scss`). New styles should use tokens.
@@ -113,8 +112,12 @@ How to carry out a change (keep each step small and verifiable):
 
 0. **Start from an issue, assigned to you** — the assignee is the lock that keeps two people
    (or two loops) off the same task. Team rules: `CONTRIBUTING.md`; loops: `docs/HARNESS.md`.
-1. **Branch from `main`** — name as `type/short-desc` (e.g. `feat/emotion-analysis`,
-   `fix/...`, `perf/...`, `docs/...`). Never commit directly to `main`.
+1. **Work in a new worktree, branched from `main`** — before the first edit, create one
+   (`EnterWorktree`, `claude --worktree <name>`, or `git worktree add .claude/worktrees/<name>
+   -b type/short-desc origin/main`). Never edit or switch branches in the main checkout:
+   another session may be using it. `require-worktree.sh` blocks it. Name branches
+   `type/short-desc` (e.g. `feat/emotion-analysis`, `fix/...`, `perf/...`, `docs/...`).
+   Never commit directly to `main`.
 2. **Read before you write** — for a new feature, first read the relevant code and explain
    the current structure, then propose a plan. **Do not start with code.**
 3. **Plan first for non-trivial work** — agree the design (and any product decisions)
@@ -133,6 +136,10 @@ How to carry out a change (keep each step small and verifiable):
 7. **Review before merge** — run `/code-review` for correctness/cleanup; `/security-review`
    when touching auth, API input, or the service-role DB path. Open a small PR into `main`;
    it needs an approval from someone else (for a loop's PR, not the person who ran it).
+   While the repo is in the *Solo phase* (`CONTRIBUTING.md`), the owner merges after
+   ticking the checklist.
+   **Fill in the template's *Human review* checklist**: point each item at where it
+   applies or mark it `N/A — <why>`, and name at most three files the reviewer must read.
 
 Code-style conventions (English artifacts, `services/`/`lib/` layering, SCSS tokens) are in
 **Conventions** below.

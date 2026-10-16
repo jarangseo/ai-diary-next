@@ -44,8 +44,9 @@ them a poor oracle for "implement X".
   set**, which is nowhere but the test run. Unset, the provider is not registered, so
   there is no path to authenticate through it. It also checks the value, not just the
   presence: if it were ever set in a deployed environment it would be account takeover.
-- Writes under a dedicated `e2e-test-user` on a fixed far-past date, so runs update one
-  row instead of accumulating, and never touch a real account's entries.
+- Writes under a dedicated `e2e-test-user` on far-past dates, so it never touches a real
+  account's entries. Every save is a new row, so each spec deletes what it wrote
+  (`e2e/entries.ts`); `withdrawal.spec.ts` runs last and wipes the rest.
 - `test.fixme` marks the oracle for work not yet done. `thread.spec.ts` is the acceptance
   test for putting the thread on the diary detail page: remove `fixme` as part of that
   task, and if it passes, the task is done.
@@ -68,8 +69,8 @@ Two things this cost, worth not re-learning:
 ## Running a loop
 
 ```
-/loop Work on GitHub issue #<n> (label agent-ready, assigned to me). Branch as
-type/short-desc from main. Implement it, run `pnpm verify`, and only if it passes,
+/loop Work on GitHub issue #<n> (label agent-ready, assigned to me). Create a new
+worktree branched from origin/main as type/short-desc, and work only there. Implement it, run `pnpm verify`, and only if it passes,
 commit and push. When the issue's "Done when" check passes, open a draft PR that
 closes #<n>, labelled agent. On failure, fix and retry at most twice, then stop,
 comment on the issue with what failed, and report. Never touch the production
@@ -142,6 +143,30 @@ each task an owner and a state that lives outside every branch.
 `docs/TODAY_PLAN.md` stays as the record of what was done before the move; new work goes
 to Issues.
 
+### One session, one worktree
+
+A checkout has one HEAD. Two sessions in the same directory share it, so one session's
+`git checkout` silently moves the other's branch out from under it.
+
+That happened on 2026-10-16. One session switched the main checkout to a docs branch and
+committed. A second session then created its feature branch from that state without
+noticing, and its pull request (#48) carried the first session's commit. Every check
+passed. Another session spotted the branch change and warned the person running both.
+
+- **Every session that changes files starts in a new worktree** under `.claude/worktrees/`,
+  branched from `origin/main`: `EnterWorktree` from inside Claude Code,
+  `claude --worktree <name>` from the shell, or
+  `git worktree add .claude/worktrees/<name> -b type/short-desc origin/main`.
+- **The main checkout is read-only for sessions.** Use it to read, `git pull`, and add
+  worktrees. `require-worktree.sh` blocks edits there and blocks git commands that move
+  HEAD there. It fails open, and `CLAUDE_ALLOW_MAIN_CHECKOUT=1` lets a person working
+  alone opt out on purpose.
+- **Never use bare `git stash` / `git stash pop`.** The stash stack is shared by every
+  worktree, so `pop` can take another session's work. Set work aside with a WIP commit
+  instead.
+- **Remove the worktree after the pull request merges** (`git worktree remove <path>`),
+  or `git worktree list` fills with stale directories.
+
 ### Passing is not approving
 
 `block-main-commit.sh` stops Claude from committing to `main` on one machine. It does not
@@ -155,6 +180,12 @@ enforced by GitHub:
   judgement a review exists to check.
 - Loop pull requests open as drafts with the `agent` label. The person who ran the loop
   marks it ready once they have read it; a teammate approves it.
+
+**Until the first teammate joins, none of this is enforced.** Branch protection is off,
+and the owner merges their own pull requests after ticking the *Human review* checklist.
+The checklist is the only gate in this phase, so a loop's pull request is never merged
+with an item left blank. Ending this phase is a checklist in `CONTRIBUTING.md`, *Solo
+phase*.
 
 ### Shared environments
 

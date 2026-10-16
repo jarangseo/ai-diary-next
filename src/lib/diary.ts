@@ -3,24 +3,49 @@ import type { DiaryEmotion } from '@/types/diary'
 import { rowToDiary } from './diaryMapper'
 import { analyzeEmotion } from './emotionAnalysis'
 
+// Ids are uuids. Anything else would reach Postgres as a cast error (22P02) and surface as
+// a 500, so it is answered as "no such entry" before a query is made — old date-shaped
+// URLs (`/diary/2026-10-10`) land here.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function isDiaryId(value: string) {
+  return UUID.test(value)
+}
+
 /**
- * The entry for a date, or null if there is none. Throws when the query fails, so a dead
- * database is not mistaken for an empty diary.
- *
- * `maybeSingle`, not `single`: `single` reports zero rows as an error (PGRST116), which is
- * what made "no entry" and "query failed" impossible to tell apart.
+ * One entry by id, or null if there is none (or it belongs to someone else). Throws when
+ * the query fails, so a dead database is not mistaken for a missing entry.
  */
-export async function getDiary(userId: string, date: string) {
+export async function getDiaryById(userId: string, id: string) {
+  if (!isDiaryId(id)) return null
+
+  const { data, error } = await supabase
+    .from('diaries')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error) throw new Error(`getDiaryById failed: ${error.message}`)
+
+  return data ? rowToDiary(data) : null
+}
+
+/**
+ * Every entry on a date, oldest first. Since migration 001 a date is a filter, not an
+ * identity — it can hold any number of entries. Throws when the query fails.
+ */
+export async function listDiariesByDate(userId: string, date: string) {
   const { data, error } = await supabase
     .from('diaries')
     .select('*')
     .eq('user_id', userId)
     .eq('date', date)
-    .maybeSingle()
+    .order('created_at', { ascending: true })
 
-  if (error) throw new Error(`getDiary failed: ${error.message}`)
+  if (error) throw new Error(`listDiariesByDate failed: ${error.message}`)
 
-  return data ? rowToDiary(data) : null
+  return data.map(rowToDiary)
 }
 
 export async function getAllDiaries(userId: string) {
@@ -33,50 +58,73 @@ export async function getAllDiaries(userId: string) {
   return data?.map(rowToDiary) ?? []
 }
 
-export async function saveDiary(
+/** Always a new entry, even on a date that already has one. Returns its id, or null. */
+export async function createDiary(
   userId: string,
   date: string,
   content: string,
   isRecordOnly: boolean
-) {
+): Promise<string | null> {
   const now = new Date().toISOString()
 
-  // If an entry exists for the date, update it (preserving created_at); otherwise insert.
-  // The previous upsert overwrote created_at on every save, losing the original creation time.
-  // A failed lookup is a failed save, not "no entry": inserting then would put a second row
-  // on a date that already has one.
-  let existing
-  try {
-    existing = await getDiary(userId, date)
-  } catch (error) {
-    console.error(error)
-    return false
+  const { data, error } = await supabase
+    .from('diaries')
+    .insert({
+      user_id: userId,
+      date,
+      content,
+      is_record_only: isRecordOnly,
+      created_at: now,
+      updated_at: now,
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    console.error('createDiary failed:', error.message)
+    return null
   }
 
-  if (existing) {
-    const { error } = await supabase
-      .from('diaries')
-      .update({ content, is_record_only: isRecordOnly, updated_at: now })
-      .eq('user_id', userId)
-      .eq('date', date)
-
-    return !error
-  }
-
-  const { error } = await supabase.from('diaries').insert({
-    user_id: userId,
-    date,
-    content,
-    is_record_only: isRecordOnly,
-    created_at: now,
-    updated_at: now,
-  })
-
-  return !error
+  return data.id
 }
 
-export async function deleteDiary(userId: string, date: string) {
-  const { error } = await supabase.from('diaries').delete().eq('user_id', userId).eq('date', date)
+export type UpdateResult = 'updated' | 'not_found' | 'failed'
+
+/**
+ * Edits an entry's body and date, leaving `created_at` alone. An update that matches no
+ * row is not an error to PostgREST, so the matched rows are read back: an id that is not
+ * this user's is `not_found`, not a silent success.
+ */
+export async function updateDiary(
+  userId: string,
+  id: string,
+  fields: { date: string; content: string }
+): Promise<UpdateResult> {
+  if (!isDiaryId(id)) return 'not_found'
+
+  const { data, error } = await supabase
+    .from('diaries')
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('id', id)
+    .select('id')
+
+  if (error) {
+    console.error('updateDiary failed:', error.message)
+    return 'failed'
+  }
+
+  return data.length > 0 ? 'updated' : 'not_found'
+}
+
+/**
+ * Removes one entry, and with it the conversation about it — the foreign keys cascade
+ * from the entry to its thread and messages. Deleting an id that is already gone succeeds.
+ */
+export async function deleteDiary(userId: string, id: string) {
+  if (!isDiaryId(id)) return true
+
+  const { error } = await supabase.from('diaries').delete().eq('user_id', userId).eq('id', id)
 
   return !error
 }
@@ -87,7 +135,7 @@ export async function deleteDiary(userId: string, date: string) {
 // alone (emotion is derived metadata, not a user content edit).
 export async function updateDiaryEmotion(
   userId: string,
-  date: string,
+  id: string,
   emotion: DiaryEmotion
 ): Promise<boolean> {
   const { error } = await supabase
@@ -99,7 +147,7 @@ export async function updateDiaryEmotion(
       emotion_questions: emotion.questions ?? null,
     })
     .eq('user_id', userId)
-    .eq('date', date)
+    .eq('id', id)
 
   // Best-effort, but never silent: a swallowed DB error here made an emotion-column
   // type mismatch (numeric overflow on the 0–100 score) hard to diagnose.
@@ -112,14 +160,14 @@ export async function updateDiaryEmotion(
 // (already-saved) entry. Both primitives swallow their own failures (analyzeEmotion
 // returns null, updateDiaryEmotion returns false), so this never throws — a diary
 // is always saved even if analysis or the emotion write fails. Returns the emotion
-// that was stored, or null. Call AFTER the entry is saved for the given date.
+// that was stored, or null. Call AFTER the entry is saved.
 export async function analyzeAndStoreEmotion(
   userId: string,
-  date: string,
+  id: string,
   content: string
 ): Promise<DiaryEmotion | null> {
   const emotion = await analyzeEmotion(content)
-  if (emotion) await updateDiaryEmotion(userId, date, emotion)
+  if (emotion) await updateDiaryEmotion(userId, id, emotion)
   return emotion
 }
 

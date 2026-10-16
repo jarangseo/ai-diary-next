@@ -1,3 +1,8 @@
+/** 'YYYY-MM-DD' in shape (the database rejects impossible dates such as 2026-02-31) */
+export function isDateKey(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
 export const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'] as const
 
 /** Date → 'YYYY-MM-DD' (local time) */

@@ -24,18 +24,37 @@ how agent loops are run, and why these rules exist, is in
    any issue otherwise.
 2. **Assign yourself before starting.** The assignee is the lock — don't start an issue
    someone else holds, and unassign yourself if you stop.
-3. **Branch from `main`** as `type/short-desc` (`feat/…`, `fix/…`, `docs/…`). One issue per
-   branch.
+3. **Branch from `main` in a new worktree** as `type/short-desc` (`feat/…`, `fix/…`,
+   `docs/…`). One issue per branch, one session per worktree; the main checkout is never
+   edited or switched (see *One session, one worktree* in `docs/HARNESS.md`).
 4. **Run `pnpm verify` before asking for review.** CI does not run E2E yet, so a green CI
    is not proof the feature works — your local `verify` is.
-5. **Open a pull request that closes the issue.** Fill in the template. Keep it small; split
-   it if the description needs headings.
+5. **Open a pull request that closes the issue.** Fill in the template, including the
+   *Human review* checklist: it is how a reviewer approves without reading every line.
+   Keep it small; split it if the description needs headings.
 6. **One approval from someone else, then merge.** For a pull request an agent loop
    opened, the approver is not the person who ran the loop. Pull requests that change the
    harness — `CLAUDE.md`, `CONTRIBUTING.md`, `docs/HARNESS.md`, `.claude/` — need **two**.
 
 `main` is protected: no direct pushes, no force-pushes, `verify` and `bundle-budget` must
 pass.
+
+### Solo phase (now — until the first teammate joins)
+
+The rules above are the team's target state. With one person, "approval from someone else"
+cannot happen, and GitHub does not let anyone approve their own pull request, so for now:
+
+- **Branch protection is off.** The owner merges their own pull requests.
+- **The *Human review* checklist stands in for the approver.** Fill in every item, then
+  tick each one yourself before merging. Never merge with an item left blank.
+- **Everything else still applies**: issue, worktree, `pnpm verify`, small pull requests,
+  hook tests.
+
+**The day the first teammate joins**, end this phase:
+
+1. Run the branch-protection command under *Repository setup* below.
+2. Add the teammate to `.github/CODEOWNERS`.
+3. Delete this section in a pull request — the teammate's approval is its first.
 
 ## Agent loops
 

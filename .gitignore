@@ -55,3 +55,6 @@ playwright-report/
 # personal Claude Code settings and context (shared ones are .claude/settings.json, CLAUDE.md)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# one worktree per session (docs/HARNESS.md, "One session, one worktree")
+.claude/worktrees/

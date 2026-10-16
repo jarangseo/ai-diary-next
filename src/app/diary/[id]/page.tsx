@@ -1,23 +1,28 @@
 import { auth } from '@/auth'
-import { getDiary } from '@/lib/diary'
+import { getDiaryById } from '@/lib/diary'
 import { getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { DeleteEntryButton } from '@/components/Diary/DeleteEntryButton'
 import { EmotionPending } from '@/components/Diary/EmotionPending'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
 import { BackButton } from '@/components/BackButton/BackButton'
-import { formatDateLabel } from '@/lib/date'
+import { formatDateLabel, isDateKey } from '@/lib/date'
 import { getEmotionMeta } from '@/lib/emotion'
 import styles from './page.module.scss'
 
-export default async function DiaryDetailPage({ params }: { params: Promise<{ date: string }> }) {
+export default async function DiaryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user?.id) return notFound()
 
-  const { date } = await params
-  const diary = await getDiary(session.user.id, date)
+  const { id } = await params
+
+  // Entries were addressed by date before migration 001. A date can hold several now, so
+  // an old link opens that day's list rather than guessing which entry it meant.
+  if (isDateKey(id)) redirect(`/diary?view=list&date=${id}`)
+
+  const diary = await getDiaryById(session.user.id, id)
   if (!diary) return notFound()
 
   // Sequential on purpose, unlike the parallel queries elsewhere: each call genuinely
@@ -50,14 +55,14 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ da
             </span>
           )}
           <Link
-            href={`/diary/write?date=${diary.date}`}
+            href={`/diary/write?id=${diary.id}`}
             className={styles.editButton}
             aria-label="수정"
           >
             <PencilIcon size={16} />
             수정
           </Link>
-          <DeleteEntryButton date={diary.date} />
+          <DeleteEntryButton id={diary.id} />
         </div>
       </header>
 

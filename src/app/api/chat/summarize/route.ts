@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
 import { getMessages } from '@/lib/chat'
-import { saveDiary, analyzeAndStoreEmotion } from '@/lib/diary'
+import { createDiary, analyzeAndStoreEmotion } from '@/lib/diary'
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 
@@ -49,10 +49,16 @@ export async function POST(request: Request) {
 
   const diaryContent = response.choices[0]?.message?.content ?? ''
 
-  await saveDiary(session.user.id, date, diaryContent, false)
+  // A new entry every time: rooms are not linked to the entries made from them, so
+  // summarizing the same room twice yields two entries. Accepted while the chat area is
+  // deferred — v2's chat tab replaces this flow (see issue #47).
+  const id = await createDiary(session.user.id, date, diaryContent, false)
+  if (!id) {
+    return NextResponse.json({ error: 'Failed to save' }, { status: 500 })
+  }
 
   // Analyze the just-generated entry and store its emotion (best-effort).
-  const emotion = await analyzeAndStoreEmotion(session.user.id, date, diaryContent)
+  const emotion = await analyzeAndStoreEmotion(session.user.id, id, diaryContent)
 
-  return NextResponse.json({ content: diaryContent, date, emotion })
+  return NextResponse.json({ id, content: diaryContent, date, emotion })
 }
