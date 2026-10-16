@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Other sessions' worktrees: each is linted in its own run, not from the main checkout.
+    '.claude/worktrees/**',
   ]),
 ])
 
