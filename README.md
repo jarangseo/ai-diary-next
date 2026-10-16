@@ -1,6 +1,11 @@
 # AI Diary
 
-A shared diary chat application where friends write diaries together through real-time conversation, with AI participation.
+A personal AI diary: talk about your day (or write it) and it becomes a diary, with an AI that remembers past
+entries and a view of how your emotions flow over time.
+
+> Product direction: [`docs/PRODUCT_DIRECTION.md`](docs/PRODUCT_DIRECTION.md) · brief: [`docs/PRODUCT_BRIEF.md`](docs/PRODUCT_BRIEF.md).
+> This README started as a *shared diary chat*; that multi-user realtime part is kept but **deferred**, and the
+> sections below that describe it (architecture, chat features, the Socket.IO server) apply only to that area.
 
 ## Architecture
 
@@ -49,7 +54,10 @@ Browser (Next.js)
 
 | Feature | Description |
 |---------|-------------|
-| Chat Rooms | Create date-based diary rooms, invite friends via shareable link |
+| Diary entries | Write, view and delete entries by id; several per date; calendar home |
+| Emotion analysis | Each entry is analyzed on save (7 fixed emotions, intensity, reflective questions) |
+| Conversation per entry | Talk with the AI about an entry, streamed, with a daily message cap |
+| Chat Rooms *(deferred)* | Create date-based diary rooms, invite friends via shareable link |
 | Real-time Messaging | Instant message delivery via WebSocket |
 | Typing Indicator | Throttled (1s) to minimize socket events, auto-clears after 2s |
 | Online Presence | Live user list with online/offline status |
@@ -115,7 +123,7 @@ cp .env.example .env.local
 # Fill in your credentials
 ```
 
-### 3. Run the Socket.IO server
+### 3. Run the Socket.IO server (only for the deferred chat rooms)
 
 ```bash
 git clone https://github.com/jarangseo/ai-diary-chat-server.git
@@ -149,8 +157,12 @@ room_members (room_id, user_id, joined_at)
 -- Messages with type discrimination
 chat_messages (id, room_id, user_id, content, type['user'|'ai'|'system'], created_at)
 
--- Diary entries
-diaries (id, user_id, date, content, is_record_only, emotion_*, created_at, updated_at)
+-- Diary entries (id is the key; a date can hold several entries)
+diaries (id, user_id, date, title, content, is_record_only, emotion_*, created_at, updated_at)
+
+-- Conversation about an entry, and its messages (migration 001)
+threads (id, user_id, diary_id, kind['diary'|'question'], title, created_at, updated_at)
+messages (id, thread_id, role['user'|'assistant'|'system'], content, tool_results, created_at)
 ```
 
 ## Testing Strategy

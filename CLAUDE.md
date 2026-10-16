@@ -1,14 +1,17 @@
 # CLAUDE.md
 
-Guide for getting context quickly in future sessions. For detailed setup see `README.md`; for product direction see `docs/PRODUCT_DIRECTION.md`;
+Guide for getting context quickly in future sessions. For detailed setup see `README.md`; for product direction see `docs/PRODUCT_DIRECTION.md` (v2)
+and `docs/PRODUCT_BRIEF.md` (who, metrics, cost, timeline);
 for how the team and agent workflow fits together see `docs/GUIDE.en.md`.
 
 ## Project overview
 
-**ai-diary-next** — a **personal AI diary app**: record your day by talking with AI and look back on the flow of your emotions.
+**ai-diary-next** — a **personal AI diary app**: talk about your day (or write it) and it becomes a diary; an AI that
+remembers past entries; the entries add up to the flow of your emotions.
 
-> ⚠️ `README.md` is written around the initial "shared diary chat" concept. **The confirmed direction is personal-AI-diary-centric**,
-> with multi-user realtime chat kept (infra only) but deferred. On any conflict, `docs/PRODUCT_DIRECTION.md` wins.
+> The v2 redesign (conversation-first home, memory, new design system) is **designed but not built yet** — see the v2
+> section and release plan in `docs/PRODUCT_DIRECTION.md`; designs are linked from `docs/reviews/`. Multi-user realtime
+> chat is kept (infra only) but deferred. On any conflict, `docs/PRODUCT_DIRECTION.md` wins.
 
 ## Tech stack
 
@@ -46,15 +49,17 @@ src/
       DiaryHome.tsx         # calendar|list toggle + "오늘 쓰기" (client)
       write/                # diary writing
       list/                 # redirect → /diary (superseded by the list toggle)
-      [date]/               # per-date detail
+      [id]/                 # entry detail (+ ThreadPanel: conversation about the entry)
       chat/                 # chat room list / [roomId] / join  (deferred area)
-    settings/               # settings (not implemented — placeholder)
+    settings/               # account withdrawal + data notice (v2 settings not built yet)
     login/                  # OAuth login
     api/
       auth/[...nextauth]/   # NextAuth
-      diary/                # diary CRUD API
+      diary/                # diary CRUD API (by id) + emotion analysis scheduling
+      threads/              # per-entry conversation messages (daily cap: lib/usage.ts)
+      account/              # account deletion
       chat/                 # chat rooms / messages / summarize (AI diary generation) API
-  components/               # Gnb (top bar), SplitPanel, Calendar, Chat/*, DiaryList, BackButton, WebVitals
+  components/               # Gnb, SplitPanel, Calendar, Chat/*, DiaryList, Thread, Settings, BackButton, WebVitals
   hooks/useSocket.ts        # Socket.IO connection/events (has tests)
   lib/                      # supabase, diary, chat (server-side queries), date helpers
   services/chatServices.ts  # client fetch wrapper (components never call fetch directly)
@@ -69,23 +74,24 @@ src/
 ```ts
 // types/diary.ts
 Diary { id(uuid, PK), date(YYYY-MM-DD), title?, content, isRecordOnly, emotion?, createdAt, updatedAt }
-DiaryEmotion { primary, score, summary, questions? }   // DB columns reserved; analysis not implemented
+DiaryEmotion { primary, score, summary, questions? }   // analyzed on save and on chat summarize
 ```
 
-DB tables: `diaries`, `chat_rooms`, `room_members`, `chat_messages` (schema in README).
+DB tables: `diaries`, `threads`, `messages` (migration 001), and the deferred `chat_rooms`, `room_members`, `chat_messages`.
 Entries are identified by `id`; `date` is a filter (a date can hold several entries). `createDiary` always inserts,
 `updateDiary(userId, id, …)` edits. Routes: `/diary/[id]`, `/api/diary/[id]` (GET/PATCH/DELETE), `GET /api/diary?date=` lists a day.
 
 ## Current status
 
-**Working**: write/view diary, OAuth, realtime chat rooms, chat→diary auto summary (`api/chat/summarize`, GPT-4o-mini),
-dynamic calendar home (month nav, entry dots, date click → detail/write), warm-tone redesign.
+**Working (v1 app)**: OAuth; write/view/delete entries by id, several per date; calendar home (month nav, entry
+dots, date → day list); emotion analysis on save + badge on the detail page; a conversation panel on each entry
+(streaming, daily cap of 20 user messages); account withdrawal; chat→diary summary (`api/chat/summarize`);
+realtime chat rooms (deferred area).
 
-**Incomplete / next (order for completing the personal-diary loop)**:
-1. Emotion analysis — **in progress**; data layer (`lib/emotion.ts`, `updateDiaryEmotion`) + AI engine
-   (`lib/emotionAnalysis.ts`) done. Remaining: trigger wiring (save/summarize) + UI. Tracker: `docs/EMOTION_ANALYSIS.md`
-2. Settings page — `app/settings/page.tsx` is an empty placeholder
-3. (deferred) chat `@ai` mention; DiaryList search/filter/edit buttons removed in redesign
+**Next**: v2, by the release plan in `docs/PRODUCT_DIRECTION.md`. Before v2.0 (see `docs/PRODUCT_BRIEF.md`):
+usability test, per-user cost estimate and a re-set daily cap, legal review (sensitive data, overseas transfer,
+privacy policy), data-scope hardening and a dev database. Still open from v1: emotion-colored calendar dots
+(`docs/EMOTION_ANALYSIS.md`).
 
 ## Environment variables (`.env.local`)
 
