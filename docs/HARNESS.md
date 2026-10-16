@@ -68,8 +68,8 @@ Two things this cost, worth not re-learning:
 ## Running a loop
 
 ```
-/loop Work on GitHub issue #<n> (label agent-ready, assigned to me). Branch as
-type/short-desc from main. Implement it, run `pnpm verify`, and only if it passes,
+/loop Work on GitHub issue #<n> (label agent-ready, assigned to me). Create a new
+worktree branched from origin/main as type/short-desc, and work only there. Implement it, run `pnpm verify`, and only if it passes,
 commit and push. When the issue's "Done when" check passes, open a draft PR that
 closes #<n>, labelled agent. On failure, fix and retry at most twice, then stop,
 comment on the issue with what failed, and report. Never touch the production
@@ -141,6 +141,30 @@ each task an owner and a state that lives outside every branch.
 
 `docs/TODAY_PLAN.md` stays as the record of what was done before the move; new work goes
 to Issues.
+
+### One session, one worktree
+
+A checkout has one HEAD. Two sessions in the same directory share it, so one session's
+`git checkout` silently moves the other's branch out from under it.
+
+That happened on 2026-10-16. One session switched the main checkout to a docs branch and
+committed. A second session then created its feature branch from that state without
+noticing, and its pull request (#48) carried the first session's commit. Every check
+passed. Another session spotted the branch change and warned the person running both.
+
+- **Every session that changes files starts in a new worktree** under `.claude/worktrees/`,
+  branched from `origin/main`: `EnterWorktree` from inside Claude Code,
+  `claude --worktree <name>` from the shell, or
+  `git worktree add .claude/worktrees/<name> -b type/short-desc origin/main`.
+- **The main checkout is read-only for sessions.** Use it to read, `git pull`, and add
+  worktrees. `require-worktree.sh` blocks edits there and blocks git commands that move
+  HEAD there. It fails open, and `CLAUDE_ALLOW_MAIN_CHECKOUT=1` lets a person working
+  alone opt out on purpose.
+- **Never use bare `git stash` / `git stash pop`.** The stash stack is shared by every
+  worktree, so `pop` can take another session's work. Set work aside with a WIP commit
+  instead.
+- **Remove the worktree after the pull request merges** (`git worktree remove <path>`),
+  or `git worktree list` fills with stale directories.
 
 ### Passing is not approving
 

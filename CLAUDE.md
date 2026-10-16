@@ -113,8 +113,12 @@ How to carry out a change (keep each step small and verifiable):
 
 0. **Start from an issue, assigned to you** — the assignee is the lock that keeps two people
    (or two loops) off the same task. Team rules: `CONTRIBUTING.md`; loops: `docs/HARNESS.md`.
-1. **Branch from `main`** — name as `type/short-desc` (e.g. `feat/emotion-analysis`,
-   `fix/...`, `perf/...`, `docs/...`). Never commit directly to `main`.
+1. **Work in a new worktree, branched from `main`** — before the first edit, create one
+   (`EnterWorktree`, `claude --worktree <name>`, or `git worktree add .claude/worktrees/<name>
+   -b type/short-desc origin/main`). Never edit or switch branches in the main checkout:
+   another session may be using it. `require-worktree.sh` blocks it. Name branches
+   `type/short-desc` (e.g. `feat/emotion-analysis`, `fix/...`, `perf/...`, `docs/...`).
+   Never commit directly to `main`.
 2. **Read before you write** — for a new feature, first read the relevant code and explain
    the current structure, then propose a plan. **Do not start with code.**
 3. **Plan first for non-trivial work** — agree the design (and any product decisions)
@@ -133,6 +137,8 @@ How to carry out a change (keep each step small and verifiable):
 7. **Review before merge** — run `/code-review` for correctness/cleanup; `/security-review`
    when touching auth, API input, or the service-role DB path. Open a small PR into `main`;
    it needs an approval from someone else (for a loop's PR, not the person who ran it).
+   **Fill in the template's *Human review* checklist**: point each item at where it
+   applies or mark it `N/A — <why>`, and name at most three files the reviewer must read.
 
 Code-style conventions (English artifacts, `services/`/`lib/` layering, SCSS tokens) are in
 **Conventions** below.
