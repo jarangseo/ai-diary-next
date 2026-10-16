@@ -17,11 +17,11 @@ function WriteForm() {
   const [date, setDate] = useState(initialDate)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
+  // Editing holds the form until the entry has loaded. Typing into it earlier would either
+  // vanish under the prefill or — if kept — replace the whole stored body on save, and a
+  // save before the date arrives would move the entry to today. A failed load keeps it held.
+  const [loaded, setLoaded] = useState(!editId)
 
-  // Editing: load the entry. Never overwrite what is already typed. The prefill is a late
-  // arrival — anyone who starts writing before it lands would otherwise watch their text
-  // vanish, which is the worst thing a diary app can do. The functional form is required:
-  // `content` here is the value captured when this effect ran, not the current one.
   useEffect(() => {
     if (!editId) return
     let active = true
@@ -29,8 +29,9 @@ function WriteForm() {
       .then((res) => (res.ok ? res.json() : null))
       .then((diary) => {
         if (!active || !diary) return
-        setContent((current) => (current ? current : diary.content))
+        setContent(diary.content)
         setDate(diary.date)
+        setLoaded(true)
       })
     return () => {
       active = false
@@ -69,11 +70,12 @@ function WriteForm() {
           className={styles.dateInput}
           value={date}
           onChange={(e) => setDate(e.target.value)}
+          disabled={!loaded}
         />
         <button
           className={styles.saveButton}
           onClick={handleSave}
-          disabled={saving || !content.trim()}
+          disabled={saving || !loaded || !content.trim()}
         >
           {saving ? '저장 중…' : editId ? '수정' : '저장'}
         </button>
@@ -83,6 +85,7 @@ function WriteForm() {
         placeholder="오늘 하루는 어땠나요?"
         value={content}
         onChange={(e) => setContent(e.target.value)}
+        readOnly={!loaded}
         autoFocus
       />
     </article>

@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { deleteDiary, getDiaryById, updateDiary } from '@/lib/diary'
+import { isDateKey } from '@/lib/date'
 import { NextResponse } from 'next/server'
 import { scheduleEmotionAnalysis } from '../scheduleAnalysis'
 
@@ -37,8 +38,11 @@ export async function PATCH(request: Request, { params }: Params) {
   const { id } = await params
   const { date, content } = await request.json()
 
-  if (!date || !content) {
-    return NextResponse.json({ error: 'date and content are required' }, { status: 400 })
+  if (typeof date !== 'string' || !isDateKey(date) || !content) {
+    return NextResponse.json(
+      { error: 'date (YYYY-MM-DD) and content are required' },
+      { status: 400 }
+    )
   }
 
   const result = await updateDiary(session.user.id, id, { date, content })

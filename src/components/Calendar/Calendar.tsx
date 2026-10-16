@@ -17,7 +17,9 @@ export function Calendar({ entries = [] }: CalendarProps) {
   const todayKey = toDateKey(today)
   const idsByDate = new Map<string, string[]>()
   for (const { id, date } of entries) {
-    idsByDate.set(date, [...(idsByDate.get(date) ?? []), id])
+    const ids = idsByDate.get(date)
+    if (ids) ids.push(id)
+    else idsByDate.set(date, [id])
   }
 
   // One entry opens it; several open that day's list, since there is no single entry

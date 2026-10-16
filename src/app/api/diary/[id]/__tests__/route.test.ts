@@ -64,3 +64,17 @@ describe('PATCH /api/diary/[id]', () => {
     expect(updateDiary).not.toHaveBeenCalled()
   })
 })
+
+describe('PATCH /api/diary/[id] input', () => {
+  it('answers 400 for a date that is not YYYY-MM-DD, before touching the database', async () => {
+    const res = await PATCH(
+      new Request(`http://test/api/diary/${ID}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ date: 'tomorrow', content: 'x' }),
+      }),
+      { params: Promise.resolve({ id: ID }) }
+    )
+    expect(res.status).toBe(400)
+    expect(updateDiary).not.toHaveBeenCalled()
+  })
+})

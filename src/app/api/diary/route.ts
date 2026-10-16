@@ -1,9 +1,8 @@
 import { auth } from '@/auth'
 import { createDiary, listDiariesByDate } from '@/lib/diary'
+import { isDateKey } from '@/lib/date'
 import { NextResponse } from 'next/server'
 import { scheduleEmotionAnalysis } from './scheduleAnalysis'
-
-const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 /** Every entry on a date — a date is a filter since migration 001, not an identity. */
 export async function GET(request: Request) {
@@ -13,7 +12,7 @@ export async function GET(request: Request) {
   }
 
   const date = new URL(request.url).searchParams.get('date')
-  if (!date || !DATE.test(date)) {
+  if (!date || !isDateKey(date)) {
     return NextResponse.json({ error: 'date (YYYY-MM-DD) is required' }, { status: 400 })
   }
 
@@ -34,8 +33,11 @@ export async function POST(request: Request) {
 
   const { date, content, isRecordOnly } = await request.json()
 
-  if (!date || !content) {
-    return NextResponse.json({ error: 'date and content are required' }, { status: 400 })
+  if (typeof date !== 'string' || !isDateKey(date) || !content) {
+    return NextResponse.json(
+      { error: 'date (YYYY-MM-DD) and content are required' },
+      { status: 400 }
+    )
   }
 
   const id = await createDiary(session.user.id, date, content, Boolean(isRecordOnly))

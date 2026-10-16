@@ -8,7 +8,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
 import { BackButton } from '@/components/BackButton/BackButton'
-import { formatDateLabel } from '@/lib/date'
+import { formatDateLabel, isDateKey } from '@/lib/date'
 import { getEmotionMeta } from '@/lib/emotion'
 import styles from './page.module.scss'
 
@@ -20,7 +20,7 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
 
   // Entries were addressed by date before migration 001. A date can hold several now, so
   // an old link opens that day's list rather than guessing which entry it meant.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(id)) redirect(`/diary?view=list&date=${id}`)
+  if (isDateKey(id)) redirect(`/diary?view=list&date=${id}`)
 
   const diary = await getDiaryById(session.user.id, id)
   if (!diary) return notFound()
