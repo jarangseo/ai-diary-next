@@ -164,8 +164,8 @@ acknowledgement; no praise or consolation by default.
   to turn memory off. (Confirm the provider's data-use terms before the copy is final.)
 - Export (Markdown/JSON) in settings; deleting the account deletes every entry and conversation.
 - **Crisis protocol:** when a conversation signals self-harm or suicide, the AI stops diary questions,
-  responds with care, and shows Korean crisis lines (자살예방상담전화 109, 정신건강위기상담전화
-  1577-0199). The app never presents itself as therapy.
+  responds with care, and shows crisis lines **for the user's country** (Korea: 자살예방상담전화 109,
+  정신건강위기상담전화 1577-0199). The app never presents itself as therapy. See *Beyond Korea* below.
 - App lock is v2.3.
 
 **First run, failure and limits** — **Decision: every state has a screen.**
@@ -212,7 +212,7 @@ owner took the recommended option on every one.
 | When is first run shown? | Whenever the user has **no entries**, including after deleting them all |
 | Greeting without a name | "반가워요. 오늘은 어땠어요?" |
 | Messages unsent while offline | A **`다시 보내기`** button once back online; never sent automatically, so a message that did reach the server is not sent twice |
-| When does the daily limit reset? | **Midnight Korea time** |
+| When does the daily limit reset? | **The user's own midnight**, from a time zone stored per user. *(Revised the same day: first "midnight Korea time", changed when the service was confirmed as not Korea-only.)* Until that column exists (migration 002) the code keeps UTC (#59) |
 | Detecting a crisis signal | The model judges while replying, and a word list double-checks explicit phrases. When unsure, show the crisis card: missing one is worse than showing it needlessly |
 | Export in v2.0 | **Hidden**; it ships in v2.2 as the release plan says |
 | Account deletion label | **"계정과 모든 일기 삭제"**; the confirmation keeps today's "일기와 대화를 모두 지우고 탈퇴할까요?" |
@@ -223,10 +223,28 @@ OpenAI's API data-use terms checked: how long sent content is kept, and whether 
 training. It is required before v2.0 ships, but it does not block building.
 
 **Code that disagrees with these decisions** (each becomes its own issue):
-- `countUserMessagesToday` (`src/lib/threads.ts`) counts from **UTC** midnight, which is 09:00 in Korea,
-  so a message written at 01:00 counts toward the previous day.
-- The over-limit notice in `src/lib/usage.ts` uses different copy ("오늘 AI 응답 한도를 다 썼어요…").
-- The settings page labels account deletion `탈퇴하기`, and `e2e/withdrawal.spec.ts` asserts that label.
+- `countUserMessagesToday` (`src/lib/threads.ts`) counts from **UTC** midnight, not the user's (#59,
+  blocked on migration 002).
+- The over-limit notice in `src/lib/usage.ts` uses different copy ("오늘 AI 응답 한도를 다 썼어요…") (#60).
+- The settings page labels account deletion `탈퇴하기`, and `e2e/withdrawal.spec.ts` asserts that label (#61).
+
+### Beyond Korea — **Decision (2026-10-18): Korean first, global-ready from the start**
+
+The service is not meant to stay in Korea. v2.0 launches in Korean, but the pieces that are expensive
+to retrofit are built for other countries now; translations and per-market launches come later.
+Retrofitting after v2 would mean touching every screen again.
+
+| Area | Decision |
+|---|---|
+| Time | Every "today" (daily limit, sidebar 오늘/어제, greeting time of day, "1년 전 오늘", an entry's default date) uses the **user's time zone, stored per user** on the server. It is set from the browser at sign-up and changeable in settings. Never a hard-coded zone. It is not sent per request, because a client-supplied zone would let anyone reset the daily limit at will |
+| UI strings | An **i18n layer goes in at the start of the v2 build**, before the first v2 screen, so no v2 screen is written with inline copy. Korean is the source language; other languages are added later |
+| Dates and numbers | Formatted with `Intl` for the user's locale. No hand-built "10월 16일 금요일" |
+| AI | Replies, drafts and titles follow the **language the user writes in**. Emotion keys stay language-neutral in code (`tired`, not `지침`), with labels per locale |
+| Crisis protocol | Lines **per country**. Korea's are above. A country without a curated list shows an international helpline directory (which one: open, to choose before a non-Korean launch) |
+| Fonts | Gowun Batang covers Hangul. Other scripts need a fallback display face, chosen with the first non-Korean locale |
+| Law | Before launching where GDPR-type law applies: consent at sign-up, export (would move from v2.2 to that launch), and stating where data is processed. Account deletion already exists |
+
+### Schema implications (v2)
 
 ### Schema implications (v2)
 
@@ -235,7 +253,8 @@ training. It is required before v2.0 ships, but it does not block building.
   user may edit) with `summary_edited_at` and a way to tell an outdated draft; `emotion_secondary`;
   `emotion_source` (`'ai' | 'user'`) so re-analysis never overwrites a user choice. Accepted additions
   are appended to `content`.
-- A per-user `memory_enabled` setting.
+- Per-user settings: `memory_enabled`, `timezone` (IANA name, e.g. `Asia/Seoul`) and `locale`. They
+  live in a user settings table, since the app has no users table of its own (`user_id` is the OAuth id).
 - `/diary/[date]` → `/diary/[id]` is done (#47). One migration (002); numbering and applying it is a
   human decision per `docs/HARNESS.md`.
 
@@ -243,7 +262,7 @@ training. It is required before v2.0 ships, but it does not block building.
 
 | Release | Contents |
 |---|---|
-| **v2.0** | New design system and shell (sidebar, mobile-first home), 대화로 쓰기 with wrap-up and the 일기 at the centre, memory greeting + recent-window context + source chips + setting, emotion correction, first run, failure and limit states, privacy notice, crisis protocol |
+| **v2.0** | New design system and shell (sidebar, mobile-first home), 대화로 쓰기 with wrap-up and the 일기 at the centre, memory greeting + recent-window context + source chips + setting, emotion correction, first run, failure and limit states, privacy notice, crisis protocol; global-ready foundations (stored time zone, i18n layer, `Intl` dates, per-country crisis lines), still in Korean only |
 | **v2.1** | 직접 쓰기, question chips, `일기에 덧붙이기` |
 | **v2.2** | Calendar dialog with the month line, list edit, export, "1년 전 오늘" |
 | **v2.3** | Full-archive retrieval, app lock |

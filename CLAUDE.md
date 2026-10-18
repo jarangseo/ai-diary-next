@@ -157,6 +157,9 @@ Code-style conventions (English artifacts, `services/`/`lib/` layering, SCSS tok
 - Keep technical terms and code identifiers in their original form.
 - Clients go through the `services/` wrapper rather than calling `fetch` directly.
 - Server-side DB access goes through functions in `lib/`.
+- **Global-ready.** The service will expand beyond Korea (`docs/PRODUCT_DIRECTION.md`, *Beyond
+  Korea*). Never hard-code a time zone, locale or date format. Use the user's stored time zone and
+  `Intl`. Once the i18n layer exists, new UI strings go through it. Crisis resources are per country.
 - Personal preferences go in `CLAUDE.local.md` (gitignored), not here — this file is shared
   by every teammate's agent and changes by pull request.
 ```
