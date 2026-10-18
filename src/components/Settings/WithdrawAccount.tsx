@@ -6,7 +6,8 @@ export function WithdrawAccount() {
   return (
     <ConfirmAction
       tone="danger"
-      label="탈퇴하기"
+      // Names what goes, not the act: "탈퇴" alone does not say the diaries go with it.
+      label="계정과 모든 일기 삭제"
       question="일기와 대화를 모두 지우고 탈퇴할까요?"
       confirmLabel="탈퇴"
       onConfirm={async () => {

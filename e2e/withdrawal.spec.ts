@@ -15,7 +15,7 @@ test('withdrawing removes the account’s entries', async ({ page }) => {
   expect((await page.request.get(`/api/diary/${id}`)).status()).toBe(200)
 
   await page.goto('/settings')
-  await page.getByRole('button', { name: '탈퇴하기' }).click()
+  await page.getByRole('button', { name: '계정과 모든 일기 삭제' }).click()
   await page
     .getByRole('group', { name: '일기와 대화를 모두 지우고 탈퇴할까요?' })
     .getByRole('button', { name: '탈퇴' })
