@@ -1,7 +1,7 @@
 -- 003 — memory notes (#108) and RLS on the chat tables (#100)
 --
--- STATUS: DRAFT — NOT APPLIED. Apply to development (`ai-diary-next-dev`) first, then
--- production (docs/migrations/README.md). Numbering and applying are a person's call.
+-- STATUS: APPLIED — development 2026-10-19, then production 2026-10-19 (both by Claude via the
+-- dashboard, at the owner's request). See ./README.md for the ledger.
 --
 -- Two unrelated, small changes in one migration, at the owner's request (2026-10-18), so
 -- the databases are touched once:

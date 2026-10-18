@@ -99,20 +99,80 @@ export async function loadMemoryEntries(
     .filter((entry) => entry.text)
 }
 
+// ---------------------------------------------------------------------------
+// Older entries (#108): one memory note each, beyond the 14-day window
+// ---------------------------------------------------------------------------
+
+const MAX_OLDER_CHARS = 2000
+const MAX_OLDER_NOTES = 60
+
+export interface MemoryNote {
+  date: string // YYYY-MM-DD
+  note: string
+}
+
+/**
+ * Older entries as one line each, newest first, capped — the layered half of memory. A
+ * year of entries stays within the cap because only the newest notes that fit are kept;
+ * monthly roll-ups are the next layer if that ever drops too much (PRODUCT_DIRECTION).
+ */
+export function buildOlderNotes(notes: MemoryNote[]): string {
+  const lines: string[] = []
+  let total = 0
+  const newestFirst = [...notes].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+  for (const { date, note } of newestFirst) {
+    const text = note.replace(/\s+/g, ' ').trim()
+    if (!text) continue
+    const line = `- ${date}: ${text}`
+    if (total + line.length > MAX_OLDER_CHARS) break
+    lines.push(line)
+    total += line.length + 1
+  }
+  return lines.join('\n')
+}
+
+/** Notes for entries dated before `before` (the window's first day), newest first. */
+export async function loadOlderNotes(userId: string, before: string): Promise<MemoryNote[]> {
+  const { data, error } = await supabase
+    .from('diaries')
+    .select('date, memory_note')
+    .eq('user_id', userId)
+    .lt('date', before)
+    .not('memory_note', 'is', null)
+    .order('date', { ascending: false })
+    .limit(MAX_OLDER_NOTES)
+
+  if (error) throw new Error(`loadOlderNotes failed: ${error.message}`)
+
+  return (data as { date: string; memory_note: string }[]).map((row) => ({
+    date: row.date,
+    note: row.memory_note,
+  }))
+}
+
+/** The two layers as one block for the prompt; either may be empty. */
+export function combineMemory(recent: string, older: string): string {
+  const parts: string[] = []
+  if (recent) parts.push(`[최근 2주]\n${recent}`)
+  if (older) parts.push(`[그 이전 — 한 줄 메모]\n${older}`)
+  return parts.join('\n\n')
+}
+
 /**
  * The memory block for a reply in the conversation about `currentEntryId`, or '' when
- * the user turned `지난 일기 참고하기` off, has nothing recent, or a read fails. Memory is
- * an addition to the reply: it never stops one.
+ * the user turned `지난 일기 참고하기` off, has nothing to remember, or a read fails.
+ * Memory is an addition to the reply: it never stops one.
  */
 export async function memoryFor(userId: string, currentEntryId?: string): Promise<string> {
   try {
     const { settings } = await getSettings(userId)
     if (!settings.memoryEnabled) return ''
-    const entries = await loadMemoryEntries(userId, {
-      excludeId: currentEntryId,
-      timeZone: settings.timezone,
-    })
-    return buildMemoryContext(entries)
+    const windowStart = dateKeyMinusDays(todayIn(new Date(), settings.timezone), MEMORY_DAYS)
+    const [entries, notes] = await Promise.all([
+      loadMemoryEntries(userId, { excludeId: currentEntryId, timeZone: settings.timezone }),
+      loadOlderNotes(userId, windowStart),
+    ])
+    return combineMemory(buildMemoryContext(entries), buildOlderNotes(notes))
   } catch (error) {
     console.error(error)
     return ''

@@ -190,6 +190,13 @@ describe('updateDiaryEmotion — the user owns the emotion', () => {
     expect(guardedAfter).toBe(true)
     expect(guardedBefore).toBe(false)
   })
+
+  it('stores the memory note with the reflection, so it follows the text whoever chose the emotion', async () => {
+    await updateDiaryEmotion('u1', ID, { ...emotion, memoryNote: '퇴근길 노을' })
+    const [reflection, chosen] = updates()
+    expect(reflection.fields).toMatchObject({ memory_note: '퇴근길 노을' })
+    expect(chosen.fields).not.toHaveProperty('memory_note')
+  })
 })
 
 describe('setUserEmotion', () => {
