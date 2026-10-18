@@ -1,14 +1,15 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ArrowUpIcon, SquareIcon } from 'lucide-react'
+import { ArrowUpIcon, SquareIcon, WifiOffIcon } from 'lucide-react'
 import { useThreadStream } from '@/hooks/useThreadStream'
 import { isWrapUpOffer } from '@/lib/wrapUp'
 import type { Message } from '@/types/thread'
 import { canSendMessage, remainingCount, sendsOnEnter } from '@/components/Home/composerRules'
 import { takeFirstMessage } from '@/components/Home/firstMessage'
 import { titleFromText } from '@/components/Shell/entryTitle'
+import { readDraft, writeDraft } from './draft'
 import styles from './ChatEntry.module.scss'
 
 interface Props {
@@ -18,8 +19,23 @@ interface Props {
   title?: string
   dateLabel: string
   initialMessages: Message[]
+  /**
+   * Messages left today before the daily limit (spec 5-2), read on the server when the
+   * page loads; null when no limit applies (test runs, like the route's bench path).
+   */
+  remainingToday: number | null
   /** Deterministic stream instead of the model — set by the page in test runs. */
   bench?: boolean
+}
+
+// navigator.onLine, kept current. The server render assumes online.
+const subscribeOnline = (onChange: () => void) => {
+  window.addEventListener('online', onChange)
+  window.addEventListener('offline', onChange)
+  return () => {
+    window.removeEventListener('online', onChange)
+    window.removeEventListener('offline', onChange)
+  }
 }
 
 // A touch screen as the main pointer: Enter is a new line there and the button sends.
@@ -28,18 +44,52 @@ const TOUCH = '(pointer: coarse)'
 const PIN_THRESHOLD_PX = 80
 
 /** Screen 1-1 / 1-1m: a 대화로 쓰기 entry before wrap-up. */
-export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages, bench }: Props) {
+export function ChatEntry({
+  entryId,
+  threadId,
+  title,
+  dateLabel,
+  initialMessages,
+  remainingToday,
+  bench,
+}: Props) {
   const t = useTranslations('ChatEntry')
   const tHome = useTranslations('Home.input')
   const tShell = useTranslations('Shell')
   const router = useRouter()
-  const { messages, status, send, stop, retry, delivery } = useThreadStream({
+  const { messages, status, send, stop, retry, delivery, limited } = useThreadStream({
     threadId,
     initialMessages,
     bench,
   })
   const [text, setText] = useState('')
   const streaming = status === 'streaming'
+  const online = useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true
+  )
+
+  // Counted here from the server's figure at load: the card replaces the input once the
+  // day's messages are used up. A 429 from the server says the same.
+  const [sent, setSent] = useState(0)
+  const atLimit = limited || (remainingToday !== null && sent >= remainingToday)
+  const sendCounted = async (value: string) => {
+    const ok = await send(value)
+    if (ok) setSent((n) => n + 1)
+    return ok
+  }
+  const retryCounted = async (id: string) => {
+    if (await retry(id)) setSent((n) => n + 1)
+  }
+
+  // What is being typed stays on this device until it is sent.
+  useEffect(() => setText(readDraft(entryId)), [entryId])
+  const changeText = (value: string) => {
+    setText(value)
+    writeDraft(entryId, value)
+  }
+
   const firstMessage = messages.find((m) => m.role === 'user')
   const heading =
     title || (firstMessage && titleFromText(firstMessage.content)) || tShell('untitled')
@@ -52,7 +102,7 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
     const timer = setTimeout(async () => {
       const first = takeFirstMessage(entryId)
       // The sidebar's title comes from the stored first message.
-      if (first && (await send(first))) router.refresh()
+      if (first && (await sendCounted(first))) router.refresh()
     }, 0)
     return () => clearTimeout(timer)
     // Mount only: the hand-off must never run a second time.
@@ -83,12 +133,18 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
     if (!canSend) return
     pinned.current = true
     // The message stays on screen whatever happens to it, so the input is cleared now.
-    setText('')
-    await send(text)
+    changeText('')
+    await sendCounted(text)
   }
 
   return (
     <div className={styles.chat}>
+      {!online && (
+        <p className={styles.offline} role="status">
+          <WifiOffIcon size={18} aria-hidden />
+          {t('offline')}
+        </p>
+      )}
       <header className={styles.header}>
         <h1 className={styles.title}>{heading}</h1>
         <p className={styles.subtitle}>
@@ -110,11 +166,27 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
                     <button
                       type="button"
                       className={styles.retry}
-                      onClick={() => retry(m.id)}
+                      onClick={() => retryCounted(m.id)}
                       disabled={streaming}
                     >
                       {t('retry')}
                     </button>
+                  </div>
+                )}
+                {delivery[m.id] === 'unsent' && (
+                  <div className={styles.failure}>
+                    <span>{t('unsent')}</span>
+                    {/* Only once back online, and only when asked: never sent by itself. */}
+                    {online && (
+                      <button
+                        type="button"
+                        className={styles.retry}
+                        onClick={() => retryCounted(m.id)}
+                        disabled={streaming}
+                      >
+                        {t('resend')}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -135,7 +207,14 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
           )}
       </div>
 
-      <form className={styles.composer} onSubmit={submit}>
+      {atLimit && (
+        <div className={styles.limit} role="status">
+          <p className={styles.limitTitle}>{t('limit.title')}</p>
+          <p className={styles.limitBody}>{t('limit.body')}</p>
+        </div>
+      )}
+      {/* Hidden rather than removed at the limit, so the draft in it is kept. */}
+      <form className={styles.composer} onSubmit={submit} hidden={atLimit}>
         <label className={styles.visuallyHidden} htmlFor="chat-message">
           {t('input.label')}
         </label>
@@ -145,7 +224,7 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
             className={styles.input}
             rows={1}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => changeText(e.target.value)}
             onKeyDown={(e) => {
               const touch = window.matchMedia(TOUCH).matches
               const key = {
