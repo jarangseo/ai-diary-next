@@ -1,6 +1,6 @@
 # Product Direction
 
-> Created: 2026-05-31 · Updated: 2026-10-16 · Status: **v2 agreed, revised after the midpoint review** · v1 kept as an appendix
+> Created: 2026-05-31 · Updated: 2026-10-18 · Status: **v2 agreed, revised after the midpoint review; v2.0 screens specified** · v1 kept as an appendix
 >
 > Who it is for, how success is measured, cost and timeline: [`PRODUCT_BRIEF.md`](./PRODUCT_BRIEF.md).
 >
@@ -180,6 +180,54 @@ Night desk theme changes color, not the shape of the user's words). The signatur
 references, is a single-ink hand-drawn illustration used only in empty states, first run and the
 completion moment. Details: the design system README.
 
+### Screen specs (v2.0) — decided 2026-10-18
+
+The v2.0 areas are specified rule by rule on the
+[screen canvas](https://claude.ai/artifact/UZYssW7Co3j3cSusLSWLKB) (private; ask the owner to share it),
+on two pages: **1 대화로 쓰기 · 동선과 명세** (a flow diagram and the screen spec) and
+**5 처음 · 예외 · 설정 · 명세**. Each line there is one rule and is meant to become one check in an
+issue's *Done when*. Shared states (hover, pressed, focus, disabled) are defined once in the design
+system, not per screen.
+
+The canvas is the full spec. The decisions below are the ones that were open until 2026-10-18; the
+owner took the recommended option on every one.
+
+**대화로 쓰기**
+
+| Question | Decision |
+|---|---|
+| When does the AI offer wrap-up? | After **4 user messages**. If declined (`조금 더 얘기할게요`), not again until 4 more |
+| Message length | **2,000 characters**; the remaining count shows from 1,800 |
+| Title before wrap-up | The first message's **first 30 characters**, replaced by the AI title at wrap-up (header and sidebar) |
+| Source chips per reply | **At most 3** |
+| Input while drafting | **Locked** until the draft is done |
+| Enter on mobile | **New line**; sending is the button only. Desktop keeps Enter to send, Shift+Enter for a new line |
+| Wrap-up after a crisis signal | The AI **does not offer** it in that conversation; the user can still wrap up by hand |
+| Daily-limit copy | The design's: "오늘은 여기까지 대화할 수 있어요. 쓴 글은 그대로 저장돼요." |
+
+**처음 · 예외 · 설정**
+
+| Question | Decision |
+|---|---|
+| When is first run shown? | Whenever the user has **no entries**, including after deleting them all |
+| Greeting without a name | "반가워요. 오늘은 어땠어요?" |
+| Messages unsent while offline | A **`다시 보내기`** button once back online; never sent automatically, so a message that did reach the server is not sent twice |
+| When does the daily limit reset? | **Midnight Korea time** |
+| Detecting a crisis signal | The model judges while replying, and a word list double-checks explicit phrases. When unsure, show the crisis card: missing one is worse than showing it needlessly |
+| Export in v2.0 | **Hidden**; it ships in v2.2 as the release plan says |
+| Account deletion label | **"계정과 모든 일기 삭제"**; the confirmation keeps today's "일기와 대화를 모두 지우고 탈퇴할까요?" |
+| Where the theme is saved | **Per device** (browser), so no new column |
+
+**Still open, for a person:** the provider sentence in settings ("[제공사 약관 확인 후 기재]") needs
+OpenAI's API data-use terms checked: how long sent content is kept, and whether it is used for
+training. It is required before v2.0 ships, but it does not block building.
+
+**Code that disagrees with these decisions** (each becomes its own issue):
+- `countUserMessagesToday` (`src/lib/threads.ts`) counts from **UTC** midnight, which is 09:00 in Korea,
+  so a message written at 01:00 counts toward the previous day.
+- The over-limit notice in `src/lib/usage.ts` uses different copy ("오늘 AI 응답 한도를 다 썼어요…").
+- The settings page labels account deletion `탈퇴하기`, and `e2e/withdrawal.spec.ts` asserts that label.
+
 ### Schema implications (v2)
 
 - **Create the `diaries` row when the entry starts** (a `kind = 'diary'` thread requires a `diary_id`).
@@ -203,7 +251,9 @@ completion moment. Details: the design system README.
 ### Process for v2
 
 1. **This section** — agreed and revised 2026-10-16.
-2. **Design** — design system and the screen canvas (links in the review).
+2. **Design** — design system and the screen canvas (links in the review). The v2.0 areas are
+   specified rule by rule (2026-10-18, see *Screen specs* above); v2.1+ areas are specified just
+   before they are built.
 3. **Usability test** — five people, the clickable canvas, one task: "오늘 일기를 써보세요". Before build.
 4. **Review against the code** — token mapping, reusable components, schema fit, the 250 KB budget;
    written up as a handoff spec.
