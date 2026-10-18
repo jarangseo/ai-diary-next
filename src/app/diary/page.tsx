@@ -20,5 +20,8 @@ export default async function DiaryPage({
     )
   }
 
-  return <Home userId={session?.user?.id} name={session?.user?.name ?? ''} />
+  // Given name only (서자랑 → 자랑). A session from before this change, or a provider without
+  // a given name (GitHub), falls back to the full name.
+  const name = session?.user?.givenName ?? session?.user?.name ?? ''
+  return <Home userId={session?.user?.id} name={name} />
 }

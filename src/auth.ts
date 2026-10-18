@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
 import GitHub from 'next-auth/providers/github'
 import Credentials from 'next-auth/providers/credentials'
+import { givenNameFrom } from '@/lib/givenName'
 
 // End-to-end tests cannot drive a Google consent screen, so they need a way in. This
 // provider is **only registered when E2E_AUTH_SECRET is present in the environment**,
@@ -31,18 +32,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: '/login', // custom login page
   },
   callbacks: {
-    jwt({ token, account, user }) {
+    jwt({ token, account, user, profile }) {
       // account is only available on first sign-in
       if (account) {
         // Credentials sign-ins carry the id on `user`; OAuth carries the stable provider
         // account id, which is what diaries are keyed by.
         token.sub = account.provider === 'e2e' ? (user?.id ?? token.sub) : account.providerAccountId
+        token.givenName = givenNameFrom(profile)
       }
       return token
     },
     session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub
+      }
+      if (session.user) {
+        session.user.givenName = typeof token.givenName === 'string' ? token.givenName : undefined
       }
       return session
     },
