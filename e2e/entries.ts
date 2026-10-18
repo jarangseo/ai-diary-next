@@ -21,3 +21,21 @@ export async function removeEntries(page: Page, ids: string[]) {
     await page.request.delete(`/api/diary/${id}`)
   }
 }
+
+/**
+ * Starts a 대화로 쓰기 entry from the home with `message` and returns its id once the entry
+ * page has sent that first message and the server has stored it (the response headers
+ * come after the insert). Pair it with `removeEntries`.
+ */
+export async function startChatEntry(page: Page, message: string) {
+  await page.goto('/diary')
+  await page.getByLabel('오늘 이야기').fill(message)
+  const stored = page.waitForResponse(
+    (r) => r.url().includes('/messages') && r.request().method() === 'POST'
+  )
+  await page.getByRole('button', { name: '보내기' }).click()
+  await expect(page).toHaveURL(ENTRY_URL)
+  const id = ENTRY_URL.exec(page.url())![1]
+  await stored
+  return id
+}
