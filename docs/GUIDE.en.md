@@ -73,11 +73,12 @@ flowchart TD
 |---|---|---|---|
 | ① Claude settings | Your machine, just **before** Claude runs a command | Committing to main, deploying, force-pushing, reading `.env` secrets | Commands a person types. Machines without these settings |
 | ② `pnpm verify` | Your machine, before the PR | Types → lint → format → unit tests → build → bundle size → **E2E (a real browser using the feature)** | Forgetting to run it. Judgement calls such as a performance regression |
-| ③ CI | GitHub, every PR | All of ② except E2E, plus the hook tests | **Whether the feature actually works** — E2E is not in CI yet |
+| ③ CI | GitHub, every PR | All of ②, E2E included (against the development database), plus the hook tests | What only a person can judge — that is ④ |
 | ④ Human review | The GitHub PR | Direction, copy and tone, performance judgement, "should we do this at all" | Fatigue — which is why ①–③ filter first |
 
-Only ② checks that the feature really works. So even with green CI, the PR author ticks
-"`pnpm verify` passes locally" in the PR. When CI runs E2E, that rule goes away.
+Since #97, CI runs E2E too, so a green CI means the feature works in a browser, not just
+that the code is coherent. Running `pnpm verify` locally first is still faster than waiting
+for CI to fail.
 
 ---
 
@@ -173,8 +174,6 @@ rest.
 
 Written into the rules but not yet real. Remove items as they land.
 
-- [ ] Run E2E in CI — needs a development Supabase project and GitHub secrets
-- [ ] A separate E2E user per run — today two simultaneous runs delete each other's data
 - [ ] Apply `main` branch protection; create the `agent-ready` / `agent` labels (commands at the end of `CONTRIBUTING.md`)
 - [ ] Set the daily loop budget per person
 - [ ] Add teammates to `CODEOWNERS`

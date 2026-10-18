@@ -5,7 +5,7 @@ Closes #
 
 ## How it was verified
 
-- [ ] `pnpm verify` passes locally (CI does not run E2E yet)
+- [ ] `pnpm verify` passes locally (CI runs it too, E2E included, as the `e2e` check)
 - [ ] The issue's *Done when* check passes
 - [ ] If a hook changed: its `.test.sh` changed too, and all hook suites pass
 

@@ -98,18 +98,26 @@ matched, and read the file back after changing it.
 an agent that cannot pass the check will keep changing things until the check passes for
 the wrong reason.
 
-## The gap: CI is weaker than the oracle
+## The gap: CI was weaker than the oracle (closed, #97)
 
-`pnpm verify` runs E2E. CI does not — it has no Supabase credentials — so the strongest
-check in this repo exists only on one machine.
+Until 2026-10-18, `pnpm verify` ran E2E but CI did not, because the only Supabase project
+was production. The strongest check existed only on the author's machine, and a PR's
+"E2E passed" was their word.
 
-That is not theoretical. Both bugs the E2E caught this week passed typecheck, unit tests,
-lint and format without complaint, because none of those opens a browser. Until CI runs
-the suite, a pull request can break the product and be told it is fine.
+That was not theoretical. Both bugs the E2E caught in its first week passed typecheck,
+unit tests, lint and format, because none of those opens a browser.
 
-The fix is a separate Supabase project for development and CI, which the repo wants
-anyway. Until it lands, the rule in [Shared environments](#shared-environments) applies:
-the pull request author runs `pnpm verify` locally and says so in the pull request.
+Now `.github/workflows/e2e.yml` runs the suite on every pull request and on `main`. It
+runs against the **development** Supabase project (`ai-diary-next-dev`), whose URL and
+service-role key are repository secrets (`DEV_SUPABASE_URL`,
+`DEV_SUPABASE_SERVICE_ROLE_KEY`). Production keys are not in CI at all. Each run has its
+own `E2E_RUN_ID`, so CI and local runs never touch each other's data. Running
+`pnpm verify` locally before review is still the habit, but the `e2e` check is what
+proves it.
+
+**Keep the development schema in step with production.** Every migration is applied to
+`ai-diary-next-dev` first, then to production (`docs/migrations/README.md`). A schema that
+drifts makes CI test a database that does not exist.
 
 ## What stays with a person
 
@@ -215,10 +223,10 @@ phase*.
   `docs/migrations/` in order, and point `.env.local` at the URL and service-role key it
   prints. The repo has no `supabase/` config yet — whoever sets it up first commits it,
   so the second person gets one command.
-- **CI runs E2E.** A green check is what a reviewer trusts, so it has to include the only
-  check that opens a browser. CI gets the development project's URL, service-role key and
-  `E2E_AUTH_SECRET` as repository secrets and runs `pnpm test:e2e` after the build. Until
-  then, see [the gap](#the-gap-ci-is-weaker-than-the-oracle).
+- **CI runs E2E** (done, #97). A green check is what a reviewer trusts, so it has to
+  include the only check that opens a browser. CI gets the development project's URL,
+  service-role key and `E2E_AUTH_SECRET` as repository secrets, and runs `pnpm test:e2e`
+  after the build (`.github/workflows/e2e.yml`).
 - **Each E2E run owns its data** (done, #87). Before it, every spec wrote as one
   `e2e-test-user` on port 3100. On 2026-10-18 two sessions ran `verify` at once, and one
   run's `withdrawal.spec.ts` wiped the other's entries mid-flight. The failures looked like
