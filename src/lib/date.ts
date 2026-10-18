@@ -13,9 +13,27 @@ export function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-/** 'YYYY-MM-DD' → Korean date label, e.g. '5월 31일 (토)' */
-export function formatDateLabel(dateKey: string): string {
+const dateLabelFormats = new Map<string, Intl.DateTimeFormat>()
+
+/**
+ * 'YYYY-MM-DD' → month, day and weekday in the locale's own order and words,
+ * e.g. '5월 31일 (일)' in ko, 'Sun, May 31' in en.
+ *
+ * A date key is a calendar day, not an instant, so it is read and formatted in UTC: that
+ * pins it to the day it names whatever zone the server or browser runs in. The user's
+ * time zone matters when deciding *which* day is today, not when printing a given one.
+ */
+export function formatDateLabel(dateKey: string, locale: string): string {
   const [y, m, d] = dateKey.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  return `${m}월 ${d}일 (${WEEKDAYS_KO[date.getDay()]})`
+  let format = dateLabelFormats.get(locale)
+  if (!format) {
+    format = new Intl.DateTimeFormat(locale, {
+      month: 'long',
+      day: 'numeric',
+      weekday: 'short',
+      timeZone: 'UTC',
+    })
+    dateLabelFormats.set(locale, format)
+  }
+  return format.format(new Date(Date.UTC(y, m - 1, d)))
 }

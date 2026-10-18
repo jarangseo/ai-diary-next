@@ -7,7 +7,7 @@ import { EmotionPending } from '@/components/Diary/EmotionPending'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { BackButton } from '@/components/BackButton/BackButton'
 import { formatDateLabel, isDateKey } from '@/lib/date'
 import { getEmotionMeta } from '@/lib/emotion'
@@ -26,7 +26,7 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
   const diary = await getDiaryById(session.user.id, id)
   if (!diary) return notFound()
 
-  const t = await getTranslations('DiaryDetail')
+  const [t, locale] = await Promise.all([getTranslations('DiaryDetail'), getLocale()])
 
   // Sequential on purpose, unlike the parallel queries elsewhere: each call genuinely
   // needs the previous one's id. Collapsing all three into one embedded read
@@ -49,7 +49,7 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
       <header className={styles.header}>
         <BackButton className={styles.backButton} />
         <time className={styles.date} dateTime={diary.date}>
-          {formatDateLabel(diary.date)}
+          {formatDateLabel(diary.date, locale)}
         </time>
         <div className={styles.actions}>
           {meta && (
