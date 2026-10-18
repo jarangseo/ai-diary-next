@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { appendMessage, countUserMessagesToday, getThread, listMessages } from '@/lib/threads'
 import { getDiaryById } from '@/lib/diary'
 import { shouldOfferWrapUp } from '@/lib/wrapUp'
+import { memoryFor } from '@/lib/memory'
 import { cappedParts, isOverDailyLimit, DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { fakeParts } from '@/lib/fakeStream'
 import { modelParts } from '@/lib/modelStream'
@@ -74,6 +75,8 @@ export async function POST(
     source = modelParts({
       history,
       text: text.trim(),
+      // The user's recent entries, unless they turned memory off (#76). Never blocks.
+      memory: await memoryFor(session.user.id, thread.diaryId),
       withEmotion: history.length === 0,
       signal: request.signal,
     })
