@@ -82,6 +82,33 @@ describe('modelParts', () => {
     ])
   })
 
+  it('adds the memory block to the system prompt only when there is one', async () => {
+    const withMemory: { messages?: unknown } = {}
+    await collect(
+      modelParts({
+        history: [],
+        text: '오늘도 회의가 길었어',
+        memory: '- 2026-10-13 Tue: 회의 끝나고 지쳤다',
+        withEmotion: false,
+        client: fakeClient(['ok'], withMemory),
+      })
+    )
+    const system = (withMemory.messages as { content: string }[])[0].content
+    expect(system).toContain('<최근 일기>\n- 2026-10-13 Tue: 회의 끝나고 지쳤다\n</최근 일기>')
+    expect(system).toContain('지어내지 마')
+
+    const without: { messages?: unknown } = {}
+    await collect(
+      modelParts({
+        history: [],
+        text: 'x',
+        withEmotion: false,
+        client: fakeClient(['ok'], without),
+      })
+    )
+    expect((without.messages as { content: string }[])[0].content).not.toContain('최근 일기')
+  })
+
   it('caps how much history is sent, so a long thread cannot grow the prompt without limit', async () => {
     const capture: { messages?: unknown } = {}
     const history = Array.from({ length: 50 }, (_, i) => message('user', `m${i}`))

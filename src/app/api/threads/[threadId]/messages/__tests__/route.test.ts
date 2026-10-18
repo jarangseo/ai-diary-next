@@ -9,6 +9,7 @@ vi.mock('@/lib/threads', () => ({
   countUserMessagesToday: vi.fn(async () => 0),
 }))
 vi.mock('@/lib/diary', () => ({ getDiaryById: vi.fn() }))
+vi.mock('@/lib/memory', () => ({ memoryFor: vi.fn(async () => '') }))
 // The model path is never taken here (bench=1). The fake stream paces itself like a real
 // model, which is right for the UI and too slow for a unit test, so a one-line reply
 // stands in for it.

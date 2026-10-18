@@ -17,9 +17,28 @@ const SYSTEM_PROMPT = `너는 사용자가 방금 쓴 일기를 함께 들여다
 - 섣불리 위로하거나 판단하지 마. 사용자가 쓴 표현을 그대로 되짚어주는 게 더 도움이 돼.
 - 일기와 무관한 요청에는 이 대화가 일기를 위한 자리라고 짧게 안내해.`
 
+// Memory (#76): how to use the user's recent entries. Remembering is the point — "화요일에도
+// 회의 끝나고 지쳤다고 했었죠" — but a reply that recites the archive, or invents what is not
+// in it, is worse than one that remembers nothing.
+const MEMORY_PROMPT = `
+
+아래는 사용자가 최근 2주 동안 쓴 일기야. 지금 이야기와 이어질 때만 자연스럽게 떠올려 말해
+(예: "화요일에도 회의 끝나고 지쳤다고 했었죠").
+- 한 답장에 한 번이면 충분해. 이어지지 않으면 꺼내지 마.
+- 일기에 없는 내용은 절대 지어내지 마. 길게 인용하지 말고 짧게 되짚어.
+- 반복되는 일을 짚더라도 판단하거나 조언하지 말고, 사용자가 더 이야기하도록 물어봐.
+<최근 일기>
+`
+
+export function systemPrompt(memory?: string): string {
+  return memory ? `${SYSTEM_PROMPT}${MEMORY_PROMPT}${memory}\n</최근 일기>` : SYSTEM_PROMPT
+}
+
 export interface ModelStreamOptions {
   history: Message[]
   text: string
+  /** The user's recent entries, condensed (lib/memory.ts). Empty or absent: no memory. */
+  memory?: string
   /** Emit the emotion card once the reply finishes. */
   withEmotion: boolean
   signal?: AbortSignal
@@ -35,7 +54,7 @@ export interface ModelStreamOptions {
  * message instead of a connection that stops mid-sentence for no stated reason.
  */
 export async function* modelParts(options: ModelStreamOptions): AsyncGenerator<StreamPart> {
-  const { history, text, withEmotion, signal, client } = options
+  const { history, text, memory, withEmotion, signal, client } = options
 
   let full = ''
 
@@ -51,7 +70,7 @@ export async function* modelParts(options: ModelStreamOptions): AsyncGenerator<S
         model: MODEL,
         stream: true,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt(memory) },
           // Bounded: an unbounded thread would grow the prompt — and the bill — without
           // limit, and the recent turns are what the reply actually depends on.
           ...history.slice(-MAX_HISTORY).map((m) => ({
