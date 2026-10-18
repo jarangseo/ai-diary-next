@@ -157,6 +157,38 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   }
 }
 
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: 0 $spacing-xs;
+  font-size: 12px;
+  color: $color-text-tertiary;
+
+  &:not(:has(.count)) {
+    @media (pointer: coarse) {
+      display: none;
+    }
+  }
+}
+
+// Enter sends only where there is a keyboard to press it on.
+.hint {
+  @media (pointer: coarse) {
+    display: none;
+  }
+}
+
+.count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+
+  &[data-over] {
+    color: $color-error;
+    font-weight: $font-weight-semibold;
+  }
+}
+
 .error {
   padding: 0 $spacing-xs;
   font-size: $font-size-sm;

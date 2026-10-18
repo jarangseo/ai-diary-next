@@ -35,6 +35,30 @@ test('send is disabled while the input is empty or only spaces', async ({ page }
   await expect(send).toBeEnabled()
 })
 
+test('counts down from 1,800 characters and refuses more than 2,000', async ({ page }) => {
+  await page.goto('/diary')
+  const input = page.getByLabel('오늘 이야기')
+  const send = page.getByRole('button', { name: '보내기' })
+
+  await input.fill('가'.repeat(1799))
+  await expect(page.getByText(/자 (남았어요|넘었어요)$/)).toHaveCount(0)
+
+  await input.fill('가'.repeat(1800))
+  await expect(input).toHaveAccessibleDescription('200자 남았어요')
+  await expect(send).toBeEnabled()
+
+  await input.fill('가'.repeat(2000))
+  await expect(input).toHaveAccessibleDescription('0자 남았어요')
+  await expect(send).toBeEnabled()
+
+  // Pasted text is kept whole, not cut at the limit; sending waits until it fits.
+  await input.fill('가'.repeat(2001))
+  await expect(input).toHaveAccessibleDescription('1자 넘었어요')
+  await expect(send).toBeDisabled()
+  await input.press('Enter')
+  await expect(page).toHaveURL(/\/diary$/)
+})
+
 test.describe('the first message', () => {
   // Pin the browser and the stored zone to one that is neither UTC nor the server's, so
   // "today" can only come from the stored setting.
@@ -70,6 +94,42 @@ test.describe('the first message', () => {
     // Handed to the entry page for the 대화 중 screen (#82) to send.
     const handed = await page.evaluate((key) => sessionStorage.getItem(key), `first-message:${id}`)
     expect(handed).toBe(message)
+  })
+
+  test('on a desktop, Shift+Enter is a new line and Enter sends', async ({ page }) => {
+    await page.goto('/diary')
+    const input = page.getByLabel('오늘 이야기')
+    await expect(page.getByText('Enter 보내기 · Shift+Enter 줄바꿈')).toBeVisible()
+
+    await input.pressSequentially('첫 줄')
+    await input.press('Shift+Enter')
+    await input.pressSequentially('둘째 줄')
+    await expect(input).toHaveValue('첫 줄\n둘째 줄')
+    await expect(page).toHaveURL(/\/diary$/)
+
+    await input.press('Enter')
+    await expect(page).toHaveURL(ENTRY_URL)
+    created.push(ENTRY_URL.exec(page.url())![1])
+  })
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+
+    test('Enter is a new line and only the button sends', async ({ page }) => {
+      await page.goto('/diary')
+      const input = page.getByLabel('오늘 이야기')
+      await expect(page.getByText('Enter 보내기 · Shift+Enter 줄바꿈')).toBeHidden()
+
+      await input.pressSequentially('첫 줄')
+      await input.press('Enter')
+      await input.pressSequentially('둘째 줄')
+      await expect(input).toHaveValue('첫 줄\n둘째 줄')
+      await expect(page).toHaveURL(/\/diary$/)
+
+      await page.getByRole('button', { name: '보내기' }).tap()
+      await expect(page).toHaveURL(ENTRY_URL)
+      created.push(ENTRY_URL.exec(page.url())![1])
+    })
   })
 
   test('keeps the text and says so when the entry cannot be created', async ({ page }) => {

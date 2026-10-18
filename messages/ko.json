@@ -78,6 +78,9 @@
       "label": "오늘 이야기",
       "placeholder": "오늘 있었던 일을 편하게 얘기해 주세요",
       "send": "보내기",
+      "enterHint": "Enter 보내기 · Shift+Enter 줄바꿈",
+      "remaining": "{count, number}자 남았어요",
+      "over": "{count, number}자 넘었어요",
       "startFailed": "일기를 시작하지 못했어요. 쓴 글은 그대로 있어요. 다시 보내 주세요."
     }
   }
