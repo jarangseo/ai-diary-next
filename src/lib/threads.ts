@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { MessageRow, ThreadRow } from './supabase'
 import type { Message, MessageToolResult, Thread } from '@/types/thread'
+import { startOfKoreanDay } from './usage'
 
 // Server-side data access for threads and messages. Ownership is checked here rather
 // than in the route: every read takes a userId, so there is no way to fetch a thread
@@ -134,13 +135,11 @@ export async function getOrCreateThreadForDiary(
  * (`lib/usage.ts`). Derived from the messages already stored rather than kept in a table
  * of its own: one less thing to keep in sync, and it cannot drift from what happened.
  *
- * The day boundary is UTC. Someone near midnight in their own zone gets a window that
- * does not match their calendar — acceptable for a spend guard, wrong for anything shown
- * to a user.
+ * The day is the Korean calendar day: the limit is shown to the user as "today", so it
+ * resets at their midnight (`startOfKoreanDay`).
  */
 export async function countUserMessagesToday(userId: string): Promise<number | null> {
-  const startOfDay = new Date()
-  startOfDay.setUTCHours(0, 0, 0, 0)
+  const startOfDay = startOfKoreanDay()
 
   const { count, error } = await supabase
     .from('messages')

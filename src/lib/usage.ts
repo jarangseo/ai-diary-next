@@ -20,6 +20,22 @@ export function isOverDailyLimit(used: number, limit: number = DAILY_MESSAGE_LIM
   return used >= limit
 }
 
+// Korea has no daylight saving time, so a fixed offset is exact.
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000
+
+/**
+ * The instant the current Korean calendar day began — when the daily limit resets.
+ *
+ * Diaries are written at night, so the boundary has to be the user's midnight: counting
+ * from UTC midnight (09:00 in Korea) put a message sent at 01:00 into the previous day,
+ * which the over-limit notice then calls "today".
+ */
+export function startOfKoreanDay(now: Date = new Date()): Date {
+  const kst = new Date(now.getTime() + KST_OFFSET_MS)
+  kst.setUTCHours(0, 0, 0, 0)
+  return new Date(kst.getTime() - KST_OFFSET_MS)
+}
+
 const NOTICE =
   '오늘 AI 응답 한도를 다 썼어요. 내일 다시 이어서 대화할 수 있고, 일기 작성과 저장은 그대로 쓸 수 있어요.\n\n'
 
