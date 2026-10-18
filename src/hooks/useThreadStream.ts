@@ -17,6 +17,12 @@ interface Options {
   initialMessages: Message[]
   /** Measurement and test path: the deterministic fake stream instead of the model. */
   bench?: boolean
+  /**
+   * Whether the server will store a wrap-up offer after this reply — the same pure rule
+   * it applies (`shouldOfferWrapUp`), given the conversation so far. The offer is stored,
+   * not streamed, so the client adds its own copy to show it without a reload.
+   */
+  offersWrapUp?: (messages: Message[]) => boolean
 }
 
 // Consumes the NDJSON stream from POST /api/threads/:id/messages and keeps the
@@ -26,7 +32,12 @@ interface Options {
 // rebuilt on every token. It is what most code does, it is what the baseline in
 // docs/PERFORMANCE.md measures, and it is the thing the INP work then fixes. Do not
 // "improve" it before the baseline is recorded.
-export function useThreadStream({ threadId, initialMessages, bench = false }: Options) {
+export function useThreadStream({
+  threadId,
+  initialMessages,
+  bench = false,
+  offersWrapUp,
+}: Options) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [status, setStatus] = useState<ThreadStatus>('idle')
   const [delivery, setDelivery] = useState<Record<string, Delivery>>({})
@@ -42,6 +53,30 @@ export function useThreadStream({ threadId, initialMessages, bench = false }: Op
   useEffect(() => () => abortRef.current?.abort(), [])
 
   const stop = useCallback(() => abortRef.current?.abort(), [])
+
+  const offersRef = useRef(offersWrapUp)
+  useEffect(() => {
+    offersRef.current = offersWrapUp
+  })
+
+  // Mirrors the route: once a reply with any text is stored, so is the offer, if due.
+  const addOfferAfter = useCallback(
+    (replyId: string) =>
+      setMessages((prev) => {
+        const reply = prev.find((m) => m.id === replyId)
+        if (!reply?.content || !offersRef.current?.(prev)) return prev
+        const offer: Message = {
+          id: crypto.randomUUID(),
+          threadId,
+          role: 'assistant',
+          content: '',
+          toolResults: [{ tool: 'wrapup_offer' }],
+          createdAt: Date.now(),
+        }
+        return [...prev, offer]
+      }),
+    [threadId]
+  )
 
   const mark = useCallback(
     (id: string, value?: Delivery) =>
@@ -137,12 +172,14 @@ export function useThreadStream({ threadId, initialMessages, bench = false }: Op
         // A reply that broke off keeps what arrived (the server stored the same) and
         // offers a retry under the user's message.
         if (failed) mark(userId, 'failed')
+        addOfferAfter(assistantId)
         setStatus(failed ? 'error' : 'idle')
         return !failed
       } catch (error) {
         // Aborting is how stop() works, so it is a normal ending, not a failure. The
         // partial assistant message stays — the server stored the same thing.
         if (error instanceof DOMException && error.name === 'AbortError') {
+          addOfferAfter(assistantId)
           setStatus('idle')
           return true
         }
@@ -156,7 +193,7 @@ export function useThreadStream({ threadId, initialMessages, bench = false }: Op
         abortRef.current = null
       }
     },
-    [threadId, bench, mark]
+    [threadId, bench, mark, addOfferAfter]
   )
 
   const send = useCallback(

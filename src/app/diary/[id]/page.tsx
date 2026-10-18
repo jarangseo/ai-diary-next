@@ -64,6 +64,8 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
         dateLabel={formatDateLabel(diary.date, locale)}
         initialMessages={messages}
         remainingToday={remainingToday}
+        wrappedUp={Boolean(diary.summary)}
+        crisis={Boolean(thread.crisisAt)}
         bench={bench}
       />
     )

@@ -4,12 +4,14 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowUpIcon, SquareIcon, WifiOffIcon } from 'lucide-react'
 import { useThreadStream } from '@/hooks/useThreadStream'
-import { isWrapUpOffer } from '@/lib/wrapUp'
+import { isWrapUpOffer, shouldOfferWrapUp } from '@/lib/wrapUp'
+import { diaryApi } from '@/services/diaryServices'
 import type { Message } from '@/types/thread'
 import { canSendMessage, remainingCount, sendsOnEnter } from '@/components/Home/composerRules'
 import { takeFirstMessage } from '@/components/Home/firstMessage'
 import { titleFromText } from '@/components/Shell/entryTitle'
 import { readDraft, writeDraft } from './draft'
+import { OfferCard, WrapUpButton, WrapUpFailed } from './WrapUp'
 import styles from './ChatEntry.module.scss'
 
 interface Props {
@@ -24,6 +26,10 @@ interface Props {
    * page loads; null when no limit applies (test runs, like the route's bench path).
    */
   remainingToday: number | null
+  /** The 일기 has been drafted (#83 shows it); no more offers or header button. */
+  wrappedUp: boolean
+  /** A crisis signal was seen in this conversation: the AI does not offer wrap-up. */
+  crisis: boolean
   /** Deterministic stream instead of the model — set by the page in test runs. */
   bench?: boolean
 }
@@ -51,6 +57,8 @@ export function ChatEntry({
   dateLabel,
   initialMessages,
   remainingToday,
+  wrappedUp,
+  crisis,
   bench,
 }: Props) {
   const t = useTranslations('ChatEntry')
@@ -61,6 +69,8 @@ export function ChatEntry({
     threadId,
     initialMessages,
     bench,
+    offersWrapUp: (conversation) =>
+      shouldOfferWrapUp({ messages: conversation, isChatEntry: true, wrappedUp, crisis }),
   })
   const [text, setText] = useState('')
   const streaming = status === 'streaming'
@@ -90,7 +100,37 @@ export function ChatEntry({
     writeDraft(entryId, value)
   }
 
+  // Wrap-up. The offer shows as a card while it is the AI's latest word: talking on, or
+  // `조금 더 얘기할게요`, puts it away (the server keeps no record of a decline).
+  const [declined, setDeclined] = useState<string[]>([])
+  const [wrapping, setWrapping] = useState(false)
+  const [wrapFailed, setWrapFailed] = useState(false)
+  const lastOffer = messages.findLastIndex(isWrapUpOffer)
+  const openOffer =
+    !wrappedUp &&
+    lastOffer > messages.findLastIndex((m) => m.role === 'user') &&
+    !declined.includes(messages[lastOffer].id)
+      ? messages[lastOffer].id
+      : null
+  const wrapUp = async () => {
+    setWrapping(true)
+    setWrapFailed(false)
+    try {
+      await diaryApi.wrapUp(entryId)
+      // What the page shows after wrap-up is #83's; the sidebar loses its badge now.
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      setWrapFailed(true)
+    } finally {
+      setWrapping(false)
+    }
+  }
+
   const firstMessage = messages.find((m) => m.role === 'user')
+  // Spec 1-1: the header's button only until the AI has offered; never both at once.
+  const headerWrapUp =
+    !wrappedUp && !atLimit && Boolean(firstMessage) && !messages.some(isWrapUpOffer)
   const heading =
     title || (firstMessage && titleFromText(firstMessage.content)) || tShell('untitled')
 
@@ -125,7 +165,7 @@ export function ChatEntry({
     if (pinned.current) window.scrollTo({ top: document.documentElement.scrollHeight })
   }, [messages])
 
-  const canSend = canSendMessage(text) && !streaming
+  const canSend = canSendMessage(text) && !streaming && !wrapping
   const remaining = remainingCount(text)
 
   const submit = async (event?: React.FormEvent) => {
@@ -146,71 +186,88 @@ export function ChatEntry({
         </p>
       )}
       <header className={styles.header}>
-        <h1 className={styles.title}>{heading}</h1>
-        <p className={styles.subtitle}>
-          {dateLabel} · {t('writing')}
-        </p>
+        <div className={styles.heading}>
+          <h1 className={styles.title}>{heading}</h1>
+          <p className={styles.subtitle}>
+            {dateLabel} · {t('writing')}
+          </p>
+        </div>
+        {headerWrapUp && (
+          <WrapUpButton
+            onWrapUp={wrapUp}
+            busy={wrapping || streaming}
+            className={styles.secondary}
+          />
+        )}
       </header>
 
       <div className={styles.log} role="log" aria-label={t('log')} aria-busy={streaming}>
-        {messages
-          // The wrap-up offer has no text of its own; its card arrives with #82's last part.
-          .filter((m) => !isWrapUpOffer(m))
-          .map((m) =>
-            m.role === 'user' ? (
-              <div key={m.id} className={styles.sent}>
-                <p className={styles.mine}>{m.content}</p>
-                {delivery[m.id] === 'failed' && (
-                  <div className={styles.failure} role="alert">
-                    <span>{t('replyFailed')}</span>
+        {messages.map((m) =>
+          isWrapUpOffer(m) ? (
+            m.id === openOffer && (
+              <OfferCard
+                key={m.id}
+                onWrapUp={wrapUp}
+                busy={wrapping}
+                onDecline={() => setDeclined((ids) => [...ids, m.id])}
+              />
+            )
+          ) : m.role === 'user' ? (
+            <div key={m.id} className={styles.sent}>
+              <p className={styles.mine}>{m.content}</p>
+              {delivery[m.id] === 'failed' && (
+                <div className={styles.failure} role="alert">
+                  <span>{t('replyFailed')}</span>
+                  <button
+                    type="button"
+                    className={styles.retry}
+                    onClick={() => retryCounted(m.id)}
+                    disabled={streaming}
+                  >
+                    {t('retry')}
+                  </button>
+                </div>
+              )}
+              {delivery[m.id] === 'unsent' && (
+                <div className={styles.failure}>
+                  <span>{t('unsent')}</span>
+                  {/* Only once back online, and only when asked: never sent by itself. */}
+                  {online && (
                     <button
                       type="button"
                       className={styles.retry}
                       onClick={() => retryCounted(m.id)}
                       disabled={streaming}
                     >
-                      {t('retry')}
+                      {t('resend')}
                     </button>
-                  </div>
-                )}
-                {delivery[m.id] === 'unsent' && (
-                  <div className={styles.failure}>
-                    <span>{t('unsent')}</span>
-                    {/* Only once back online, and only when asked: never sent by itself. */}
-                    {online && (
-                      <button
-                        type="button"
-                        className={styles.retry}
-                        onClick={() => retryCounted(m.id)}
-                        disabled={streaming}
-                      >
-                        {t('resend')}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div key={m.id} className={styles.reply}>
-                {m.content ? (
-                  <p>{m.content}</p>
-                ) : (
-                  <span className={styles.typing} aria-hidden>
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                )}
-                {/* Source chips (#76): the entries a reply drew on, at most three. */}
-              </div>
-            )
-          )}
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div key={m.id} className={styles.reply}>
+              {m.content ? (
+                <p>{m.content}</p>
+              ) : (
+                <span className={styles.typing} aria-hidden>
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              )}
+              {/* Source chips (#76): the entries a reply drew on, at most three. */}
+              {wrapFailed && <WrapUpFailed onWrapUp={wrapUp} busy={wrapping} />}
+            </div>
+          )
+        )}
       </div>
 
       {atLimit && (
         <div className={styles.limit} role="status">
           <p className={styles.limitTitle}>{t('limit.title')}</p>
           <p className={styles.limitBody}>{t('limit.body')}</p>
+          <WrapUpButton onWrapUp={wrapUp} busy={wrapping} />
         </div>
       )}
       {/* Hidden rather than removed at the limit, so the draft in it is kept. */}
