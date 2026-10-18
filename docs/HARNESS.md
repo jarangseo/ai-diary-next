@@ -161,6 +161,12 @@ passed. Another session spotted the branch change and warned the person running 
   worktrees. `require-worktree.sh` blocks edits there and blocks git commands that move
   HEAD there. It fails open, and `CLAUDE_ALLOW_MAIN_CHECKOUT=1` lets a person working
   alone opt out on purpose.
+- **Set up a new worktree before building in it:** `pnpm install`, then link the env file from
+  the main checkout:
+  `ln -s "$(git rev-parse --path-format=absolute --git-common-dir)/../.env.local" .env.local`.
+  `.env.local` is gitignored, so a worktree starts without one, and `pnpm build` fails with
+  `supabaseUrl is required` (2026-10-18, #67). Link it rather than copy it: a link never puts the
+  keys in a second place, and it never needs reading. The link is gitignored like the file.
 - **Never use bare `git stash` / `git stash pop`.** The stash stack is shared by every
   worktree, so `pop` can take another session's work. Set work aside with a WIP commit
   instead.

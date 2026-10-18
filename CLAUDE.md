@@ -104,6 +104,9 @@ privacy policy), data-scope hardening and a dev database. Still open from v1: em
   otherwise a cold `pnpm install` exits 1 with `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` alone is
   **no longer sufficient** on pnpm 11 — it is still read, but the install fails anyway. CI installs with
   `--ignore-scripts` so it never hit this; Vercel does a plain install, so it broke there first.
+- **A new worktree has no `.env.local`**, so `pnpm build` / `pnpm verify` fail with
+  `supabaseUrl is required`. Symlink it from the main checkout; don't copy or read it. The command
+  is in `docs/HARNESS.md`, *One session, one worktree*.
 - **Never resolve an entry by date.** A date holds any number of entries since migration 001;
   `.single()`/`.maybeSingle()` on `(user_id, date)` errors (PGRST116, 406) once it holds two. Use
   `getDiaryById`, or `listDiariesByDate` for a day. Old `/diary/YYYY-MM-DD` links redirect to the list.
