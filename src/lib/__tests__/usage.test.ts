@@ -31,7 +31,9 @@ describe('cappedParts', () => {
 
     const [first] = parts
     expect(first.type).toBe('text-delta')
-    expect(first.type === 'text-delta' && first.delta).toContain('한도')
+    expect(first.type === 'text-delta' && first.delta).toMatch(
+      /^오늘은 여기까지 대화할 수 있어요\. 쓴 글은 그대로 저장돼요\./
+    )
     // Degrades rather than refusing: the rest is a real stream, not an error.
     expect(parts.slice(1).every((p) => p.type !== 'error')).toBe(true)
   })

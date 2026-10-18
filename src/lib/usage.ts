@@ -21,12 +21,15 @@ export function isOverDailyLimit(used: number, limit: number = DAILY_MESSAGE_LIM
 }
 
 const NOTICE =
-  '오늘 AI 응답 한도를 다 썼어요. 내일 다시 이어서 대화할 수 있고, 일기 작성과 저장은 그대로 쓸 수 있어요.\n\n'
+  '오늘은 여기까지 대화할 수 있어요. 쓴 글은 그대로 저장돼요. 내일 다시 이어서 얘기해요.\n\n'
 
 /**
  * What a user gets once they are over the limit: the notice, then the deterministic
  * stream. Degrading rather than refusing — being told the conversation is unavailable
  * today is a better answer than an error, and the writing half of the product still works.
+ *
+ * The notice is the agreed copy (docs/PRODUCT_DIRECTION.md, *Screen specs*): it says what
+ * still works before what stopped, and never mentions the AI's budget.
  */
 export async function* cappedParts(signal?: AbortSignal): AsyncGenerator<StreamPart> {
   yield { type: 'text-delta', delta: NOTICE }
