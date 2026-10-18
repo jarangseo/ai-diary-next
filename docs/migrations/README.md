@@ -37,6 +37,7 @@ running app keeps working between the migration and the code change.
 |---|---|---|---|---|
 | 001 | [`001_diary_id_and_threads.sql`](./001_diary_id_and_threads.sql) | 2026-08-19 | `main` (production) | ✅ see below |
 | 002 | [`002_v2_entries_and_settings.sql`](./002_v2_entries_and_settings.sql) | 2026-10-18 | `main` (production) | ✅ see below |
+| 003 | [`003_memory_note_and_chat_rls.sql`](./003_memory_note_and_chat_rls.sql) | **draft — not applied** (development first, then production) | — | tested on PGlite |
 
 ### 002 — verification
 
