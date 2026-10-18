@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import clsx from 'clsx'
+import { useLocale } from 'next-intl'
 import { PlusIcon } from 'lucide-react'
 import { Calendar } from '@/components/Calendar/Calendar'
 import { DiaryList } from '@/components/DiaryList/DiaryList'
@@ -21,6 +22,7 @@ type DiaryHomeProps = {
 export function DiaryHome({ diaries, view, dateFilter }: DiaryHomeProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const locale = useLocale()
   const todayKey = toDateKey(new Date())
   const listed = dateFilter ? diaries.filter((d) => d.date === dateFilter) : diaries
 
@@ -61,7 +63,7 @@ export function DiaryHome({ diaries, view, dateFilter }: DiaryHomeProps) {
 
       {view === 'list' && dateFilter && (
         <div className={styles.filter}>
-          <span>{formatDateLabel(dateFilter)}</span>
+          <span>{formatDateLabel(dateFilter, locale)}</span>
           <Link href={`${pathname}?view=list`} className={styles.filterClear}>
             전체 보기
           </Link>
