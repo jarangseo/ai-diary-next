@@ -1,4 +1,4 @@
-import type { MessageToolResult } from './thread'
+import type { EmotionToolResult } from './thread'
 
 // Wire protocol between the streaming endpoint and the client transport.
 //
@@ -11,6 +11,8 @@ import type { MessageToolResult } from './thread'
 // component at that point in the stream instead of parsing text back into data.
 export type StreamPart =
   | { type: 'text-delta'; delta: string }
-  | ({ type: 'tool-result' } & MessageToolResult)
+  // Only the emotion card streams. A wrap-up offer is decided by the server after the
+  // reply and stored as a message of its own (#74), not emitted mid-stream.
+  | ({ type: 'tool-result' } & EmotionToolResult)
   | { type: 'done' }
   | { type: 'error'; message: string }

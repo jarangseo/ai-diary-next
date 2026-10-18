@@ -14,6 +14,7 @@ function rowToThread(row: ThreadRow): Thread {
     kind: row.kind,
     diaryId: row.diary_id ?? undefined,
     title: row.title ?? '',
+    crisisAt: row.crisis_at ? new Date(row.crisis_at).getTime() : undefined,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
   }

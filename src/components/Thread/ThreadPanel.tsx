@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useThreadStream } from '@/hooks/useThreadStream'
 import { getEmotionMeta } from '@/lib/emotion'
-import type { Message } from '@/types/thread'
+import type { EmotionToolResult, Message } from '@/types/thread'
+import { isWrapUpOffer } from '@/lib/wrapUp'
 import styles from './ThreadPanel.module.scss'
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
 // stream carries it as a typed part, this reads `data` directly instead of parsing a
 // model's prose back into structure.
 function EmotionCard({ message }: { message: Message }) {
-  const result = message.toolResults?.find((r) => r.tool === 'emotion')
+  const result = message.toolResults?.find((r): r is EmotionToolResult => r.tool === 'emotion')
   if (!result) return null
 
   const meta = getEmotionMeta(result.data.primary)
@@ -83,15 +84,19 @@ export function ThreadPanel({ threadId, initialMessages, bench }: Props) {
   return (
     <div className={styles.panel}>
       <div className={styles.list} ref={listRef} onScroll={handleScroll}>
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`${styles.message} ${m.role === 'user' ? styles.user : styles.assistant}`}
-          >
-            {m.content}
-            <EmotionCard message={m} />
-          </div>
-        ))}
+        {/* A wrap-up offer has no text of its own (it is UI copy, rendered by the 대화 중
+            screen, #82). Until that screen exists, skip it rather than draw an empty bubble. */}
+        {messages
+          .filter((m) => !isWrapUpOffer(m))
+          .map((m) => (
+            <div
+              key={m.id}
+              className={`${styles.message} ${m.role === 'user' ? styles.user : styles.assistant}`}
+            >
+              {m.content}
+              <EmotionCard message={m} />
+            </div>
+          ))}
       </div>
 
       {!pinned && (
