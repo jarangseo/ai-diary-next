@@ -22,6 +22,7 @@ deployed, so the running app keeps working between the migration and the code ch
 | # | Migration | Applied | Env | Verified |
 |---|---|---|---|---|
 | 001 | [`001_diary_id_and_threads.sql`](./001_diary_id_and_threads.sql) | 2026-08-19 | `main` (production) | ✅ see below |
+| 002 | [`002_v2_entries_and_settings.sql`](./002_v2_entries_and_settings.sql) | **draft — not applied** | — | tested on PGlite; pre-apply checks on `main` passed 2026-10-18 |
 
 ### 001 — verification
 
