@@ -83,5 +83,15 @@
       "over": "{count, number}자 넘었어요",
       "startFailed": "일기를 시작하지 못했어요. 쓴 글은 그대로 있어요. 다시 보내 주세요."
     }
+  },
+  "ChatEntry": {
+    "writing": "대화로 쓰는 중",
+    "log": "대화",
+    "input": {
+      "label": "이어서 이야기하기",
+      "placeholder": "이어서 얘기해 주세요",
+      "send": "보내기",
+      "stop": "정지"
+    }
   }
 }

@@ -1,0 +1,227 @@
+@use '@/styles/variables' as *;
+
+$touch: 44px; // the minimum touch target
+// The shell's mobile header and the content padding, so the screen fills one viewport.
+$mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// The page scrolls; the composer sticks to the bottom of the viewport.
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - #{$mobile-chrome});
+
+  @include mdm-lrg {
+    min-height: calc(100dvh - #{$spacing-xl + $spacing-3xl});
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $color-border;
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: $color-text-secondary;
+}
+
+.log {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 22px;
+  padding: $spacing-2xl 0 $spacing-lg;
+  font-size: 16px;
+  line-height: 1.6;
+  color: $color-text-primary;
+
+  p {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
+.mine {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 18px 18px 6px 18px;
+  background-color: $color-bg-tertiary;
+
+  @include mdm-lrg {
+    max-width: 78%;
+  }
+}
+
+.reply {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+// Three dots while the reply has not started.
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 10px 0;
+
+  i {
+    width: 6px;
+    height: 6px;
+    border-radius: $radius-full;
+    background-color: $color-text-tertiary;
+    animation: blink 1.2s infinite ease-in-out;
+
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    i {
+      animation: none;
+    }
+  }
+}
+
+@keyframes blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+// === Composer ===
+.composer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-sm 0 $spacing-md;
+  background-color: $color-bg-primary;
+}
+
+.field {
+  display: flex;
+  align-items: flex-end;
+  gap: $spacing-sm;
+  padding: 6px 6px 6px $spacing-lg;
+  background-color: $color-surface;
+  border: 1px solid $color-border-input;
+  border-radius: 20px;
+  box-shadow: $shadow-md;
+
+  &:focus-within {
+    @include focus-ring;
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  max-height: 40dvh;
+  padding: $spacing-sm 0;
+  border: 0;
+  resize: none;
+  field-sizing: content;
+  background: transparent;
+  font: inherit;
+  // 16px keeps iOS from zooming into the field on focus.
+  font-size: 16px;
+  line-height: 1.6;
+  color: $color-text-primary;
+  outline: none;
+
+  &::placeholder {
+    color: $color-text-tertiary;
+  }
+}
+
+.send {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $touch;
+  height: $touch;
+  border-radius: $radius-full;
+  background-color: $color-accent-strong;
+  color: $color-text-inverse;
+  transition: background-color $transition-fast;
+
+  &:hover:not(:disabled) {
+    background-color: $color-accent-hover;
+  }
+
+  &:disabled {
+    background-color: $color-disabled;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: 0 $spacing-xs;
+  font-size: 12px;
+  color: $color-text-tertiary;
+
+  &:not(:has(.count)) {
+    @media (pointer: coarse) {
+      display: none;
+    }
+  }
+}
+
+// Enter sends only where there is a keyboard to press it on.
+.hint {
+  @media (pointer: coarse) {
+    display: none;
+  }
+}
+
+.count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+
+  &[data-over] {
+    color: $color-error;
+    font-weight: $font-weight-semibold;
+  }
+}

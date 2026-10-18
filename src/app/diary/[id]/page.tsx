@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { getDiaryById } from '@/lib/diary'
 import { getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
+import { ChatEntry } from '@/components/ChatEntry/ChatEntry'
 import { DeleteEntryButton } from '@/components/Diary/DeleteEntryButton'
 import { EmotionPending } from '@/components/Diary/EmotionPending'
 import { notFound, redirect } from 'next/navigation'
@@ -39,6 +40,28 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
     diary.title ?? t('threadDefaultTitle')
   )
   const messages = thread ? await listMessages(thread.id) : []
+
+  // The deterministic stream in the test environment, the model everywhere else.
+  // E2E_AUTH_SECRET is already the "this is a test run" gate (it is what makes the test
+  // sign-in provider exist), and reusing it keeps the suite from spending a model call
+  // per run.
+  const bench = Boolean(process.env.E2E_AUTH_SECRET)
+
+  // 대화로 쓰기: the conversation is the page until wrap-up (screen 1-1). Its emotion comes
+  // with the draft, so nothing here waits for an analysis.
+  if (diary.mode === 'chat' && thread) {
+    return (
+      <ChatEntry
+        key={diary.id}
+        entryId={diary.id}
+        threadId={thread.id}
+        title={diary.title}
+        dateLabel={formatDateLabel(diary.date, locale)}
+        initialMessages={messages}
+        bench={bench}
+      />
+    )
+  }
 
   const emotion = diary.emotion
   const meta = emotion ? getEmotionMeta(emotion.primary) : undefined
@@ -100,15 +123,7 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
 
       {thread && (
         <section className={styles.thread} aria-label={t('threadLabel')}>
-          <ThreadPanel
-            threadId={thread.id}
-            initialMessages={messages}
-            // The deterministic stream in the test environment, the model everywhere
-            // else. E2E_AUTH_SECRET is already the "this is a test run" gate (it is what
-            // makes the test sign-in provider exist), and reusing it keeps the suite from
-            // spending a model call per run.
-            bench={Boolean(process.env.E2E_AUTH_SECRET)}
-          />
+          <ThreadPanel threadId={thread.id} initialMessages={messages} bench={bench} />
         </section>
       )}
     </article>

@@ -171,7 +171,7 @@ export function ShellFrame({ groups, user, children }: Props) {
         </div>
 
         <div className={styles.actions}>
-          <Link className={styles.newEntry} href="/diary/write">
+          <Link className={styles.newEntry} href="/diary">
             <PlusIcon size={18} aria-hidden className={styles.newEntryIcon} />
             {t('newEntry')}
           </Link>

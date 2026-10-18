@@ -91,9 +91,8 @@ test.describe('the first message', () => {
     const entry = await (await page.request.get(`/api/diary/${id}`)).json()
     expect(entry).toMatchObject({ mode: 'chat', content: '', date: todayIn(new Date(), ZONE) })
 
-    // Handed to the entry page for the 대화 중 screen (#82) to send.
-    const handed = await page.evaluate((key) => sessionStorage.getItem(key), `first-message:${id}`)
-    expect(handed).toBe(message)
+    // Handed to the entry page, which sends it as the conversation's first message.
+    await expect(page.getByRole('log', { name: '대화' }).getByText(message)).toBeVisible()
   })
 
   test('on a desktop, Shift+Enter is a new line and Enter sends', async ({ page }) => {
