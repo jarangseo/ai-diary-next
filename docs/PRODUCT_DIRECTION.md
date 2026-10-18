@@ -1,6 +1,8 @@
 # Product Direction
 
-> Created: 2026-05-31 · Updated: 2026-10-16 · Status: **v1 agreed · v2 agreed, revised after the midpoint review**
+> Created: 2026-05-31 · Updated: 2026-10-16 · Status: **v2 agreed, revised after the midpoint review** · v1 kept as an appendix
+>
+> Who it is for, how success is measured, cost and timeline: [`PRODUCT_BRIEF.md`](./PRODUCT_BRIEF.md).
 >
 > v2 revises v1's entry screen and core loop; where they conflict, the [v2 section](#v2--two-ways-to-write)
 > wins. Everything else in v1 still stands.
@@ -209,6 +211,14 @@ completion moment. Details: the design system README.
 
 No in-app versioning: v2 replaces v1's screens progressively on `main`, and this document plus git
 history is the record of what changed.
+
+---
+
+# Appendix — v1 (superseded)
+
+> Kept as the record of how v2 was reached. **Superseded by the v2 section above:** the
+> `Diary ⟷ Question` toggle, the three-pane detail, the analysis cards and the near-term list below no
+> longer describe the plan. Where this appendix and v2 differ, v2 wins. Do not plan work from it.
 
 ## What changed in v1 (and why)
 
