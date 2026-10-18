@@ -42,7 +42,8 @@
 
 @mixin btn-primary {
   @include btn-base;
-  background-color: $color-accent;
+  // accent-strong, not accent: light terracotta under white text is only 3.7:1.
+  background-color: $color-accent-strong;
   color: $color-text-inverse;
 
   &:hover:not(:disabled) {

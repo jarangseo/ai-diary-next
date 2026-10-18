@@ -48,7 +48,8 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
           {meta && (
             <span
               className={styles.emotion}
-              style={{ color: meta.color, backgroundColor: `${meta.color}22` }}
+              // The theme's emotion color (themes.scss), not EMOTION_META's single hex.
+              style={{ '--emotion': `var(--emotion-${meta.key})` } as React.CSSProperties}
             >
               <span aria-hidden>{meta.emoji}</span>
               {meta.label}

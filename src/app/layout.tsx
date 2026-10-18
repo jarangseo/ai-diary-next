@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import '@/styles/themes.scss'
 import '@/styles/globals.scss'
 import Providers from '@/components/Provider'
 import { WebVitals } from '@/components/WebVitals'

@@ -1,0 +1,72 @@
+@use 'sass:list';
+
+// =============================================================
+//  Themes — Paper (light, default) and Night desk (dark)
+//
+//  Values come from the AI Diary design system's tokens.json (copied verbatim to
+//  ./tokens.json); src/styles/__tests__/themes.test.ts fails if a value here drifts
+//  from it, and checks text contrast for both themes.
+//
+//  Only color and shadow change between themes; layout, type, spacing and radii are the
+//  same in both (variables.scss).
+//
+//  Which theme applies (per device, browser storage only — see src/lib/theme.ts):
+//    no data-theme       → follows prefers-color-scheme ("system", the default)
+//    data-theme="light"  → Paper, whatever the OS says
+//    data-theme="dark"   → Night desk, whatever the OS says
+// =============================================================
+
+// name: (Paper, Night desk). One row per token, so a value diff reads at a glance.
+// prettier-ignore
+$theme-tokens: (
+  bg: (#faf8f4, #15171b),
+  bg-sidebar: (#f3efe7, #111316),
+  surface: (#fffdf9, #1d2026),
+  surface-muted: (#efe9de, #1f2228),
+  border: (#e6dfd2, #2c3038),
+  border-strong: (#ddd5c7, #34373e),
+  border-input: (#968c80, #6a6e76),
+  ink: (#2b2724, #ece6da),
+  ink-secondary: (#6f655b, #a7a196),
+  ink-tertiary: (#70665c, #8f8a80),
+  accent: (#c2693f, #e6b45a),
+  accent-strong: (#aa5733, #e6b45a),
+  accent-hover: (#93492a, #f2cd85),
+  on-accent: (#fffdf9, #1a1712),
+  glow: (rgba(194, 105, 63, 0), rgba(230, 180, 90, 0.1)),
+  danger: (#b04432, #e0735f),
+  emotion-joy: (#d99a32, #e9b44c),
+  emotion-excitement: (#d8698f, #e889a8),
+  emotion-calm: (#7f9370, #9db38c),
+  emotion-tired: (#9c9387, #8e8a84),
+  emotion-sad: (#5f83a8, #7ea3c9),
+  emotion-anxious: (#a57fb4, #b99ad0),
+  emotion-angry: (#bf4f3d, #e0735f),
+  emotion-none: (#8a8076, #6f6c66),
+  dot-ring: (rgba(43, 39, 36, 0.55), rgba(0, 0, 0, 0)),
+  shadow-tab: (0 1px 2px rgba(43, 39, 36, 0.08), 0 1px 2px rgba(0, 0, 0, 0.4)),
+  shadow-card: (0 6px 20px rgba(43, 39, 36, 0.06), none),
+);
+
+@mixin theme($index, $scheme) {
+  // Native controls, scrollbars and autofill follow the theme too.
+  color-scheme: $scheme;
+
+  @each $name, $values in $theme-tokens {
+    --#{$name}: #{list.nth($values, $index)};
+  }
+}
+
+:root {
+  @include theme(1, light);
+}
+
+:root[data-theme='dark'] {
+  @include theme(2, dark);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include theme(2, dark);
+  }
+}
