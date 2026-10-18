@@ -20,7 +20,6 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - #{$mobile-chrome});
-  background-image: radial-gradient(ellipse 90% 40% at 50% 0%, var(--glow), transparent 70%);
 
   @include mdm-lrg {
     min-height: calc(100dvh - #{$spacing-xl + $spacing-3xl});
