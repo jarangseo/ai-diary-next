@@ -16,9 +16,17 @@ export interface DiaryRow {
   user_id: string
   date: string
   title: string | null
+  // Migration 002. `mode` and `emotion_source` have defaults ('write', 'ai'), so rows
+  // written before it read back as written, AI-analysed entries.
+  mode: 'chat' | 'write'
   content: string
+  summary: string | null
+  summary_made_at: string | null
+  summary_edited_at: string | null
   is_record_only: boolean
   emotion_primary: string | null
+  emotion_secondary: string | null
+  emotion_source: 'ai' | 'user'
   emotion_score: number | null
   emotion_summary: string | null
   emotion_questions: string[] | null
@@ -32,6 +40,8 @@ export interface ThreadRow {
   diary_id: string | null
   kind: 'diary' | 'question'
   title: string | null
+  /** Migration 002: set when a crisis signal is detected; no wrap-up offers after it. */
+  crisis_at: string | null
   created_at: string
   updated_at: string
 }

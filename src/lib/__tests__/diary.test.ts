@@ -28,7 +28,15 @@ vi.mock('../supabase', () => {
 // tests reach it.
 vi.mock('../emotionAnalysis', () => ({ analyzeEmotion: vi.fn() }))
 
-import { createDiary, deleteDiary, getDiaryById, listDiariesByDate, updateDiary } from '../diary'
+import {
+  createDiary,
+  deleteDiary,
+  getDiaryById,
+  listDiariesByDate,
+  setUserEmotion,
+  updateDiary,
+  updateDiaryEmotion,
+} from '../diary'
 
 const ID = '0b6f3c1e-2d4a-4b8e-9c7f-1a2b3c4d5e6f'
 
@@ -37,9 +45,15 @@ const row: DiaryRow = {
   user_id: 'u1',
   date: '2026-10-10',
   title: null,
+  mode: 'write',
   content: 'hello',
+  summary: null,
+  summary_made_at: null,
+  summary_edited_at: null,
   is_record_only: false,
   emotion_primary: null,
+  emotion_secondary: null,
+  emotion_source: 'ai',
   emotion_score: null,
   emotion_summary: null,
   emotion_questions: null,
@@ -133,5 +147,65 @@ describe('deleteDiary', () => {
     await expect(deleteDiary('u1', ID)).resolves.toBe(true)
     expect(db.calls).toContainEqual(['eq', 'id', ID])
     expect(db.calls.some(([name, col]) => name === 'eq' && col === 'date')).toBe(false)
+  })
+})
+
+describe('createDiary — mode', () => {
+  const inserted = () =>
+    db.calls.find(([name]) => name === 'insert')?.[1] as Record<string, unknown>
+
+  it('writes a written entry as before, now with mode write', async () => {
+    db.result = { data: { id: ID }, error: null }
+    await createDiary('u1', '2026-10-10', 'hello', false)
+    expect(inserted()).toMatchObject({ mode: 'write', content: 'hello' })
+  })
+
+  it('starts a chat entry with an empty body', async () => {
+    db.result = { data: { id: ID }, error: null }
+    await createDiary('u1', '2026-10-10', 'ignored', false, 'chat')
+    expect(inserted()).toMatchObject({ mode: 'chat', content: '' })
+  })
+})
+
+describe('updateDiaryEmotion — the user owns the emotion', () => {
+  const emotion = { primary: 'sad' as const, score: 40, summary: 'down', questions: ['why?'] }
+  const updates = () =>
+    db.calls.flatMap((call, i) => (call[0] === 'update' ? [{ i, fields: call[1] }] : []))
+
+  it('refreshes the reflection for everyone, but the emotion only where the AI chose it', async () => {
+    await expect(updateDiaryEmotion('u1', ID, emotion)).resolves.toBe(true)
+    const [reflection, chosen] = updates()
+
+    expect(reflection.fields).toEqual({ emotion_summary: 'down', emotion_questions: ['why?'] })
+    expect(chosen.fields).toMatchObject({ emotion_primary: 'sad', emotion_score: 40 })
+
+    // Only the emotion write is guarded by emotion_source = 'ai': a user's pick is left
+    // alone, even one that lands while analysis is running.
+    const guardedAfter = db.calls
+      .slice(chosen.i)
+      .some(([name, col, value]) => name === 'eq' && col === 'emotion_source' && value === 'ai')
+    const guardedBefore = db.calls
+      .slice(reflection.i, chosen.i)
+      .some(([name, col]) => name === 'eq' && col === 'emotion_source')
+    expect(guardedAfter).toBe(true)
+    expect(guardedBefore).toBe(false)
+  })
+})
+
+describe('setUserEmotion', () => {
+  it("stores the pick and marks it the user's", async () => {
+    db.result = { data: [{ id: ID }], error: null }
+    await expect(setUserEmotion('u1', ID, 'tired', 'calm')).resolves.toBe(true)
+    expect(db.calls.find(([name]) => name === 'update')?.[1]).toEqual({
+      emotion_primary: 'tired',
+      emotion_secondary: 'calm',
+      emotion_source: 'user',
+    })
+    expect(db.calls).toContainEqual(['eq', 'user_id', 'u1'])
+  })
+
+  it("reports false for an entry that is not the user's", async () => {
+    db.result = { data: [], error: null }
+    await expect(setUserEmotion('u1', ID, 'tired')).resolves.toBe(false)
   })
 })

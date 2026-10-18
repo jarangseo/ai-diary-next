@@ -9,9 +9,15 @@ function baseRow(overrides: Partial<DiaryRow> = {}): DiaryRow {
     user_id: 'user-1',
     date: '2026-06-01',
     title: null,
+    mode: 'write',
     content: 'a calm day',
+    summary: null,
+    summary_made_at: null,
+    summary_edited_at: null,
     is_record_only: false,
     emotion_primary: null,
+    emotion_secondary: null,
+    emotion_source: 'ai',
     emotion_score: null,
     emotion_summary: null,
     emotion_questions: null,
@@ -67,12 +73,57 @@ describe('rowToDiary', () => {
   })
 })
 
+describe('rowToDiary — v2 columns (migration 002)', () => {
+  it('reads an existing written entry as write / ai with no draft', () => {
+    const diary = rowToDiary(baseRow())
+    expect(diary.mode).toBe('write')
+    expect(diary.summary).toBeUndefined()
+    expect(diary.emotionSource).toBe('ai')
+  })
+
+  it('maps a chat entry with its draft and edit time', () => {
+    const diary = rowToDiary(
+      baseRow({
+        mode: 'chat',
+        content: '',
+        summary: '긴 회의 끝에 본 노을',
+        summary_made_at: '2026-06-01T13:24:00.000Z',
+        summary_edited_at: '2026-06-01T13:30:00.000Z',
+      })
+    )
+    expect(diary.mode).toBe('chat')
+    expect(diary.summary).toEqual({
+      text: '긴 회의 끝에 본 노을',
+      madeAt: Date.parse('2026-06-01T13:24:00.000Z'),
+      editedAt: Date.parse('2026-06-01T13:30:00.000Z'),
+    })
+  })
+
+  it('does not surface a draft without its timestamp', () => {
+    expect(rowToDiary(baseRow({ mode: 'chat', summary: 'x' })).summary).toBeUndefined()
+  })
+
+  it('maps the secondary emotion and who chose it, dropping an unknown secondary', () => {
+    const diary = rowToDiary(
+      baseRow({ emotion_primary: 'tired', emotion_secondary: 'calm', emotion_source: 'user' })
+    )
+    expect(diary.emotion?.secondary).toBe('calm')
+    expect(diary.emotionSource).toBe('user')
+    expect(
+      rowToDiary(baseRow({ emotion_primary: 'tired', emotion_secondary: 'ecstatic' })).emotion
+        ?.secondary
+    ).toBeUndefined()
+  })
+})
+
 describe('diaryToRow', () => {
   const diary: Diary = {
     id: 'diary-1',
     date: '2026-06-01',
+    mode: 'write',
     content: 'a calm day',
     isRecordOnly: false,
+    emotionSource: 'ai',
     createdAt: 0,
     updatedAt: 0,
   }
@@ -82,9 +133,15 @@ describe('diaryToRow', () => {
       user_id: 'user-1',
       date: '2026-06-01',
       title: null,
+      mode: 'write',
       content: 'a calm day',
+      summary: null,
+      summary_made_at: null,
+      summary_edited_at: null,
       is_record_only: false,
       emotion_primary: null,
+      emotion_secondary: null,
+      emotion_source: 'ai',
       emotion_score: null,
       emotion_summary: null,
       emotion_questions: null,

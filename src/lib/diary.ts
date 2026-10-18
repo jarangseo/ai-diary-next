@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { deleteChatDataForUser } from './chat'
-import type { DiaryEmotion } from '@/types/diary'
+import type { DiaryEmotion, DiaryMode } from '@/types/diary'
+import type { EmotionPrimary } from './emotion'
 import { rowToDiary } from './diaryMapper'
 import { analyzeEmotion } from './emotionAnalysis'
 
@@ -59,12 +60,18 @@ export async function getAllDiaries(userId: string) {
   return data?.map(rowToDiary) ?? []
 }
 
-/** Always a new entry, even on a date that already has one. Returns its id, or null. */
+/**
+ * Always a new entry, even on a date that already has one. Returns its id, or null.
+ *
+ * A chat entry starts the moment its conversation does, with an empty body: its 일기 is
+ * the AI draft made at wrap-up, and the user's words live in the conversation.
+ */
 export async function createDiary(
   userId: string,
   date: string,
   content: string,
-  isRecordOnly: boolean
+  isRecordOnly: boolean,
+  mode: DiaryMode = 'write'
 ): Promise<string | null> {
   const now = new Date().toISOString()
 
@@ -73,7 +80,8 @@ export async function createDiary(
     .insert({
       user_id: userId,
       date,
-      content,
+      mode,
+      content: mode === 'chat' ? '' : content,
       is_record_only: isRecordOnly,
       created_at: now,
       updated_at: now,
@@ -134,27 +142,74 @@ export async function deleteDiary(userId: string, id: string) {
 // Targeted update of the emotion columns only — never touches `content` (analysis
 // runs after a save, so the content is already correct) and leaves `updated_at`
 // alone (emotion is derived metadata, not a user content edit).
+//
+// The user owns the emotion (PRODUCT_DIRECTION, *Emotion*): once they have picked one
+// (`emotion_source = 'user'`), re-analysis refreshes the reflection — summary and
+// questions — but never the emotion itself. That rule is in the WHERE clause of the
+// second update rather than a read-then-write, so a pick that lands mid-analysis still
+// wins.
 export async function updateDiaryEmotion(
   userId: string,
   id: string,
   emotion: DiaryEmotion
 ): Promise<boolean> {
-  const { error } = await supabase
+  const { error: reflectionError } = await supabase
     .from('diaries')
     .update({
-      emotion_primary: emotion.primary,
-      emotion_score: emotion.score,
       emotion_summary: emotion.summary,
       emotion_questions: emotion.questions ?? null,
     })
     .eq('user_id', userId)
     .eq('id', id)
 
+  const { error: emotionError } = await supabase
+    .from('diaries')
+    .update({
+      emotion_primary: emotion.primary,
+      emotion_secondary: emotion.secondary ?? null,
+      emotion_score: emotion.score,
+    })
+    .eq('user_id', userId)
+    .eq('id', id)
+    .eq('emotion_source', 'ai')
+
   // Best-effort, but never silent: a swallowed DB error here made an emotion-column
   // type mismatch (numeric overflow on the 0–100 score) hard to diagnose.
+  const error = reflectionError ?? emotionError
   if (error) console.error('updateDiaryEmotion failed:', error.message)
 
   return !error
+}
+
+/**
+ * The user picking the entry's emotion (the emotion chip). Marks it theirs, so
+ * re-analysis leaves it alone from then on. Returns false when nothing matched or the
+ * write failed.
+ */
+export async function setUserEmotion(
+  userId: string,
+  id: string,
+  primary: EmotionPrimary,
+  secondary?: EmotionPrimary
+): Promise<boolean> {
+  if (!isDiaryId(id)) return false
+
+  const { data, error } = await supabase
+    .from('diaries')
+    .update({
+      emotion_primary: primary,
+      emotion_secondary: secondary ?? null,
+      emotion_source: 'user',
+    })
+    .eq('user_id', userId)
+    .eq('id', id)
+    .select('id')
+
+  if (error) {
+    console.error('setUserEmotion failed:', error.message)
+    return false
+  }
+  return data.length > 0
 }
 
 // Best-effort: analyze the content and, if successful, store the emotion on the
