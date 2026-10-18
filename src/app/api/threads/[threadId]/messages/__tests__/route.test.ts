@@ -95,3 +95,29 @@ describe('POST messages — wrap-up offer', () => {
     expect(stored().map((x) => x.role)).toEqual(['user', 'assistant'])
   })
 })
+
+describe('POST messages — length', () => {
+  const post = (text: string) =>
+    POST(
+      new Request(`http://test/api/threads/${THREAD}/messages?bench=1`, {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      }),
+      { params: Promise.resolve({ threadId: THREAD }) }
+    )
+
+  beforeEach(() => vi.mocked(listMessages).mockResolvedValue([]))
+
+  it('refuses more than 2,000 characters and stores nothing', async () => {
+    const res = await post('가'.repeat(2001))
+    expect(res.status).toBe(400)
+    expect(appendMessage).not.toHaveBeenCalled()
+  })
+
+  it('counts by code point, so 2,000 emoji are within the limit', async () => {
+    const res = await post('😀'.repeat(2000))
+    expect(res.status).toBe(200)
+    await res.text()
+    expect(stored()[0].role).toBe('user')
+  })
+})
