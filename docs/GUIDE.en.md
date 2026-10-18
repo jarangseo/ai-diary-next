@@ -141,7 +141,7 @@ rest.
 | File | Role |
 |---|---|
 | `verify` script in `package.json` | Runs the seven checks in order, as one command — given several, people and AIs alike run only some |
-| `e2e/`, `playwright.config.ts` | Real-browser tests for signing in, writing, deleting, closing an account. Run as the test-only user `e2e-test-user` |
+| `e2e/`, `playwright.config.ts` | Real-browser tests for signing in, writing, deleting, closing an account. Run as a test-only user per run (`e2e-test-user-<run id>`), so two sessions can run them at once |
 | `src/**/*.test.ts`, `scripts/__tests__/` | Unit tests (Vitest) |
 | `scripts/check-bundle-budget.mjs` | The bundle size check |
 | `scripts/seed.mjs` | Puts sample entries into the development database |

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { E2E_STATE } from './constants'
 
 // The browser's own zone is stored on the first visit, and a later visit from a device in
 // another zone does not move the user's day.
@@ -29,7 +30,7 @@ test('the first visit stores the browser time zone, and a later one does not ove
 
   // Same account, another device in Seoul.
   const seoul = await browser.newContext({
-    storageState: 'e2e/.auth/state.json',
+    storageState: E2E_STATE,
     timezoneId: 'Asia/Seoul',
     locale: 'ko-KR',
   })

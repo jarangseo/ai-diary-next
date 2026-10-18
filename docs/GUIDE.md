@@ -144,7 +144,7 @@ AI에게 절대 맡기지 않는 일이에요. 훅과 설정이 일부를 기계
 | 파일 | 역할 |
 |---|---|
 | `package.json`의 `verify` 스크립트 | 검사 7가지를 순서대로 한 번에 돌리는 명령. 따로따로 두면 사람도 AI도 일부만 돌려서 하나로 묶었어요 |
-| `e2e/`, `playwright.config.ts` | 실제 브라우저로 로그인, 일기 쓰기, 삭제, 탈퇴를 확인하는 테스트. 테스트 전용 계정 `e2e-test-user`로 돌아요 |
+| `e2e/`, `playwright.config.ts` | 실제 브라우저로 로그인, 일기 쓰기, 삭제, 탈퇴를 확인하는 테스트. 실행마다 따로 만든 테스트 전용 계정(`e2e-test-user-<실행 id>`)으로 돌아서, 두 세션이 동시에 돌려도 서로 데이터를 지우지 않아요 |
 | `src/**/*.test.ts`, `scripts/__tests__/` | 단위 테스트(Vitest) |
 | `scripts/check-bundle-budget.mjs` | 번들 크기 검사 |
 | `scripts/seed.mjs` | 개발 DB에 샘플 일기를 넣어요 |

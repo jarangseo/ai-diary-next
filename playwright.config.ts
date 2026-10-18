@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { E2E_PORT, E2E_RUN_ID, E2E_STATE } from './e2e/constants'
 
 // E2E exists to answer the question the other checks cannot: does the feature work?
 // typecheck, lint, unit tests and the bundle budget all pass on a page that renders
@@ -6,7 +7,9 @@ import { defineConfig, devices } from '@playwright/test'
 //
 // Runs against a production build, because that is the artefact that ships and because
 // dev-mode timing and behaviour differ enough to hide real problems.
-const PORT = 3100
+//
+// The port is per run (see e2e/constants.ts) so two sessions' suites do not collide.
+const PORT = E2E_PORT
 // 127.0.0.1, not localhost: Chromium resolves `localhost` to ::1 first, and the dev
 // server binds IPv4 only — which shows up as ERR_CONNECTION_REFUSED in the browser while
 // curl and Playwright's request context (both of which fall back) work fine.
@@ -14,8 +17,10 @@ const BASE_URL = `http://127.0.0.1:${PORT}`
 
 export default defineConfig({
   testDir: './e2e',
-  // Serial by default: the specs share one database and one seeded user, so parallel
-  // runs would race on the same rows.
+  // Per run, so a second suite in the same folder (E2E_RUN_ID) keeps its own traces.
+  outputDir: `test-results/${E2E_RUN_ID}`,
+  // Serial within a run: its specs share one user, so parallel workers would race on the
+  // same rows. Separate runs are isolated by their own user and port instead.
   workers: 1,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -31,7 +36,7 @@ export default defineConfig({
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/state.json' },
+      use: { ...devices['Desktop Chrome'], storageState: E2E_STATE },
       dependencies: ['setup'],
     },
   ],

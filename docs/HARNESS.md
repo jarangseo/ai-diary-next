@@ -39,14 +39,19 @@ them a poor oracle for "implement X".
 
 ### E2E
 
-- Runs against a **production build** on port 3100 — the artefact that ships.
+- Runs against a **production build**, the artefact that ships, on a port fixed per run
+  (3100–3899, from the run id; `E2E_PORT` overrides).
+- **Every run is its own user.** The run id is the worktree's folder name (`E2E_RUN_ID`
+  overrides), the user is `e2e-test-user-<run id>`, and the saved sign-in is
+  `e2e/.auth/state-<run id>.json`. Two sessions can run `pnpm verify` at once
+  (`e2e/constants.ts`, #87).
 - Signs in through a credentials provider that **only exists when `E2E_AUTH_SECRET` is
   set**, which is nowhere but the test run. Unset, the provider is not registered, so
   there is no path to authenticate through it. It also checks the value, not just the
   presence: if it were ever set in a deployed environment it would be account takeover.
-- Writes under a dedicated `e2e-test-user` on far-past dates, so it never touches a real
-  account's entries. Every save is a new row, so each spec deletes what it wrote
-  (`e2e/entries.ts`); `withdrawal.spec.ts` runs last and wipes the rest.
+- Writes under that dedicated user on far-past dates, so it never touches a real account's
+  entries or another run's. Every save is a new row, so each spec deletes what it wrote
+  (`e2e/entries.ts`); `withdrawal.spec.ts` runs last and wipes the rest of this run's user.
 - `test.fixme` marks the oracle for work not yet done. `thread.spec.ts` is the acceptance
   test for putting the thread on the diary detail page: remove `fixme` as part of that
   task, and if it passes, the task is done.
@@ -210,12 +215,12 @@ phase*.
   check that opens a browser. CI gets the development project's URL, service-role key and
   `E2E_AUTH_SECRET` as repository secrets and runs `pnpm test:e2e` after the build. Until
   then, see [the gap](#the-gap-ci-is-weaker-than-the-oracle).
-- **Each E2E run owns its data.** Today every spec writes as `e2e-test-user`, and
-  `withdrawal.spec.ts` deletes *all* of that user's rows — a teammate's run, or CI, that
-  reaches it wipes yours mid-flight, and the failure looks like flakiness. The rule:
-  the E2E user id carries a run id (`e2e-<run>`), each run cleans up only its own user,
-  and new specs never rely on a fixed shared row. Until that change lands, don't run E2E
-  against the shared database at the same time as someone else.
+- **Each E2E run owns its data** (done, #87). Before it, every spec wrote as one
+  `e2e-test-user` on port 3100. On 2026-10-18 two sessions ran `verify` at once, and one
+  run's `withdrawal.spec.ts` wiped the other's entries mid-flight. The failures looked like
+  flakiness: timeouts and a lost sign-in. Now the user id and port carry a run id, each run
+  cleans up only its own user, and new specs never rely on a fixed shared row. CI should
+  set `E2E_RUN_ID` to something unique per job, such as the run number.
 - **Claude settings are split by who they apply to.** `.claude/settings.json` (committed)
   holds the hooks and the `permissions.deny` list everyone needs: reading `.env` files and
   deploying. The deny list and `block-risky-commands.sh` overlap on purpose — the deny
