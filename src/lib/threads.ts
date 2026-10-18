@@ -96,6 +96,18 @@ export async function appendMessage(
 }
 
 /**
+ * Removes messages from one thread — what a broken-off reply left behind, before `다시 시도`
+ * generates it again (#115). Scoped by thread as well as id, so a stray id from elsewhere
+ * cannot delete anything; the caller has already checked the thread is the user's.
+ */
+export async function deleteMessages(threadId: string, ids: string[]): Promise<boolean> {
+  if (ids.length === 0) return true
+  const { error } = await supabase.from('messages').delete().eq('thread_id', threadId).in('id', ids)
+  if (error) console.error('deleteMessages failed:', error.message)
+  return !error
+}
+
+/**
  * The thread for an entry, created on first sight if it does not exist yet.
  *
  * Lazy rather than created alongside the entry, for two reasons: entries written before

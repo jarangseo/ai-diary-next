@@ -80,6 +80,40 @@ test.describe('when something goes wrong (spec 5-2)', () => {
     await expect(log.getByText(message)).toHaveCount(1)
   })
 
+  test('다시 시도 after a reply broke off mid-stream does not store the message twice (#115)', async ({
+    page,
+  }) => {
+    const message = `중간에 끊김 ${Date.now()}`
+    // The server gets the whole request — it stores the message and the reply — but the
+    // browser receives only the first line and then an error: a stream that broke off.
+    await page.route(MESSAGES, async (route) => {
+      const full = await (await route.fetch()).text()
+      const firstLine = full.split('\n')[0]
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/x-ndjson',
+        body: `${firstLine}\n${JSON.stringify({ type: 'error', message: 'broke off' })}\n`,
+      })
+    })
+    await page.getByLabel('이어서 이야기하기').fill(message)
+    await page.getByRole('button', { name: '보내기' }).click()
+    // route.fetch() lets the server finish its whole (paced) fake reply first.
+    await expect(page.getByRole('button', { name: '다시 시도' })).toBeVisible({ timeout: 30_000 })
+
+    await page.unroute(MESSAGES)
+    const retried = page.waitForResponse(
+      (r) => r.url().includes('/messages') && r.request().method() === 'POST'
+    )
+    await page.getByRole('button', { name: '다시 시도' }).click()
+    expect((await retried).ok()).toBe(true)
+    await expect(page.getByRole('button', { name: '정지' })).toBeVisible()
+
+    // Once on the server, though it reached it twice.
+    const log = page.getByRole('log', { name: '대화' })
+    await page.reload()
+    await expect(log.getByText(message)).toHaveCount(1)
+  })
+
   test('over the daily limit, the card stands in for the input', async ({ page }) => {
     const message = `한도 ${Date.now()}`
     await page.route(MESSAGES, (route) => route.fulfill({ status: 429 }))

@@ -92,7 +92,7 @@ export function useThreadStream({
   // Sends the user's message `userId` (already on screen) and streams the reply under it.
   // Resolves true once the reply has arrived.
   const deliver = useCallback(
-    async (userId: string, text: string): Promise<boolean> => {
+    async (userId: string, text: string, retrying = false): Promise<boolean> => {
       mark(userId)
       if (!navigator.onLine) {
         mark(userId, 'unsent')
@@ -103,10 +103,20 @@ export function useThreadStream({
       // later. Captured in closures below so updates target this exact message rather
       // than "the last one", which breaks the moment anything else appends.
       const assistantId = crypto.randomUUID()
-      setMessages((prev) => [
-        ...prev,
-        { id: assistantId, threadId, role: 'assistant', content: '', createdAt: Date.now() },
-      ])
+      const placeholder: Message = {
+        id: assistantId,
+        threadId,
+        role: 'assistant',
+        content: '',
+        createdAt: Date.now(),
+      }
+      setMessages((prev) => {
+        if (!retrying) return [...prev, placeholder]
+        // A retry replaces what the failed attempt left after the message (a reply that
+        // broke off); the server drops the same (#115).
+        const at = prev.findIndex((m) => m.id === userId)
+        return at === -1 ? [...prev, placeholder] : [...prev.slice(0, at + 1), placeholder]
+      })
       setStatus('streaming')
 
       const controller = new AbortController()
@@ -137,7 +147,7 @@ export function useThreadStream({
           {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ text }),
+            body: JSON.stringify(retrying ? { text, retry: true } : { text }),
             signal: controller.signal,
           }
         )
@@ -219,7 +229,7 @@ export function useThreadStream({
     (id: string): Promise<boolean> => {
       const message = messages.find((m) => m.id === id)
       if (!message || status === 'streaming') return Promise.resolve(false)
-      return deliver(id, message.content)
+      return deliver(id, message.content, true)
     },
     [messages, status, deliver]
   )
