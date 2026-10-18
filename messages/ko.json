@@ -63,5 +63,21 @@
     "sad": "슬픔",
     "anxious": "불안",
     "angry": "분노"
+  },
+  "Home": {
+    "greeting": "{name}님,<br></br>오늘은 어땠어요?",
+    "greetingNoName": "오늘은 어땠어요?",
+    "modes": {
+      "label": "쓰는 방식",
+      "chat": "대화로 쓰기",
+      "write": "직접 쓰기",
+      "writeSoon": "곧",
+      "writeUnavailable": "직접 쓰기는 다음 업데이트에서 열려요."
+    },
+    "input": {
+      "label": "오늘 이야기",
+      "placeholder": "오늘 있었던 일을 편하게 얘기해 주세요",
+      "send": "보내기"
+    }
   }
 }

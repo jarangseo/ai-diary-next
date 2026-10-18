@@ -1,0 +1,198 @@
+@use '@/styles/variables' as *;
+
+$touch: 44px; // the minimum touch target
+// The shell's mobile header (44px button + 8px padding each side + its border) and the
+// content padding above and below, so the home fills exactly one screen on a phone.
+$mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// On a phone the greeting sits in the middle and the input at the bottom, within thumb
+// reach. From the tablet breakpoint up, everything is one centred column.
+.home {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - #{$mobile-chrome});
+
+  @include mdm-lrg {
+    min-height: calc(100dvh - #{$spacing-xl + $spacing-3xl});
+    justify-content: center;
+    gap: $spacing-2xl;
+  }
+}
+
+.intro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: $spacing-3xl;
+
+  @include mdm-lrg {
+    flex: none;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 0;
+  }
+}
+
+.today {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.greeting {
+  font-family: $font-serif;
+  font-weight: $font-weight-bold;
+  font-size: 28px;
+  line-height: 1.3;
+  color: $color-text-primary;
+
+  @include mdm-lrg {
+    font-size: 34px;
+  }
+}
+
+.memory {
+  font-family: $font-serif;
+  font-size: 16px;
+  color: $color-text-secondary;
+}
+
+.start {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  @include mdm-lrg {
+    align-items: center;
+    gap: $spacing-md;
+  }
+}
+
+// === Writing-mode tabs ===
+.modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-xs;
+  padding: $spacing-xs;
+  background-color: $color-bg-tertiary;
+  border-radius: $radius-md;
+
+  @include mdm-lrg {
+    display: inline-grid;
+    grid-template-columns: repeat(2, auto);
+  }
+}
+
+.mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: $touch;
+  padding: 0 18px;
+  border-radius: 9px;
+  font-size: 14px;
+  color: $color-text-secondary;
+
+  &[aria-pressed='true'] {
+    background-color: $color-surface;
+    color: $color-text-primary;
+    font-weight: $font-weight-semibold;
+    box-shadow:
+      inset 0 -2px 0 $color-accent,
+      $shadow-xs;
+  }
+
+  &[aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.soon {
+  padding: 1px 6px;
+  border-radius: $radius-sm;
+  background-color: $color-surface;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+// === Input ===
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: $spacing-sm;
+  padding: 6px 6px 6px $spacing-lg;
+  background-color: $color-surface;
+  border: 1px solid $color-border-input;
+  border-radius: 20px;
+  box-shadow: $shadow-md;
+
+  &:focus-within {
+    @include focus-ring;
+  }
+
+  @include mdm-lrg {
+    width: 100%;
+    max-width: 680px;
+    box-sizing: border-box;
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: $spacing-sm 0;
+  border: 0;
+  resize: none;
+  background: transparent;
+  font: inherit;
+  // 16px keeps iOS from zooming into the field on focus.
+  font-size: 16px;
+  line-height: 1.6;
+  color: $color-text-primary;
+  outline: none;
+
+  &::placeholder {
+    color: $color-text-tertiary;
+  }
+}
+
+.send {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $touch;
+  height: $touch;
+  border-radius: 999px;
+  background-color: $color-accent-strong;
+  color: $color-text-inverse;
+  transition: background-color $transition-fast;
+
+  &:hover:not(:disabled) {
+    background-color: $color-accent-hover;
+  }
+
+  &:disabled {
+    background-color: $color-disabled;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
