@@ -212,6 +212,42 @@ export async function setUserEmotion(
   return data.length > 0
 }
 
+/**
+ * Stores a chat entry's 일기 from wrap-up (#75). A fresh draft is the AI's text again, so
+ * any earlier edit mark is cleared; the caller has already asked the user before
+ * replacing an edited draft. The AI title replaces the "first 30 characters" one.
+ * Only chat entries take a draft (the CHECK in migration 002 says the same). Returns false
+ * when nothing matched or the write failed.
+ */
+export async function saveDraft(
+  userId: string,
+  id: string,
+  draft: { title: string; text: string },
+  madeAt: Date
+): Promise<boolean> {
+  if (!isDiaryId(id)) return false
+
+  const { data, error } = await supabase
+    .from('diaries')
+    .update({
+      summary: draft.text,
+      summary_made_at: madeAt.toISOString(),
+      summary_edited_at: null,
+      ...(draft.title ? { title: draft.title } : {}),
+      updated_at: madeAt.toISOString(),
+    })
+    .eq('user_id', userId)
+    .eq('id', id)
+    .eq('mode', 'chat')
+    .select('id')
+
+  if (error) {
+    console.error('saveDraft failed:', error.message)
+    return false
+  }
+  return data.length > 0
+}
+
 // Best-effort: analyze the content and, if successful, store the emotion on the
 // (already-saved) entry. Both primitives swallow their own failures (analyzeEmotion
 // returns null, updateDiaryEmotion returns false), so this never throws — a diary
