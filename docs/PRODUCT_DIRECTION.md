@@ -125,8 +125,15 @@ as is (it saves immediately, caps at 3–5 sentences and embellishes).
    (`10월 14일 일기`) that opens the entry. A conversation can widen from today to "요즘" this way, which is
    where v1's `Question` mode now lives.
 3. Settings: `지난 일기 참고하기` (on by default), with a line explaining what the AI reads.
-Retrieval in v2.0 is the recent window (about two weeks of 일기, condensed); full-archive retrieval is
-v2.3. If memory ships as a plain LLM passthrough, the product has lost its reason to exist.
+Retrieval in v2.0 is **layered** *(revised 2026-10-18; was "the recent window only")*:
+- **Last 14 days** (the user's own calendar): each entry's 일기, condensed (#107).
+- **Older**: one **memory note** per entry, a single line saying what happened, written by the same
+  call that analyses the emotion (no extra model call). Newest first, capped (#108).
+- **Much older, later**: monthly roll-ups of the notes, if the notes alone outgrow their cap.
+
+Concatenating every day's summary as-is was considered and rejected, because it grows without bound
+(about 36k characters a year) on every reply. Full-archive retrieval, meaning search over everything, is
+still v2.3. If memory ships as a plain LLM passthrough, the product has lost its reason to exist.
 
 **Emotion — the AI suggests, the user owns it** — **Decision.**
 Each entry has a primary emotion and an optional secondary one. Tapping the emotion chip lets the user
@@ -262,7 +269,7 @@ Retrofitting after v2 would mean touching every screen again.
 
 | Release | Contents |
 |---|---|
-| **v2.0** | New design system and shell (sidebar, mobile-first home), 대화로 쓰기 with wrap-up and the 일기 at the centre, memory greeting + recent-window context + source chips + setting, emotion correction, first run, failure and limit states, privacy notice, crisis protocol; global-ready foundations (stored time zone, i18n layer, `Intl` dates, per-country crisis lines), still in Korean only |
+| **v2.0** | New design system and shell (sidebar, mobile-first home), 대화로 쓰기 with wrap-up and the 일기 at the centre, memory greeting + layered context (recent window + older memory notes) + source chips + setting, emotion correction, first run, failure and limit states, privacy notice, crisis protocol; global-ready foundations (stored time zone, i18n layer, `Intl` dates, per-country crisis lines), still in Korean only |
 | **v2.1** | 직접 쓰기, question chips, `일기에 덧붙이기` |
 | **v2.2** | Calendar dialog with the month line, list edit, export, "1년 전 오늘" |
 | **v2.3** | Full-archive retrieval, app lock |
