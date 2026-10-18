@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
+import { ThemeSetting } from '@/components/Settings/ThemeSetting'
 import { WithdrawAccount } from '@/components/Settings/WithdrawAccount'
 import styles from './page.module.scss'
 
@@ -10,6 +11,16 @@ export default async function SettingsPage() {
   return (
     <div className={styles.settings}>
       <h1 className={styles.title}>설정</h1>
+
+      <section className={styles.section} aria-labelledby="display-heading">
+        <h2 className={styles.sectionTitle} id="display-heading">
+          화면
+        </h2>
+        <p className={styles.body}>
+          기기 설정을 따르거나 낮·밤 테마를 고를 수 있어요. 이 기기에만 저장돼요.
+        </p>
+        <ThemeSetting />
+      </section>
 
       <section className={styles.section} aria-labelledby="account-heading">
         <h2 className={styles.sectionTitle} id="account-heading">
