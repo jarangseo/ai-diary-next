@@ -27,8 +27,8 @@ how agent loops are run, and why these rules exist, is in
 3. **Branch from `main` in a new worktree** as `type/short-desc` (`feat/…`, `fix/…`,
    `docs/…`). One issue per branch, one session per worktree; the main checkout is never
    edited or switched (see *One session, one worktree* in `docs/HARNESS.md`).
-4. **Run `pnpm verify` before asking for review.** CI does not run E2E yet, so a green CI
-   is not proof the feature works — your local `verify` is.
+4. **Run `pnpm verify` before asking for review.** CI runs it too, E2E included (the `e2e`
+   check, against the development database), but catching a failure locally is faster.
 5. **Open a pull request that closes the issue.** Fill in the template, including the
    *Human review* checklist: it is how a reviewer approves without reading every line.
    Keep it small; split it if the description needs headings.
@@ -123,8 +123,9 @@ gh api -X PUT repos/jarangseo/ai-diary-next/branches/main/protection \
 EOF
 ```
 
-Then add the development Supabase keys and `E2E_AUTH_SECRET` as repository secrets so CI
-can run E2E (tracked in `docs/HARNESS.md`, *The gap*).
+CI's E2E needs these repository secrets (set 2026-10-18, #97): `DEV_SUPABASE_URL` and
+`DEV_SUPABASE_SERVICE_ROLE_KEY` (the development project, never production),
+`E2E_AUTH_SECRET` and `CI_AUTH_SECRET` (random values).
 
 Branch protection counts approvals per branch, not per path, so the second approval on
 harness pull requests is a reviewers' rule rather than a GitHub setting.

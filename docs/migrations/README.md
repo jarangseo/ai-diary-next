@@ -12,10 +12,24 @@ has no migration runner — the ledger below **is** the record of what has been 
 - The file states what was **verified against the live database** before it was written,
   so a reader can tell facts from assumptions.
 - After applying, add a row to the ledger and record how it was verified.
+- **Apply to development first, then production.** CI's E2E runs against
+  `ai-diary-next-dev`, so a migration that reaches production but not development leaves
+  CI testing a schema that no longer exists.
 
-There is a single Supabase environment (`main`, PRODUCTION) — no staging copy to
-rehearse on. Migrations are written to be backwards compatible with the code already
-deployed, so the running app keeps working between the migration and the code change.
+There are two Supabase projects (since 2026-10-18, #97):
+
+| Project | Role |
+|---|---|
+| `jarangseo's Project` | **production** — the live app |
+| `ai-diary-next-dev` | development — CI's E2E, and the place to rehearse a migration |
+
+`ai-diary-next-dev` was built from production's original creation queries plus 001 and
+002, and checked equal to production on 2026-10-18 (same column and constraint
+fingerprints; issue #97). One known difference: RLS is on for the three chat tables in
+development but off in production.
+
+Migrations are written to be backwards compatible with the code already deployed, so the
+running app keeps working between the migration and the code change.
 
 ## Ledger
 

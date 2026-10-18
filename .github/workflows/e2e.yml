@@ -1,0 +1,63 @@
+name: E2E
+
+# The only check that opens a browser (docs/HARNESS.md, "The oracle"). Until #97 it ran only
+# on the author's machine, so a PR's "E2E passed" was the author's word. It now runs here,
+# against the development Supabase project — never production: production keys are not in
+# CI's secrets at all.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # The app's server-side env, pointed at the development project.
+      SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}
+      AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+      # OAuth is never used here: the E2E credentials provider signs in instead (it exists
+      # only when E2E_AUTH_SECRET is set). The ids just have to be present at build time.
+      AUTH_GOOGLE_ID: ci-dummy
+      AUTH_GOOGLE_SECRET: ci-dummy
+      AUTH_GITHUB_ID: ci-dummy
+      AUTH_GITHUB_SECRET: ci-dummy
+      # No model calls: E2E streams the deterministic fake reply, and the after-save emotion
+      # analysis is best-effort, so a dummy key only makes it log and skip. Nothing is spent.
+      OPENAI_API_KEY: ci-dummy
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+      E2E_AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET }}
+      # One user and one port per run (#91), so concurrent runs — and local runs against the
+      # same project — never wipe each other's data.
+      E2E_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # version is read from package.json's packageManager → matches local
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build
+        run: pnpm build
+
+      - name: E2E
+        run: pnpm test:e2e
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
