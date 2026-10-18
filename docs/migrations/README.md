@@ -44,7 +44,22 @@ running app keeps working between the migration and the code change.
 |---|---|---|---|---|
 | 001 | [`001_diary_id_and_threads.sql`](./001_diary_id_and_threads.sql) | 2026-08-19 | `main` (production) | ✅ see below |
 | 002 | [`002_v2_entries_and_settings.sql`](./002_v2_entries_and_settings.sql) | 2026-10-18 | `main` (production) | ✅ see below |
-| 003 | [`003_memory_note_and_chat_rls.sql`](./003_memory_note_and_chat_rls.sql) | **draft — not applied** (development first, then production) | — | tested on PGlite |
+| 003 | [`003_memory_note_and_chat_rls.sql`](./003_memory_note_and_chat_rls.sql) | 2026-10-19 | development, then `main` (production) | ✅ see below |
+
+### 003 — verification
+
+- Before: tested on Postgres 16.4 (PGlite) against a stand-in with production's RLS state
+  (7/7). The separate chat server was checked first: it connects with
+  `SUPABASE_SERVICE_ROLE_KEY` (`ai-diary-chat-server/src/supabase.ts`), so RLS does not block it.
+- Development: applied, then verified `memory_note` = text/nullable and RLS true on all three
+  chat tables.
+- Production: pre-apply check returned `memory_note` absent and RLS **false** on all three
+  chat tables. After applying: `memory_note` = text/nullable, RLS true on all three, and
+  still 34 entries.
+- With this applied, the code that uses `memory_note` (#116) could merge, per the rule above.
+
+The two SQL Editor queries used for this ("Untitled query") can be deleted from the
+dashboard; the saved creation queries were not touched.
 
 ### 002 — verification
 
