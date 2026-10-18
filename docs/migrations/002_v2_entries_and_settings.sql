@@ -1,6 +1,6 @@
 -- 002 — v2 entries (chat / write, AI draft, owned emotion) and per-user settings
 --
--- STATUS: DRAFT — NOT APPLIED. Numbering and applying are a person's call (docs/HARNESS.md).
+-- STATUS: APPLIED 2026-10-18 to `main` (production) by the owner. See ./README.md for the ledger.
 --
 -- Sources: docs/PRODUCT_DIRECTION.md (v2 *Decision records*, *Screen specs (v2.0)*,
 -- *Beyond Korea*, *Schema implications (v2)*) and the screen canvas specs of 2026-10-18.

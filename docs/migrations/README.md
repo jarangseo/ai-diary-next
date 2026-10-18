@@ -22,7 +22,18 @@ deployed, so the running app keeps working between the migration and the code ch
 | # | Migration | Applied | Env | Verified |
 |---|---|---|---|---|
 | 001 | [`001_diary_id_and_threads.sql`](./001_diary_id_and_threads.sql) | 2026-08-19 | `main` (production) | ✅ see below |
-| 002 | [`002_v2_entries_and_settings.sql`](./002_v2_entries_and_settings.sql) | **draft — not applied** | — | tested on PGlite; pre-apply checks on `main` passed 2026-10-18 |
+| 002 | [`002_v2_entries_and_settings.sql`](./002_v2_entries_and_settings.sql) | 2026-10-18 | `main` (production) | ✅ see below |
+
+### 002 — verification
+
+- Before: tested on Postgres 16.4 (PGlite) against a stand-in schema (14/14 checks, listed in
+  the file header). The three pre-apply checks on `main` returned what the draft expects.
+- Applied by the owner in the SQL Editor, statements only (the file without comments):
+  `Success. No rows returned`.
+- After:
+  - `select mode, count(*) from diaries group by mode` → `write | 34`. Every existing entry
+    was backfilled, with no other mode.
+  - `user_settings` has `relrowsecurity = true`.
 
 ### 001 — verification
 
