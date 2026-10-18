@@ -1,46 +1,59 @@
 // =============================================================
-//  Design Tokens — "Warm Journal" tone
-//  paper-textured off-white + terracotta accent + sage sub
+//  Design Tokens — AI Diary design system (Paper / Night desk)
+//
+//  Colors and shadows are CSS custom properties defined per theme in themes.scss, so the
+//  names below resolve at runtime and every component follows the active theme. Because
+//  they are var() references, Sass color functions (rgba($x, .5), mix, darken) do not
+//  work on them; use color-mix() instead.
 // =============================================================
 
 // === Colors ===
-// --- Text (warm ink) ---
-$color-text-primary: #2b2724; // warm near-black (ink)
-$color-text-secondary: #6f655b; // warm gray
-$color-text-tertiary: #a59c90; // muted warm gray
-$color-text-inverse: #fffdf9; // warm white
+// --- Text ---
+$color-text-primary: var(--ink);
+$color-text-secondary: var(--ink-secondary);
+$color-text-tertiary: var(--ink-tertiary); // hints, placeholders — still ≥4.5:1
+$color-text-inverse: var(--on-accent); // text on accent fills
 
-// --- Surface / Background (paper) ---
-$color-bg-primary: #faf8f4; // page — warm off-white paper
-$color-bg-secondary: #f3efe7; // secondary surface
-$color-bg-tertiary: #ece7dd; // inset / badge
-$color-bg-hover: #efeae1; // hover state
-$color-surface: #ffffff; // card surface (white on paper)
+// --- Surface / Background ---
+$color-bg-primary: var(--bg); // page
+$color-bg-secondary: var(--bg-sidebar); // secondary column
+$color-bg-tertiary: var(--surface-muted); // inset / badge
+$color-bg-hover: var(--surface-muted); // hover rows
+$color-surface: var(--surface); // raised cards, dialogs
 
 // --- Border ---
-$color-border: #e9e3d8; // soft warm border
-$color-border-strong: #ddd5c7; // stronger divider
+$color-border: var(--border); // decorative hairlines only
+$color-border-strong: var(--border-strong);
+$color-border-input: var(--border-input); // the visible edge of an input (≥3:1)
 
-// --- Accent (terracotta) ---
-$color-accent: #c2693f;
-$color-accent-light: #f5e7df;
-$color-accent-hover: #aa5733;
-
-// --- Sub (sage) ---
-$color-sub: #8a9a7b;
-$color-sub-light: #ecf0e7;
+// --- Accent ---
+// `accent` is for icons, fills without text and the focus ring: light terracotta is
+// 3.7:1 on bg, so text in the accent hue uses $color-accent-text, and filled buttons
+// with text use $color-accent-strong.
+$color-accent: var(--accent);
+$color-accent-strong: var(--accent-strong);
+$color-accent-hover: var(--accent-hover);
+$color-accent-text: var(--accent-strong); // on bg / surface only (≥4.5:1 there)
+$color-accent-light: color-mix(in srgb, var(--accent) 14%, var(--surface)); // tint behind accent
 
 // --- Status ---
-$color-success: #6f8f5e;
-$color-success-light: #ecf0e7;
-$color-error: #c0503f;
-$color-error-light: #f6e4e0;
+// The design system has no separate success hue; sage (emotion-calm) keeps its role.
+$color-sub: var(--emotion-none);
+$color-success: var(--emotion-calm);
+$color-success-light: color-mix(in srgb, var(--emotion-calm) 16%, var(--surface));
+$color-error: var(--danger);
+$color-error-light: color-mix(in srgb, var(--danger) 12%, var(--surface));
 
-$color-disabled: #d8d2c8;
+$color-disabled: color-mix(in srgb, var(--ink) 22%, var(--surface));
+
+// --- Emotion --- (keys match EMOTIONS in src/lib/emotion.ts)
+@function emotion-color($key) {
+  @return var(--emotion-#{$key});
+}
 
 // === Typography ===
-$font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
-$font-serif: 'Gowun Batang', 'Nanum Myeongjo', serif; // journal feel (headings/body)
+$font-sans: 'Pretendard Variable', Pretendard, 'Noto Sans KR', system-ui, sans-serif;
+$font-serif: 'Gowun Batang', 'Nanum Myeongjo', serif; // display: greeting, titles, diary text
 
 $font-size-xs: 11px;
 $font-size-sm: 13px;
@@ -72,13 +85,11 @@ $radius-md: 12px;
 $radius-lg: 16px;
 $radius-full: 50%;
 
-// === Shadows === (soft, ink-on-paper)
-$shadow-xs: 0 1px 2px rgba(43, 39, 36, 0.04);
-$shadow-sm:
-  0 1px 3px rgba(43, 39, 36, 0.06),
-  0 1px 2px rgba(43, 39, 36, 0.04);
-$shadow-md: 0 4px 12px rgba(43, 39, 36, 0.07);
-$shadow-lg: 0 8px 24px rgba(43, 39, 36, 0.09);
+// === Shadows === (per theme: soft ink in Paper, none or near-black in Night desk)
+$shadow-xs: var(--shadow-tab);
+$shadow-sm: var(--shadow-tab);
+$shadow-md: var(--shadow-card);
+$shadow-lg: var(--shadow-card);
 
 // === Transitions ===
 $transition-fast: 0.15s ease;

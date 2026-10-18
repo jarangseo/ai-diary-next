@@ -79,7 +79,11 @@
   border-radius: $radius-lg;
   font-size: $font-size-sm;
   font-weight: $font-weight-semibold;
-  // color + background are set inline from the emotion's color (EMOTION_META)
+  // --emotion is set inline per entry. The hue tints the chip; the label stays in ink,
+  // because emotion colors are 2–3:1 on light grounds and would fail as text.
+  color: $color-text-primary;
+  background-color: color-mix(in srgb, var(--emotion) 22%, $color-surface);
+  border: 1px solid color-mix(in srgb, var(--emotion) 60%, $color-surface);
 }
 
 .content {

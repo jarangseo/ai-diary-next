@@ -1,0 +1,62 @@
+@use '@/styles/variables' as *;
+
+// A segmented control built on real radio inputs: arrow keys move between options and a
+// screen reader announces "1 of 3, selected" with no extra ARIA.
+.options {
+  display: inline-flex;
+  gap: $spacing-xs;
+  padding: $spacing-xs;
+  border-radius: $radius-md;
+  background-color: $color-bg-tertiary;
+}
+
+.legend {
+  // Named by the section heading visually; the legend keeps the group named for
+  // assistive technology.
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.option {
+  position: relative;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 $spacing-lg;
+    border-radius: 9px;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    transition:
+      background-color $transition-fast,
+      color $transition-fast;
+  }
+
+  input:checked + span {
+    background-color: $color-surface;
+    color: $color-text-primary;
+    box-shadow: $shadow-xs;
+    // Selected is told by shape too, not color alone (WCAG 1.4.1).
+    text-decoration: underline;
+    text-decoration-color: $color-accent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
+  }
+
+  input:focus-visible + span {
+    @include focus-ring;
+  }
+}

@@ -1,6 +1,16 @@
 {
   "Settings": {
     "title": "설정",
+    "display": {
+      "heading": "화면",
+      "body": "기기 설정을 따르거나 낮·밤 테마를 고를 수 있어요. 이 기기에만 저장돼요.",
+      "legend": "화면 테마",
+      "options": {
+        "system": "기기 설정",
+        "light": "낮",
+        "dark": "밤"
+      }
+    },
     "account": {
       "heading": "계정",
       "body": "탈퇴하면 지금까지 쓴 일기와 대화가 모두 삭제돼요. 되돌릴 수 없어요.",

@@ -6,7 +6,7 @@
   inset: 0 0 auto 0;
   z-index: 98;
   height: $topbar-height;
-  background-color: rgba($color-bg-primary, 0.85);
+  background-color: color-mix(in srgb, $color-bg-primary 85%, transparent);
   backdrop-filter: saturate(180%) blur(8px);
   border-bottom: 1px solid $color-border;
 }
@@ -29,7 +29,7 @@
   color: $color-text-primary;
 
   a:hover {
-    color: $color-accent;
+    color: $color-accent-text;
   }
 }
 

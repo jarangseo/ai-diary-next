@@ -81,8 +81,10 @@
 }
 
 .today {
+  // The tint and the weight mark today; the number stays in ink, since accent-colored
+  // text on the tint is 4.3:1 in the light theme (src/styles/__tests__/themes.test.ts).
   background-color: $color-accent-light;
-  color: $color-accent;
+  color: $color-text-primary;
   font-weight: $font-weight-bold;
 }
 
@@ -92,7 +94,7 @@
   width: 5px;
   height: 5px;
   border-radius: $radius-full;
-  background-color: $color-sub; // neutral dot (sage) until emotion analysis exists
+  background-color: $color-sub; // neutral dot until the calendar shows emotion colors
 }
 
 .today .dot {

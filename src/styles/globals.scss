@@ -1,3 +1,4 @@
+@use '@/styles/variables' as *;
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
 
@@ -21,10 +22,10 @@ html {
 body {
   padding-bottom: env(safe-area-inset-bottom);
   overflow-wrap: break-word;
-  font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
-  // Warm Journal base — tokens: $color-bg-primary / $color-text-primary
-  background-color: #faf8f4;
-  color: #2b2724;
+  font-family: $font-sans;
+  // Theme custom properties come from themes.scss (imported before this file).
+  background-color: var(--bg);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
