@@ -4,17 +4,9 @@ import { getSettings, DEFAULT_SETTINGS } from '@/lib/settings'
 import { groupEntries, todayIn, weekStartFor } from '@/lib/entryGroups'
 import { getEmotionMeta } from '@/lib/emotion'
 import type { Diary } from '@/types/diary'
-import { getEntries } from './entries'
+import { getEntries, getFirstMessages } from './entries'
+import { titleFromText } from './entryTitle'
 import { ShellFrame, type SidebarGroup } from './ShellFrame'
-
-// The spec's title before wrap-up: the first 30 characters of what was written.
-const TITLE_LENGTH = 30
-
-function fallbackTitle(content: string): string {
-  const firstLine = content.trim().split('\n', 1)[0].trim()
-  // By code point, so an emoji or a combining mark is never cut in half.
-  return Array.from(firstLine).slice(0, TITLE_LENGTH).join('')
-}
 
 /** The settings, or the defaults if they cannot be read: a sidebar grouped in UTC beats no app. */
 async function readSettings(userId: string) {
@@ -42,6 +34,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     getTranslations('Emotion'),
     getLocale(),
   ])
+  const firstMessages = userId ? await getFirstMessages(userId, entries) : new Map<string, string>()
 
   const monthFormat = (withYear: boolean) =>
     new Intl.DateTimeFormat(locale, {
@@ -72,12 +65,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         const emotion = getEmotionMeta(diary.emotion?.primary)?.key
         return {
           id: diary.id,
-          title: diary.title || fallbackTitle(diary.content) || t('untitled'),
+          title:
+            diary.title ||
+            titleFromText(firstMessages.get(diary.id) ?? diary.content) ||
+            t('untitled'),
           emotion,
           emotionLabel: emotion ? tEmotion(emotion) : undefined,
-          // A chat entry not yet wrapped up. Entries carry no such state until the
-          // conversation mode lands (#73), so nothing is unwrapped today.
-          unwrapped: false,
+          // A chat entry not yet wrapped up: its 일기 is still to be drafted.
+          unwrapped: diary.mode === 'chat' && !diary.summary,
         }
       }),
     }
