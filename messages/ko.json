@@ -1,0 +1,27 @@
+{
+  "Settings": {
+    "title": "설정",
+    "account": {
+      "heading": "계정",
+      "body": "탈퇴하면 지금까지 쓴 일기와 대화가 모두 삭제돼요. 되돌릴 수 없어요.",
+      "withdrawLabel": "계정과 모든 일기 삭제",
+      "withdrawQuestion": "일기와 대화를 모두 지우고 탈퇴할까요?",
+      "withdrawConfirm": "탈퇴"
+    },
+    "data": {
+      "heading": "내 데이터",
+      "body": "일기 내용은 감정 분석과 대화를 위해 OpenAI로 전송돼요. 일기와 대화는 이 서비스의 데이터베이스에 저장되고, 개별 일기는 상세 화면에서 지울 수 있어요."
+    }
+  },
+  "DiaryDetail": {
+    "edit": "수정",
+    "delete": "삭제",
+    "deleteQuestion": "이 일기와 대화를 모두 지울까요?",
+    "deleteConfirm": "삭제",
+    "emotionPending": "감정을 살펴보는 중이에요…",
+    "reflectionLabel": "감정 분석",
+    "questionsTitle": "돌아보기",
+    "threadLabel": "이 일기에 대한 대화",
+    "threadDefaultTitle": "대화"
+  }
+}

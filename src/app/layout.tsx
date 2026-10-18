@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 import '@/styles/globals.scss'
 import Providers from '@/components/Provider'
 import { WebVitals } from '@/components/WebVitals'
@@ -8,16 +10,22 @@ export const metadata: Metadata = {
   description: 'AI-powered diary application',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body suppressHydrationWarning>
         <WebVitals />
-        <Providers>{children}</Providers>
+        {/* Server components read messages directly; this hands the locale and messages
+            to client components (useTranslations, useLocale). */}
+        <NextIntlClientProvider>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   )
