@@ -5,15 +5,19 @@
 -- Sources: docs/PRODUCT_DIRECTION.md (v2 *Decision records*, *Screen specs (v2.0)*,
 -- *Beyond Korea*, *Schema implications (v2)*) and the screen canvas specs of 2026-10-18.
 --
--- NOT verified against the live database. Unlike 001, this draft was written without access
--- to it, so run the pre-apply checks below first and record what they return here.
+-- Pre-apply checks run against the live database (`main`, production) by the owner on
+-- 2026-10-18, all as expected:
+--   1. new columns           → no rows (none exists yet)
+--   2. user_settings         → NULL (table does not exist)
+--   3. CHECKs on diaries     → no rows (no CHECK at all, so an empty `content` is accepted)
 --
 -- Tested on 2026-10-18 against Postgres 16.4 (PGlite), on a stand-in for the post-001 schema
 -- built from src/lib/supabase.ts. It applies, re-applies as a no-op, and backfills an
 -- existing row as write/ai. A deployed-style insert still works, and a chat entry with an
 -- empty body works. All three CHECKs reject what they should. user_settings gets its
 -- defaults and RLS. Asia/Seoul midnight can be computed in SQL from a stored zone, and the
--- rollback restores the 001 shape. A stand-in is not the live schema, hence the checks below.
+-- rollback restores the 001 shape. A stand-in is not the live schema, which is why the
+-- pre-apply checks above were run on the live database.
 --
 -- Backwards compatible with the code currently deployed:
 --   - every new `diaries` column is nullable or has a default, and the deployed inserts name
@@ -26,7 +30,7 @@
 
 
 -- ---------------------------------------------------------------------------
--- Pre-apply checks — run these first, paste the results into this header
+-- Pre-apply checks — run 2026-10-18, results in the header
 -- ---------------------------------------------------------------------------
 -- 1. None of the new columns exists yet (expect 0 rows):
 --    select table_name, column_name from information_schema.columns
