@@ -90,6 +90,12 @@ test.describe('when something goes wrong (spec 5-2)', () => {
       '쓴 글은 그대로 저장돼요.'
     )
     await expect(page.getByLabel('이어서 이야기하기')).toBeHidden()
+    // Wrap-up stays available past the limit.
+    await expect(
+      page.getByRole('status').filter({ hasText: '오늘은 여기까지' }).getByRole('button', {
+        name: '일기로 정리하기',
+      })
+    ).toBeEnabled()
     await expect(page.getByRole('log', { name: '대화' }).getByText(message)).toBeVisible()
   })
 
