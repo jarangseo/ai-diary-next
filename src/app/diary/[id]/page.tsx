@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 import { getDiaryById } from '@/lib/diary'
-import { getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
+import { countUserMessagesToday, getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
+import { DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { ChatEntry } from '@/components/ChatEntry/ChatEntry'
 import { DeleteEntryButton } from '@/components/Diary/DeleteEntryButton'
@@ -50,6 +51,10 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
   // 대화로 쓰기: the conversation is the page until wrap-up (screen 1-1). Its emotion comes
   // with the draft, so nothing here waits for an analysis.
   if (diary.mode === 'chat' && thread) {
+    // Mirrors the route: no limit on the bench path, and an unreadable count counts as
+    // over it.
+    const used = bench ? null : await countUserMessagesToday(session.user.id)
+    const remainingToday = bench ? null : Math.max(0, DAILY_MESSAGE_LIMIT - (used ?? Infinity))
     return (
       <ChatEntry
         key={diary.id}
@@ -58,6 +63,9 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
         title={diary.title}
         dateLabel={formatDateLabel(diary.date, locale)}
         initialMessages={messages}
+        remainingToday={remainingToday}
+        wrappedUp={Boolean(diary.summary)}
+        crisis={Boolean(thread.crisisAt)}
         bench={bench}
       />
     )

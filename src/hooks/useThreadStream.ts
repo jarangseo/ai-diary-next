@@ -5,11 +5,24 @@ import type { Message, MessageToolResult } from '@/types/thread'
 
 export type ThreadStatus = 'idle' | 'streaming' | 'error'
 
+/**
+ * Why a message of the user's has no reply: `failed` — the request or the reply broke;
+ * `unsent` — the device was offline, so it never left. Either way the message stays on
+ * screen (spec 1-1, 5-2) and is sent again only when the user asks.
+ */
+export type Delivery = 'failed' | 'unsent'
+
 interface Options {
   threadId: string
   initialMessages: Message[]
   /** Measurement and test path: the deterministic fake stream instead of the model. */
   bench?: boolean
+  /**
+   * Whether the server will store a wrap-up offer after this reply — the same pure rule
+   * it applies (`shouldOfferWrapUp`), given the conversation so far. The offer is stored,
+   * not streamed, so the client adds its own copy to show it without a reload.
+   */
+  offersWrapUp?: (messages: Message[]) => boolean
 }
 
 // Consumes the NDJSON stream from POST /api/threads/:id/messages and keeps the
@@ -19,9 +32,17 @@ interface Options {
 // rebuilt on every token. It is what most code does, it is what the baseline in
 // docs/PERFORMANCE.md measures, and it is the thing the INP work then fixes. Do not
 // "improve" it before the baseline is recorded.
-export function useThreadStream({ threadId, initialMessages, bench = false }: Options) {
+export function useThreadStream({
+  threadId,
+  initialMessages,
+  bench = false,
+  offersWrapUp,
+}: Options) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [status, setStatus] = useState<ThreadStatus>('idle')
+  const [delivery, setDelivery] = useState<Record<string, Delivery>>({})
+  // The server refused for the daily limit (429).
+  const [limited, setLimited] = useState(false)
 
   // A ref, not state: nothing renders differently because the controller changed, and
   // putting it in state would re-render the whole thread on every send.
@@ -33,34 +54,58 @@ export function useThreadStream({ threadId, initialMessages, bench = false }: Op
 
   const stop = useCallback(() => abortRef.current?.abort(), [])
 
-  const send = useCallback(
-    async (text: string): Promise<boolean> => {
-      const trimmed = text.trim()
-      if (!trimmed || status === 'streaming') return false
+  const offersRef = useRef(offersWrapUp)
+  useEffect(() => {
+    offersRef.current = offersWrapUp
+  })
 
-      // Temporary ids: React needs a stable key now, the server assigns the real id
-      // later. Captured in closures below so updates target this exact message rather
-      // than "the last one", which breaks the moment anything else appends.
-      const userId = crypto.randomUUID()
-      const assistantId = crypto.randomUUID()
-      const now = Date.now()
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: userId,
-          threadId,
-          role: 'user',
-          content: trimmed,
-          createdAt: now,
-        },
-        {
-          id: assistantId,
+  // Mirrors the route: once a reply with any text is stored, so is the offer, if due.
+  const addOfferAfter = useCallback(
+    (replyId: string) =>
+      setMessages((prev) => {
+        const reply = prev.find((m) => m.id === replyId)
+        if (!reply?.content || !offersRef.current?.(prev)) return prev
+        const offer: Message = {
+          id: crypto.randomUUID(),
           threadId,
           role: 'assistant',
           content: '',
-          createdAt: now,
-        },
+          toolResults: [{ tool: 'wrapup_offer' }],
+          createdAt: Date.now(),
+        }
+        return [...prev, offer]
+      }),
+    [threadId]
+  )
+
+  const mark = useCallback(
+    (id: string, value?: Delivery) =>
+      setDelivery((prev) => {
+        const next = { ...prev }
+        if (value) next[id] = value
+        else delete next[id]
+        return next
+      }),
+    []
+  )
+
+  // Sends the user's message `userId` (already on screen) and streams the reply under it.
+  // Resolves true once the reply has arrived.
+  const deliver = useCallback(
+    async (userId: string, text: string): Promise<boolean> => {
+      mark(userId)
+      if (!navigator.onLine) {
+        mark(userId, 'unsent')
+        return false
+      }
+
+      // A temporary id: React needs a stable key now, the server assigns the real one
+      // later. Captured in closures below so updates target this exact message rather
+      // than "the last one", which breaks the moment anything else appends.
+      const assistantId = crypto.randomUUID()
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, threadId, role: 'assistant', content: '', createdAt: Date.now() },
       ])
       setStatus('streaming')
 
@@ -92,11 +137,12 @@ export function useThreadStream({ threadId, initialMessages, bench = false }: Op
           {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ text: trimmed }),
+            body: JSON.stringify({ text }),
             signal: controller.signal,
           }
         )
 
+        if (response.status === 429) setLimited(true)
         // fetch resolves on 4xx/5xx, so the status has to be checked explicitly.
         if (!response.ok || !response.body) {
           throw new Error(`stream failed: ${response.status}`)
@@ -123,27 +169,60 @@ export function useThreadStream({ threadId, initialMessages, bench = false }: Op
         }
         apply(parser.flush())
 
+        // A reply that broke off keeps what arrived (the server stored the same) and
+        // offers a retry under the user's message.
+        if (failed) mark(userId, 'failed')
+        addOfferAfter(assistantId)
         setStatus(failed ? 'error' : 'idle')
         return !failed
       } catch (error) {
         // Aborting is how stop() works, so it is a normal ending, not a failure. The
         // partial assistant message stays — the server stored the same thing.
         if (error instanceof DOMException && error.name === 'AbortError') {
+          addOfferAfter(assistantId)
           setStatus('idle')
           return true
         }
 
-        // Nothing reached the user, so the optimistic pair is removed. The composer
-        // restores the text from its own copy, so the writing is never lost.
-        setMessages((prev) => prev.filter((m) => m.id !== userId && m.id !== assistantId))
+        // No reply arrived: its placeholder goes, the user's message stays.
+        setMessages((prev) => prev.filter((m) => m.id !== assistantId))
+        mark(userId, navigator.onLine ? 'failed' : 'unsent')
         setStatus('error')
         return false
       } finally {
         abortRef.current = null
       }
     },
-    [threadId, bench, status]
+    [threadId, bench, mark, addOfferAfter]
   )
 
-  return { messages, status, send, stop }
+  const send = useCallback(
+    async (text: string): Promise<boolean> => {
+      const trimmed = text.trim()
+      if (!trimmed || status === 'streaming') return false
+
+      const userId = crypto.randomUUID()
+      setMessages((prev) => [
+        ...prev,
+        { id: userId, threadId, role: 'user', content: trimmed, createdAt: Date.now() },
+      ])
+      return deliver(userId, trimmed)
+    },
+    [threadId, status, deliver]
+  )
+
+  /**
+   * Sends a failed or unsent message again, under the same bubble. Never automatic: a
+   * message that did reach the server before the connection dropped would go twice.
+   */
+  const retry = useCallback(
+    (id: string): Promise<boolean> => {
+      const message = messages.find((m) => m.id === id)
+      if (!message || status === 'streaming') return Promise.resolve(false)
+      return deliver(id, message.content)
+    },
+    [messages, status, deliver]
+  )
+
+  return { messages, status, send, stop, retry, delivery, limited }
 }

@@ -26,10 +26,87 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
 
 .header {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
   padding-bottom: $spacing-md;
   border-bottom: 1px solid $color-border;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+// === Wrap-up ===
+@mixin action {
+  flex: none;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  transition: background-color $transition-fast;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.primary {
+  @include action;
+  background-color: $color-accent-strong;
+  color: $color-text-inverse;
+
+  &:hover:not(:disabled) {
+    background-color: $color-accent-hover;
+  }
+}
+
+.secondary {
+  @include action;
+  border: 1px solid $color-border-strong;
+  background-color: $color-surface;
+  color: $color-text-secondary;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-hover;
+  }
+}
+
+.offer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// Two equal buttons on a phone, side by side at their own width from the tablet up.
+.offerActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-sm;
+
+  @include mdm-lrg {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+.wrapUpFailed {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: $radius-md;
+  background-color: $color-bg-tertiary;
 }
 
 .title {
@@ -62,6 +139,99 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
+}
+
+// The user's bubble with whatever went wrong with it right underneath (spec 5-2: the
+// problem shows where it happened).
+.sent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $spacing-sm;
+}
+
+.failure {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.retry {
+  min-height: 44px;
+  padding: 0 $spacing-md;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-sm;
+  background-color: $color-surface;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-hover;
+  }
+
+  &:disabled {
+    color: $color-text-tertiary;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.offline {
+  position: sticky;
+  // Under the shell's sticky mobile header; the top of the page from the tablet up.
+  top: 61px + $spacing-sm;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: $spacing-md;
+  padding: 12px 14px;
+  border-radius: $radius-md;
+  background-color: $color-bg-tertiary;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  @include mdm-lrg {
+    top: $spacing-sm;
+  }
+
+  svg {
+    flex: none;
+  }
+}
+
+// The daily-limit card stands where the input was.
+.limit {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: $spacing-md;
+  padding: $spacing-lg;
+  border: 1px solid $color-border-input;
+  border-radius: 18px;
+  background-color: $color-surface;
+}
+
+.limitTitle {
+  font-size: 15px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.limitBody {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
 }
 
 .mine {
@@ -130,6 +300,10 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   gap: $spacing-sm;
   padding: $spacing-sm 0 $spacing-md;
   background-color: $color-bg-primary;
+
+  &[hidden] {
+    display: none;
+  }
 }
 
 .field {

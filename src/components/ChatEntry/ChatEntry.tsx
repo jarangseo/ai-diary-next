@@ -1,14 +1,17 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ArrowUpIcon, SquareIcon } from 'lucide-react'
+import { ArrowUpIcon, SquareIcon, WifiOffIcon } from 'lucide-react'
 import { useThreadStream } from '@/hooks/useThreadStream'
-import { isWrapUpOffer } from '@/lib/wrapUp'
+import { isWrapUpOffer, shouldOfferWrapUp } from '@/lib/wrapUp'
+import { diaryApi } from '@/services/diaryServices'
 import type { Message } from '@/types/thread'
 import { canSendMessage, remainingCount, sendsOnEnter } from '@/components/Home/composerRules'
 import { takeFirstMessage } from '@/components/Home/firstMessage'
 import { titleFromText } from '@/components/Shell/entryTitle'
+import { readDraft, writeDraft } from './draft'
+import { OfferCard, WrapUpButton, WrapUpFailed } from './WrapUp'
 import styles from './ChatEntry.module.scss'
 
 interface Props {
@@ -18,8 +21,27 @@ interface Props {
   title?: string
   dateLabel: string
   initialMessages: Message[]
+  /**
+   * Messages left today before the daily limit (spec 5-2), read on the server when the
+   * page loads; null when no limit applies (test runs, like the route's bench path).
+   */
+  remainingToday: number | null
+  /** The 일기 has been drafted (#83 shows it); no more offers or header button. */
+  wrappedUp: boolean
+  /** A crisis signal was seen in this conversation: the AI does not offer wrap-up. */
+  crisis: boolean
   /** Deterministic stream instead of the model — set by the page in test runs. */
   bench?: boolean
+}
+
+// navigator.onLine, kept current. The server render assumes online.
+const subscribeOnline = (onChange: () => void) => {
+  window.addEventListener('online', onChange)
+  window.addEventListener('offline', onChange)
+  return () => {
+    window.removeEventListener('online', onChange)
+    window.removeEventListener('offline', onChange)
+  }
 }
 
 // A touch screen as the main pointer: Enter is a new line there and the button sends.
@@ -28,16 +50,87 @@ const TOUCH = '(pointer: coarse)'
 const PIN_THRESHOLD_PX = 80
 
 /** Screen 1-1 / 1-1m: a 대화로 쓰기 entry before wrap-up. */
-export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages, bench }: Props) {
+export function ChatEntry({
+  entryId,
+  threadId,
+  title,
+  dateLabel,
+  initialMessages,
+  remainingToday,
+  wrappedUp,
+  crisis,
+  bench,
+}: Props) {
   const t = useTranslations('ChatEntry')
   const tHome = useTranslations('Home.input')
   const tShell = useTranslations('Shell')
   const router = useRouter()
-  const { messages, status, send, stop } = useThreadStream({ threadId, initialMessages, bench })
+  const { messages, status, send, stop, retry, delivery, limited } = useThreadStream({
+    threadId,
+    initialMessages,
+    bench,
+    offersWrapUp: (conversation) =>
+      shouldOfferWrapUp({ messages: conversation, isChatEntry: true, wrappedUp, crisis }),
+  })
   const [text, setText] = useState('')
   const streaming = status === 'streaming'
+  const online = useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true
+  )
+
+  // Counted here from the server's figure at load: the card replaces the input once the
+  // day's messages are used up. A 429 from the server says the same.
+  const [sent, setSent] = useState(0)
+  const atLimit = limited || (remainingToday !== null && sent >= remainingToday)
+  const sendCounted = async (value: string) => {
+    const ok = await send(value)
+    if (ok) setSent((n) => n + 1)
+    return ok
+  }
+  const retryCounted = async (id: string) => {
+    if (await retry(id)) setSent((n) => n + 1)
+  }
+
+  // What is being typed stays on this device until it is sent.
+  useEffect(() => setText(readDraft(entryId)), [entryId])
+  const changeText = (value: string) => {
+    setText(value)
+    writeDraft(entryId, value)
+  }
+
+  // Wrap-up. The offer shows as a card while it is the AI's latest word: talking on, or
+  // `조금 더 얘기할게요`, puts it away (the server keeps no record of a decline).
+  const [declined, setDeclined] = useState<string[]>([])
+  const [wrapping, setWrapping] = useState(false)
+  const [wrapFailed, setWrapFailed] = useState(false)
+  const lastOffer = messages.findLastIndex(isWrapUpOffer)
+  const openOffer =
+    !wrappedUp &&
+    lastOffer > messages.findLastIndex((m) => m.role === 'user') &&
+    !declined.includes(messages[lastOffer].id)
+      ? messages[lastOffer].id
+      : null
+  const wrapUp = async () => {
+    setWrapping(true)
+    setWrapFailed(false)
+    try {
+      await diaryApi.wrapUp(entryId)
+      // What the page shows after wrap-up is #83's; the sidebar loses its badge now.
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      setWrapFailed(true)
+    } finally {
+      setWrapping(false)
+    }
+  }
 
   const firstMessage = messages.find((m) => m.role === 'user')
+  // Spec 1-1: the header's button only until the AI has offered; never both at once.
+  const headerWrapUp =
+    !wrappedUp && !atLimit && Boolean(firstMessage) && !messages.some(isWrapUpOffer)
   const heading =
     title || (firstMessage && titleFromText(firstMessage.content)) || tShell('untitled')
 
@@ -49,7 +142,7 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
     const timer = setTimeout(async () => {
       const first = takeFirstMessage(entryId)
       // The sidebar's title comes from the stored first message.
-      if (first && (await send(first))) router.refresh()
+      if (first && (await sendCounted(first))) router.refresh()
     }, 0)
     return () => clearTimeout(timer)
     // Mount only: the hand-off must never run a second time.
@@ -72,54 +165,113 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
     if (pinned.current) window.scrollTo({ top: document.documentElement.scrollHeight })
   }, [messages])
 
-  const canSend = canSendMessage(text) && !streaming
+  const canSend = canSendMessage(text) && !streaming && !wrapping
   const remaining = remainingCount(text)
 
   const submit = async (event?: React.FormEvent) => {
     event?.preventDefault()
     if (!canSend) return
-    const pending = text
     pinned.current = true
-    setText('')
-    if (!(await send(pending))) setText(pending)
+    // The message stays on screen whatever happens to it, so the input is cleared now.
+    changeText('')
+    await sendCounted(text)
   }
 
   return (
     <div className={styles.chat}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>{heading}</h1>
-        <p className={styles.subtitle}>
-          {dateLabel} · {t('writing')}
+      {!online && (
+        <p className={styles.offline} role="status">
+          <WifiOffIcon size={18} aria-hidden />
+          {t('offline')}
         </p>
+      )}
+      <header className={styles.header}>
+        <div className={styles.heading}>
+          <h1 className={styles.title}>{heading}</h1>
+          <p className={styles.subtitle}>
+            {dateLabel} · {t('writing')}
+          </p>
+        </div>
+        {headerWrapUp && (
+          <WrapUpButton
+            onWrapUp={wrapUp}
+            busy={wrapping || streaming}
+            className={styles.secondary}
+          />
+        )}
       </header>
 
       <div className={styles.log} role="log" aria-label={t('log')} aria-busy={streaming}>
-        {messages
-          // The wrap-up offer has no text of its own; its card arrives with #82's last part.
-          .filter((m) => !isWrapUpOffer(m))
-          .map((m) =>
-            m.role === 'user' ? (
-              <p key={m.id} className={styles.mine}>
-                {m.content}
-              </p>
-            ) : (
-              <div key={m.id} className={styles.reply}>
-                {m.content ? (
-                  <p>{m.content}</p>
-                ) : (
-                  <span className={styles.typing} aria-hidden>
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                )}
-                {/* Source chips (#76): the entries a reply drew on, at most three. */}
-              </div>
+        {messages.map((m) =>
+          isWrapUpOffer(m) ? (
+            m.id === openOffer && (
+              <OfferCard
+                key={m.id}
+                onWrapUp={wrapUp}
+                busy={wrapping}
+                onDecline={() => setDeclined((ids) => [...ids, m.id])}
+              />
             )
-          )}
+          ) : m.role === 'user' ? (
+            <div key={m.id} className={styles.sent}>
+              <p className={styles.mine}>{m.content}</p>
+              {delivery[m.id] === 'failed' && (
+                <div className={styles.failure} role="alert">
+                  <span>{t('replyFailed')}</span>
+                  <button
+                    type="button"
+                    className={styles.retry}
+                    onClick={() => retryCounted(m.id)}
+                    disabled={streaming}
+                  >
+                    {t('retry')}
+                  </button>
+                </div>
+              )}
+              {delivery[m.id] === 'unsent' && (
+                <div className={styles.failure}>
+                  <span>{t('unsent')}</span>
+                  {/* Only once back online, and only when asked: never sent by itself. */}
+                  {online && (
+                    <button
+                      type="button"
+                      className={styles.retry}
+                      onClick={() => retryCounted(m.id)}
+                      disabled={streaming}
+                    >
+                      {t('resend')}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div key={m.id} className={styles.reply}>
+              {m.content ? (
+                <p>{m.content}</p>
+              ) : (
+                <span className={styles.typing} aria-hidden>
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              )}
+              {/* Source chips (#76): the entries a reply drew on, at most three. */}
+              {wrapFailed && <WrapUpFailed onWrapUp={wrapUp} busy={wrapping} />}
+            </div>
+          )
+        )}
       </div>
 
-      <form className={styles.composer} onSubmit={submit}>
+      {atLimit && (
+        <div className={styles.limit} role="status">
+          <p className={styles.limitTitle}>{t('limit.title')}</p>
+          <p className={styles.limitBody}>{t('limit.body')}</p>
+          <WrapUpButton onWrapUp={wrapUp} busy={wrapping} />
+        </div>
+      )}
+      {/* Hidden rather than removed at the limit, so the draft in it is kept. */}
+      <form className={styles.composer} onSubmit={submit} hidden={atLimit}>
         <label className={styles.visuallyHidden} htmlFor="chat-message">
           {t('input.label')}
         </label>
@@ -129,7 +281,7 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
             className={styles.input}
             rows={1}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => changeText(e.target.value)}
             onKeyDown={(e) => {
               const touch = window.matchMedia(TOUCH).matches
               const key = {

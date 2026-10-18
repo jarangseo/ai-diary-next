@@ -71,21 +71,18 @@ export function ThreadPanel({ threadId, initialMessages, bench }: Props) {
 
   const streaming = status === 'streaming'
 
-  const submit = async () => {
-    const pending = text
-    // Cleared optimistically so the composer feels instant...
+  const submit = () => {
+    // Cleared optimistically so the composer feels instant. A message whose reply fails
+    // stays in the thread, so what the user wrote is never lost.
+    send(text)
     setText('')
-    const ok = await send(pending)
-    // ...and restored from this local copy if the request never landed, so what the
-    // user wrote is never lost.
-    if (!ok) setText(pending)
   }
 
   return (
     <div className={styles.panel}>
       <div className={styles.list} ref={listRef} onScroll={handleScroll}>
-        {/* A wrap-up offer has no text of its own (it is UI copy, rendered by the 대화 중
-            screen, #82). Until that screen exists, skip it rather than draw an empty bubble. */}
+        {/* Wrap-up offers belong to chat entries, which the 대화 중 screen (ChatEntry) draws.
+            This panel serves written entries, so an offer is never drawn as an empty bubble. */}
         {messages
           .filter((m) => !isWrapUpOffer(m))
           .map((m) => (

@@ -15,6 +15,13 @@ has no migration runner — the ledger below **is** the record of what has been 
 - **Apply to development first, then production.** CI's E2E runs against
   `ai-diary-next-dev`, so a migration that reaches production but not development leaves
   CI testing a schema that no longer exists.
+- **Code that uses a new column merges only after production has it.** `main` deploys to
+  production, and CI cannot catch the gap: its E2E runs on development, which already has
+  the column. So the order is migration on development → migration on production → merge
+  the code that reads or writes it. Keep such a PR a **draft** until then, and say so at the
+  top of its body. (2026-10-18: #116 would have broken every emotion-analysis save on
+  production, because `memory_note` did not exist there yet. A local run against production
+  logged `Could not find the 'memory_note' column`.)
 
 There are two Supabase projects (since 2026-10-18, #97):
 

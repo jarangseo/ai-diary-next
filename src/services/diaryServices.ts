@@ -15,4 +15,19 @@ export const diaryApi = {
     }
     return (await res.json()).id
   },
+
+  /**
+   * `일기로 정리하기`: drafts the chat entry's 일기 from its conversation (#75). Resolves
+   * once the draft is stored; throws when it could not be made.
+   */
+  wrapUp: async (id: string): Promise<void> => {
+    const res = await fetch(`/api/diary/${id}/wrap-up`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    if (!res.ok) {
+      throw new Error(`API Error: ${res.status} ${res.statusText}`)
+    }
+  },
 }

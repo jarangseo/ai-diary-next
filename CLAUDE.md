@@ -104,6 +104,9 @@ privacy policy), data-scope hardening and a dev database. Still open from v1: em
   otherwise a cold `pnpm install` exits 1 with `ERR_PNPM_IGNORED_BUILDS`. `onlyBuiltDependencies` alone is
   **no longer sufficient** on pnpm 11 — it is still read, but the install fails anyway. CI installs with
   `--ignore-scripts` so it never hit this; Vercel does a plain install, so it broke there first.
+- **Never merge code that uses a new DB column before production has it.** `main` deploys to
+  production, and CI's E2E runs on the development DB, which is migrated first, so CI stays green.
+  Keep the PR a draft until the migration is on production (`docs/migrations/README.md`).
 - **After `git pull` in the main checkout, run `pnpm install`.** A merged PR that adds a
   dependency otherwise breaks the local dev server with a missing-module error (#95).
 - **A new worktree has no `.env.local`**, so `pnpm build` / `pnpm verify` fail with
