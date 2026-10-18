@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import clsx from 'clsx'
+import { useLocale } from 'next-intl'
 import styles from './DiaryList.module.scss'
 import { formatDateLabel } from '@/lib/date'
 import type { Diary } from '@/types/diary'
@@ -10,6 +11,8 @@ type DiaryListProps = {
 }
 
 export function DiaryList({ diaries, className }: DiaryListProps) {
+  const locale = useLocale()
+
   if (diaries.length === 0) {
     return (
       <div className={clsx(styles.empty, className)}>
@@ -25,7 +28,7 @@ export function DiaryList({ diaries, className }: DiaryListProps) {
         <li key={diary.id}>
           <Link className={styles.item} href={`/diary/${diary.id}`}>
             <div className={styles.itemHead}>
-              <span className={styles.date}>{formatDateLabel(diary.date)}</span>
+              <span className={styles.date}>{formatDateLabel(diary.date, locale)}</span>
               {diary.emotion?.primary && (
                 <span className={styles.mood}>{diary.emotion.primary}</span>
               )}

@@ -1,5 +1,6 @@
 'use client'
 import { useSyncExternalStore } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   type ThemePreference,
   readThemePreference,
@@ -8,11 +9,7 @@ import {
 } from '@/lib/theme'
 import styles from './ThemeSetting.module.scss'
 
-const OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: 'system', label: '기기 설정' },
-  { value: 'light', label: '낮' },
-  { value: 'dark', label: '밤' },
-]
+const OPTIONS: ThemePreference[] = ['system', 'light', 'dark']
 
 // The server cannot know a per-device choice, so it renders 'system' and the client
 // corrects it after hydration. The page itself is already in the right theme by then:
@@ -25,20 +22,21 @@ export function ThemeSetting() {
     readThemePreference,
     serverSnapshot
   )
+  const t = useTranslations('Settings.display')
 
   return (
     <fieldset className={styles.options}>
-      <legend className={styles.legend}>화면 테마</legend>
+      <legend className={styles.legend}>{t('legend')}</legend>
       {OPTIONS.map((option) => (
-        <label key={option.value} className={styles.option}>
+        <label key={option} className={styles.option}>
           <input
             type="radio"
             name="theme"
-            value={option.value}
-            checked={preference === option.value}
-            onChange={() => writeThemePreference(option.value)}
+            value={option}
+            checked={preference === option}
+            onChange={() => writeThemePreference(option)}
           />
-          <span>{option.label}</span>
+          <span>{t(`options.${option}`)}</span>
         </label>
       ))}
     </fieldset>

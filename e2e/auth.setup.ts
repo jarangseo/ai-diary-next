@@ -1,7 +1,5 @@
 import { test as setup, expect } from '@playwright/test'
-import { E2E_SECRET, E2E_USER_ID } from './constants'
-
-const STATE = 'e2e/.auth/state.json'
+import { E2E_SECRET, E2E_STATE as STATE, E2E_USER_ID } from './constants'
 
 // Drives NextAuth's credentials callback directly rather than through a form: there is
 // no sign-in UI for this provider, and OAuth consent screens cannot be automated.

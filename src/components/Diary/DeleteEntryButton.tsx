@@ -1,5 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { ConfirmAction } from '@/components/ConfirmAction/ConfirmAction'
 
 /**
@@ -8,13 +9,14 @@ import { ConfirmAction } from '@/components/ConfirmAction/ConfirmAction'
  */
 export function DeleteEntryButton({ id }: { id: string }) {
   const router = useRouter()
+  const t = useTranslations('DiaryDetail')
 
   return (
     <ConfirmAction
       tone="danger"
-      label="삭제"
-      question="이 일기와 대화를 모두 지울까요?"
-      confirmLabel="삭제"
+      label={t('delete')}
+      question={t('deleteQuestion')}
+      confirmLabel={t('deleteConfirm')}
       onConfirm={async () => {
         const res = await fetch(`/api/diary/${id}`, { method: 'DELETE' })
         if (!res.ok) return
