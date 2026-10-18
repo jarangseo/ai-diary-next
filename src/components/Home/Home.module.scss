@@ -133,6 +133,17 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
 // === Input ===
 .composer {
   display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+
+  @include mdm-lrg {
+    width: 100%;
+    max-width: 680px;
+  }
+}
+
+.field {
+  display: flex;
   align-items: flex-end;
   gap: $spacing-sm;
   padding: 6px 6px 6px $spacing-lg;
@@ -144,12 +155,12 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   &:focus-within {
     @include focus-ring;
   }
+}
 
-  @include mdm-lrg {
-    width: 100%;
-    max-width: 680px;
-    box-sizing: border-box;
-  }
+.error {
+  padding: 0 $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-error;
 }
 
 .input {
