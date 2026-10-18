@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import styles from './EmotionPending.module.scss'
 
 const ATTEMPTS = [2500, 5000]
@@ -15,6 +16,7 @@ const ATTEMPTS = [2500, 5000]
  */
 export function EmotionPending() {
   const router = useRouter()
+  const t = useTranslations('DiaryDetail')
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function EmotionPending() {
 
   return (
     <p className={styles.pending} role="status">
-      감정을 살펴보는 중이에요…
+      {t('emotionPending')}
     </p>
   )
 }

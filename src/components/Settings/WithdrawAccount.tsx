@@ -1,15 +1,18 @@
 'use client'
 import { signOut } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { ConfirmAction } from '@/components/ConfirmAction/ConfirmAction'
 
 export function WithdrawAccount() {
+  const t = useTranslations('Settings.account')
+
   return (
     <ConfirmAction
       tone="danger"
       // Names what goes, not the act: "탈퇴" alone does not say the diaries go with it.
-      label="계정과 모든 일기 삭제"
-      question="일기와 대화를 모두 지우고 탈퇴할까요?"
-      confirmLabel="탈퇴"
+      label={t('withdrawLabel')}
+      question={t('withdrawQuestion')}
+      confirmLabel={t('withdrawConfirm')}
       onConfirm={async () => {
         const res = await fetch('/api/account', { method: 'DELETE' })
         if (!res.ok) return

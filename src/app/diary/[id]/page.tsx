@@ -7,6 +7,7 @@ import { EmotionPending } from '@/components/Diary/EmotionPending'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PencilIcon } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 import { BackButton } from '@/components/BackButton/BackButton'
 import { formatDateLabel, isDateKey } from '@/lib/date'
 import { getEmotionMeta } from '@/lib/emotion'
@@ -25,12 +26,18 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
   const diary = await getDiaryById(session.user.id, id)
   if (!diary) return notFound()
 
+  const t = await getTranslations('DiaryDetail')
+
   // Sequential on purpose, unlike the parallel queries elsewhere: each call genuinely
   // needs the previous one's id. Collapsing all three into one embedded read
   // (`diaries?select=*,threads(*,messages(*))`) is the obvious follow-up — see the note
   // in docs/TODAY_PLAN.md — but it cannot express "create if absent", so it only helps
   // the common case.
-  const thread = await getOrCreateThreadForDiary(session.user.id, diary.id, diary.title ?? '대화')
+  const thread = await getOrCreateThreadForDiary(
+    session.user.id,
+    diary.id,
+    diary.title ?? t('threadDefaultTitle')
+  )
   const messages = thread ? await listMessages(thread.id) : []
 
   const emotion = diary.emotion
@@ -57,10 +64,10 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
           <Link
             href={`/diary/write?id=${diary.id}`}
             className={styles.editButton}
-            aria-label="수정"
+            aria-label={t('edit')}
           >
             <PencilIcon size={16} />
-            수정
+            {t('edit')}
           </Link>
           <DeleteEntryButton id={diary.id} />
         </div>
@@ -75,11 +82,11 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
       {!emotion && !diary.isRecordOnly && <EmotionPending />}
 
       {emotion && (emotion.summary || questions.length > 0) && (
-        <section className={styles.reflection} aria-label="감정 분석">
+        <section className={styles.reflection} aria-label={t('reflectionLabel')}>
           {emotion.summary && <p className={styles.summary}>{emotion.summary}</p>}
           {questions.length > 0 && (
             <div className={styles.questions}>
-              <h2 className={styles.questionsTitle}>돌아보기</h2>
+              <h2 className={styles.questionsTitle}>{t('questionsTitle')}</h2>
               <ul>
                 {questions.map((q, i) => (
                   <li key={i}>{q}</li>
@@ -91,7 +98,7 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
       )}
 
       {thread && (
-        <section className={styles.thread} aria-label="이 일기에 대한 대화">
+        <section className={styles.thread} aria-label={t('threadLabel')}>
           <ThreadPanel
             threadId={thread.id}
             initialMessages={messages}
