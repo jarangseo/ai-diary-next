@@ -1,0 +1,391 @@
+@use '@/styles/variables' as *;
+
+$sidebar-width: 272px;
+$touch: 44px; // the minimum touch target
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.visuallyHidden {
+  @include visually-hidden;
+}
+
+.shell {
+  min-height: 100dvh;
+  background-color: $color-bg-primary;
+
+  @include mdm-lrg {
+    display: flex;
+  }
+}
+
+.skipLink {
+  position: absolute;
+  top: -60px;
+  left: $spacing-sm;
+  z-index: 200;
+  padding: 10px 14px;
+  border-radius: $radius-sm;
+  background-color: $color-surface;
+  color: $color-text-primary;
+
+  &:focus-visible {
+    top: $spacing-sm;
+    @include focus-ring;
+  }
+}
+
+// === Mobile header (narrow screens only) ===
+.mobileHeader {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm;
+  background-color: color-mix(in srgb, $color-bg-primary 90%, transparent);
+  backdrop-filter: saturate(180%) blur(8px);
+  border-bottom: 1px solid $color-border;
+
+  @include mdm-lrg {
+    display: none;
+  }
+}
+
+.mobileLogo {
+  flex: 1;
+  text-align: center;
+  font-family: $font-serif;
+  font-size: 17px;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: $touch;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.iconButton {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $touch;
+  height: $touch;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: background-color $transition-fast;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-hover;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    color: $color-text-tertiary;
+    cursor: default;
+  }
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background-color: color-mix(in srgb, var(--ink) 40%, transparent);
+
+  @include mdm-lrg {
+    display: none;
+  }
+}
+
+// === Sidebar: always beside the page when wide, a drawer when narrow ===
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 14px 14px;
+  background-color: $color-bg-secondary;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @include mdm-lrg {
+    position: sticky;
+    top: 0;
+    flex: none;
+    width: $sidebar-width;
+    height: 100dvh;
+    border-right: 1px solid $color-border;
+  }
+
+  @include sml {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 100;
+    width: min(320px, 86vw);
+    box-shadow: $shadow-lg;
+    transform: translateX(-100%);
+    visibility: hidden;
+    // Closing: hide only once the slide-out has finished.
+    transition:
+      transform $transition-normal,
+      visibility 0s linear 0.2s;
+
+    // Opening: visible at once, so focus can move into the drawer in the same frame.
+    &[data-open] {
+      transform: none;
+      visibility: visible;
+      transition:
+        transform $transition-normal,
+        visibility 0s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+}
+
+.logo {
+  font-family: $font-serif;
+  font-size: 19px;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: $touch;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.closeButton {
+  @include mdm-lrg {
+    display: none;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+%row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: $touch;
+  padding: 0 $spacing-md;
+  border-radius: $radius-md;
+  font-size: 14px;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.newEntry {
+  @extend %row;
+  border: 1px solid $color-border-strong;
+  background-color: $color-surface;
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+
+  &:hover {
+    background-color: $color-bg-hover;
+  }
+}
+
+.newEntryIcon {
+  color: $color-accent;
+}
+
+.action {
+  @extend %row;
+  background: transparent;
+  color: $color-text-secondary;
+
+  &:disabled {
+    color: $color-text-tertiary;
+    cursor: default;
+  }
+}
+
+// === Entries ===
+.entries {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.groupLabel {
+  padding: 0 $spacing-md 6px;
+  font-size: 12px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.04em;
+  color: $color-text-tertiary;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item {
+  @extend %row;
+  position: relative;
+  border-radius: $radius-sm;
+  color: $color-text-primary;
+  font-weight: 400;
+
+  &:hover {
+    background-color: $color-bg-hover;
+  }
+
+  &[aria-current='page'] {
+    background-color: $color-surface;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: $radius-full;
+  background-color: var(--emotion);
+  box-shadow: 0 0 0 1px var(--dot-ring);
+
+  // Not wrapped up yet: an empty ring, no emotion to show.
+  &[data-unwrapped] {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--emotion-none);
+  }
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid $color-border-strong;
+  border-radius: 999px;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+// === Footer ===
+.footer {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 14px 0 0;
+  border-top: 1px solid $color-border;
+}
+
+.user {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: $touch;
+  padding: 0 6px;
+  border-radius: $radius-sm;
+  color: $color-text-primary;
+  font-size: 14px;
+
+  &:hover {
+    background-color: $color-bg-hover;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.avatar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-full;
+  background-color: $color-bg-tertiary;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.userName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userSettings {
+  flex: none;
+  color: $color-text-tertiary;
+}
+
+.footerButton {
+  flex: none;
+  min-height: $touch;
+  padding: 0 10px;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+
+  &:disabled {
+    color: $color-text-tertiary;
+    cursor: default;
+  }
+}
+
+// === Page ===
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.content {
+  max-width: $content-max-width;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-lg $spacing-3xl;
+}

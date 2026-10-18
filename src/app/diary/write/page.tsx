@@ -53,6 +53,9 @@ function WriteForm() {
         // returns to wherever the user came from — the list or the calendar,
         // whichever URL is still in history.
         router.replace(`/diary/${id}`)
+        // The shell's sidebar lives in the layout, which a navigation does not re-render;
+        // refresh so the entry just saved appears in it.
+        router.refresh()
       }
     } finally {
       setSaving(false)

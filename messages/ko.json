@@ -33,5 +33,35 @@
     "questionsTitle": "돌아보기",
     "threadLabel": "이 일기에 대한 대화",
     "threadDefaultTitle": "대화"
+  },
+  "Shell": {
+    "skipToContent": "본문으로 건너뛰기",
+    "home": "AI Diary",
+    "newEntry": "새 일기",
+    "calendar": "캘린더",
+    "entries": "지난 일기",
+    "openDrawer": "지난 일기 열기",
+    "closeDrawer": "지난 일기 닫기",
+    "groups": {
+      "today": "오늘",
+      "yesterday": "어제",
+      "thisWeek": "이번 주"
+    },
+    "untitled": "제목 없는 일기",
+    "unwrapped": "정리 전",
+    "unwrappedLabel": "정리 전 대화",
+    "editList": "목록 편집",
+    "settings": "설정",
+    "signOut": "로그아웃",
+    "signIn": "로그인"
+  },
+  "Emotion": {
+    "joy": "기쁨",
+    "excitement": "설렘",
+    "calm": "평온",
+    "tired": "지침",
+    "sad": "슬픔",
+    "anxious": "불안",
+    "angry": "분노"
   }
 }
