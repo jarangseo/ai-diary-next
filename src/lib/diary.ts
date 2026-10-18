@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { deleteChatDataForUser } from './chat'
 import type { DiaryEmotion } from '@/types/diary'
 import { rowToDiary } from './diaryMapper'
 import { analyzeEmotion } from './emotionAnalysis'
@@ -177,10 +178,11 @@ export async function analyzeAndStoreEmotion(
  * Diaries go first: their threads and messages follow through the cascade, so there is no
  * window where a message outlives the entry it belongs to. Standalone threads — the
  * `question` kind, which has no diary — are not reachable that way and are removed after.
+ * The deferred chat-room area (`lib/chat.ts`) goes last.
  *
- * Not transactional. PostgREST has no multi-statement transaction, so a failure between
- * the two leaves the standalone threads behind. The caller is told, and a retry is safe
- * because both deletes are idempotent.
+ * Not transactional. PostgREST has no multi-statement transaction, so a failure part-way
+ * leaves the rest behind. The caller is told, and a retry is safe because every delete is
+ * idempotent.
  */
 export async function deleteAllUserData(userId: string): Promise<boolean> {
   const { error: diaryError } = await supabase.from('diaries').delete().eq('user_id', userId)
@@ -195,5 +197,6 @@ export async function deleteAllUserData(userId: string): Promise<boolean> {
     return false
   }
 
-  return true
+  // The deferred chat-room area holds conversations too; settings promises everything goes.
+  return deleteChatDataForUser(userId)
 }

@@ -9,6 +9,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
   }
 
   const { roomId } = await params
-  const messages = await getMessages(roomId)
+  const messages = await getMessages(session.user.id, roomId)
+  if (messages === null) {
+    return NextResponse.json({ error: 'Room not found' }, { status: 404 })
+  }
   return NextResponse.json(messages)
 }
