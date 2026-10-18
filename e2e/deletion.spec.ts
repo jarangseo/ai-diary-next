@@ -8,7 +8,7 @@ test('an entry can be deleted, and stays deleted', async ({ page }) => {
   const body = `Deletion E2E ${Date.now()}`
 
   const id = await writeEntry(page, DATE, body)
-  await expect(page.getByText(body)).toBeVisible()
+  await expect(page.getByRole('main').getByText(body)).toBeVisible()
 
   // Two steps on purpose — a native confirm() would be dismissed by automation, leaving
   // the destructive path untested.
@@ -35,7 +35,7 @@ test('cancelling leaves the entry alone', async ({ page }) => {
   await page.getByRole('button', { name: '취소' }).click()
 
   await page.reload()
-  await expect(page.getByText(body)).toBeVisible()
+  await expect(page.getByRole('main').getByText(body)).toBeVisible()
 
   await removeEntries(page, [id])
 })

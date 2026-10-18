@@ -17,7 +17,7 @@ test('writing an entry saves it and shows it on the detail page', async ({ page 
   const id = await writeEntry(page, DATE, body)
   created.push(id)
 
-  await expect(page.getByText(body)).toBeVisible()
+  await expect(page.getByRole('main').getByText(body)).toBeVisible()
 })
 
 test('editing keeps the entry and its id', async ({ page }) => {
@@ -36,7 +36,7 @@ test('editing keeps the entry and its id', async ({ page }) => {
   await page.getByRole('button', { name: '수정' }).click()
 
   await expect(page).toHaveURL(new RegExp(`/diary/${id}$`))
-  await expect(page.getByText(edited)).toBeVisible()
+  await expect(page.getByRole('main').getByText(edited)).toBeVisible()
 })
 
 // The bug behind issue #47: a second entry on a date made the date-keyed detail route
@@ -57,7 +57,7 @@ test('two entries on one date both open by id', async ({ page }) => {
   ]) {
     const response = await page.goto(`/diary/${id}`)
     expect(response?.status()).toBe(200)
-    await expect(page.getByText(body)).toBeVisible()
+    await expect(page.getByRole('main').getByText(body)).toBeVisible()
   }
 
   const list = await page.request.get(`/api/diary?date=${DATE}`)
@@ -72,5 +72,5 @@ test('an old date URL opens that day’s list', async ({ page }) => {
 
   await page.goto(`/diary/${DATE}`)
   await expect(page).toHaveURL(new RegExp(`/diary\\?view=list&date=${DATE}$`))
-  await expect(page.getByText(body)).toBeVisible()
+  await expect(page.getByRole('main').getByText(body)).toBeVisible()
 })
