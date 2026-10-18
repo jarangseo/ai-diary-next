@@ -1,6 +1,8 @@
 import { supabase } from './supabase'
 import type { MessageRow, ThreadRow } from './supabase'
 import type { Message, MessageToolResult, Thread } from '@/types/thread'
+import { DEFAULT_SETTINGS, getSettings } from './settings'
+import { startOfDayIn } from './usage'
 
 // Server-side data access for threads and messages. Ownership is checked here rather
 // than in the route: every read takes a userId, so there is no way to fetch a thread
@@ -134,13 +136,19 @@ export async function getOrCreateThreadForDiary(
  * (`lib/usage.ts`). Derived from the messages already stored rather than kept in a table
  * of its own: one less thing to keep in sync, and it cannot drift from what happened.
  *
- * The day boundary is UTC. Someone near midnight in their own zone gets a window that
- * does not match their calendar — acceptable for a spend guard, wrong for anything shown
- * to a user.
+ * The day is the user's own: it starts at midnight in the time zone stored in their
+ * settings (`startOfDayIn`), because the over-limit notice calls it "today". A user without
+ * stored settings, or a failed settings read, counts from UTC midnight, as before
+ * settings existed: the guard keeps working rather than failing closed on a lookup.
  */
 export async function countUserMessagesToday(userId: string): Promise<number | null> {
-  const startOfDay = new Date()
-  startOfDay.setUTCHours(0, 0, 0, 0)
+  let timeZone = DEFAULT_SETTINGS.timezone
+  try {
+    timeZone = (await getSettings(userId)).settings.timezone
+  } catch (error) {
+    console.error(error)
+  }
+  const startOfDay = startOfDayIn(timeZone)
 
   const { count, error } = await supabase
     .from('messages')

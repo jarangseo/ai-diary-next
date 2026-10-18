@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DAILY_MESSAGE_LIMIT, isOverDailyLimit, cappedParts } from '../usage'
+import { DAILY_MESSAGE_LIMIT, isOverDailyLimit, cappedParts, startOfDayIn } from '../usage'
 import type { StreamPart } from '@/types/stream'
 
 describe('isOverDailyLimit', () => {
@@ -18,6 +18,31 @@ describe('isOverDailyLimit', () => {
   it('takes an explicit limit, so the policy is not welded to one number', () => {
     expect(isOverDailyLimit(2, 3)).toBe(false)
     expect(isOverDailyLimit(3, 3)).toBe(true)
+  })
+})
+
+describe('startOfDayIn', () => {
+  const start = (tz: string, iso: string) => startOfDayIn(tz, new Date(iso)).toISOString()
+
+  it('UTC+9: 01:00 in Seoul belongs to that Seoul day, not the previous UTC day', () => {
+    // 2026-10-18 01:00 KST = 2026-10-17 16:00 UTC; Seoul midnight = 15:00 UTC.
+    expect(start('Asia/Seoul', '2026-10-17T16:00:00Z')).toBe('2026-10-17T15:00:00.000Z')
+    expect(start('Asia/Seoul', '2026-10-18T14:59:59Z')).toBe('2026-10-17T15:00:00.000Z')
+    expect(start('Asia/Seoul', '2026-10-18T15:00:00Z')).toBe('2026-10-18T15:00:00.000Z')
+  })
+
+  it('UTC−5: 23:00 in New York is still the same New York day', () => {
+    // 2026-01-15 23:00 EST = 2026-01-16 04:00 UTC; New York midnight = 05:00 UTC.
+    expect(start('America/New_York', '2026-01-16T04:00:00Z')).toBe('2026-01-15T05:00:00.000Z')
+  })
+
+  it('handles a daylight-saving change day (New York, 2026-03-08)', () => {
+    // Midnight was still EST (UTC−5) even though 14:00 that day is EDT (UTC−4).
+    expect(start('America/New_York', '2026-03-08T18:00:00Z')).toBe('2026-03-08T05:00:00.000Z')
+  })
+
+  it('UTC itself is UTC midnight', () => {
+    expect(start('UTC', '2026-10-18T03:00:00Z')).toBe('2026-10-18T00:00:00.000Z')
   })
 })
 
