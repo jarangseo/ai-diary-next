@@ -1,5 +1,7 @@
 import { auth } from '@/auth'
 import { appendMessage, countUserMessagesToday, getThread, listMessages } from '@/lib/threads'
+import { getDiaryById } from '@/lib/diary'
+import { shouldOfferWrapUp } from '@/lib/wrapUp'
 import { cappedParts, isOverDailyLimit, DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { fakeParts } from '@/lib/fakeStream'
 import { modelParts } from '@/lib/modelStream'
@@ -77,6 +79,24 @@ export async function POST(
     })
   }
 
+  // Decided now, stored after the reply: the offer reads as the AI's next turn, so it has
+  // to land after the reply it follows. A failed entry lookup only costs the offer —
+  // the conversation never waits on it.
+  let offerWrapUp = false
+  if (thread.kind === 'diary' && thread.diaryId) {
+    try {
+      const diary = await getDiaryById(session.user.id, thread.diaryId)
+      offerWrapUp = shouldOfferWrapUp({
+        messages: [...history, stored],
+        isChatEntry: diary?.mode === 'chat',
+        wrappedUp: Boolean(diary?.summary),
+        crisis: Boolean(thread.crisisAt),
+      })
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const stream = partsToNdjsonStream(source, {
     onComplete: async (content, toolResults) => {
       if (!content) return
@@ -86,6 +106,9 @@ export async function POST(
         content,
         toolResults.length ? toolResults : undefined
       )
+      if (offerWrapUp) {
+        await appendMessage(threadId, 'assistant', '', [{ tool: 'wrapup_offer' }])
+      }
     },
   })
 

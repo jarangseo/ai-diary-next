@@ -10,6 +10,8 @@ export interface Thread {
   kind: ThreadKind
   diaryId?: string // present iff kind === 'diary'
   title: string
+  /** Set when a crisis signal was detected (migration 002); no wrap-up offers after it. */
+  crisisAt?: number
   createdAt: number
   updatedAt: number
 }
@@ -17,8 +19,17 @@ export interface Thread {
 export type MessageRole = 'user' | 'assistant' | 'system'
 
 // Tool results are kept apart from `content` so a generative-UI message never has to
-// pretend it is text. Today there is one tool; the union is the extension point.
-export type MessageToolResult = { tool: 'emotion'; data: DiaryEmotion }
+// pretend it is text.
+export type EmotionToolResult = { tool: 'emotion'; data: DiaryEmotion }
+
+/**
+ * "여기까지 일기로 정리해 둘까요?" — the AI offering wrap-up (#74). Stored as its own assistant
+ * message with empty `content`: the words are UI copy, rendered from messages/<locale>.json,
+ * so an offer reads in whatever language the user has, not the one it was stored in.
+ */
+export type WrapUpOfferToolResult = { tool: 'wrapup_offer' }
+
+export type MessageToolResult = EmotionToolResult | WrapUpOfferToolResult
 
 export interface Message {
   id: string
