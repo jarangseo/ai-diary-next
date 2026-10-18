@@ -1,6 +1,8 @@
 import { auth } from '@/auth'
 import { getMessages } from '@/lib/chat'
 import { createDiary, analyzeAndStoreEmotion } from '@/lib/diary'
+import { countUserMessagesToday } from '@/lib/threads'
+import { isOverDailyLimit } from '@/lib/usage'
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 
@@ -16,10 +18,24 @@ export async function POST(request: Request) {
 
   const { roomId, date } = await request.json()
 
-  // get messages from the room
-  const messages = await getMessages(roomId)
+  // Members only: summarizing sends the conversation to OpenAI and saves it as the
+  // caller's diary, so a room they are not in must look like one that does not exist.
+  const messages = await getMessages(session.user.id, roomId)
+  if (messages === null) {
+    return NextResponse.json({ error: 'Room not found' }, { status: 404 })
+  }
   if (messages.length === 0) {
     return NextResponse.json({ error: 'No messages found' }, { status: 404 })
+  }
+
+  // Two model calls follow (the summary, then its emotion), so this path sits behind the
+  // same daily cap as the conversation. A failed count is treated as over the limit.
+  const used = await countUserMessagesToday(session.user.id)
+  if (used === null || isOverDailyLimit(used)) {
+    return NextResponse.json(
+      { error: '오늘 AI 응답 한도를 다 썼어요. 내일 다시 정리할 수 있어요.' },
+      { status: 429 }
+    )
   }
 
   const conversation = messages

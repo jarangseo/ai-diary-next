@@ -1,5 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
+// The service-role key bypasses row-level security: this client may only ever run on the
+// server. Importing it from client code should fail loudly, not quietly ship a broken client.
+if (typeof window !== 'undefined') {
+  throw new Error('lib/supabase is server-only')
+}
+
 export const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!

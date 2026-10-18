@@ -3,7 +3,8 @@ import { deleteAllUserData } from '@/lib/diary'
 import { NextResponse } from 'next/server'
 
 /**
- * Account withdrawal: removes every entry, thread and message belonging to the caller.
+ * Account withdrawal: removes every entry, thread and message belonging to the caller,
+ * and their chat-room data.
  *
  * Required before this app is linked publicly. A privacy notice cannot say entries are
  * kept "until withdrawal" when there is no way to withdraw, and diaries are about as
