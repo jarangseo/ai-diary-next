@@ -33,10 +33,13 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
   const tHome = useTranslations('Home.input')
   const tShell = useTranslations('Shell')
   const router = useRouter()
-  const { messages, status, send, stop } = useThreadStream({ threadId, initialMessages, bench })
+  const { messages, status, send, stop, retry, delivery } = useThreadStream({
+    threadId,
+    initialMessages,
+    bench,
+  })
   const [text, setText] = useState('')
   const streaming = status === 'streaming'
-
   const firstMessage = messages.find((m) => m.role === 'user')
   const heading =
     title || (firstMessage && titleFromText(firstMessage.content)) || tShell('untitled')
@@ -78,10 +81,10 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
   const submit = async (event?: React.FormEvent) => {
     event?.preventDefault()
     if (!canSend) return
-    const pending = text
     pinned.current = true
+    // The message stays on screen whatever happens to it, so the input is cleared now.
     setText('')
-    if (!(await send(pending))) setText(pending)
+    await send(text)
   }
 
   return (
@@ -99,9 +102,22 @@ export function ChatEntry({ entryId, threadId, title, dateLabel, initialMessages
           .filter((m) => !isWrapUpOffer(m))
           .map((m) =>
             m.role === 'user' ? (
-              <p key={m.id} className={styles.mine}>
-                {m.content}
-              </p>
+              <div key={m.id} className={styles.sent}>
+                <p className={styles.mine}>{m.content}</p>
+                {delivery[m.id] === 'failed' && (
+                  <div className={styles.failure} role="alert">
+                    <span>{t('replyFailed')}</span>
+                    <button
+                      type="button"
+                      className={styles.retry}
+                      onClick={() => retry(m.id)}
+                      disabled={streaming}
+                    >
+                      {t('retry')}
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div key={m.id} className={styles.reply}>
                 {m.content ? (

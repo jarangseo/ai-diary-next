@@ -43,3 +43,40 @@ test('the sidebar’s 새 일기 opens the home', async ({ page }) => {
   await page.goto('/diary')
   await expect(page.getByRole('link', { name: '새 일기' })).toHaveAttribute('href', '/diary')
 })
+
+test.describe('when something goes wrong (spec 5-2)', () => {
+  const MESSAGES = '**/api/threads/*/messages*'
+
+  // A chat entry whose first reply has been stopped, ready for the next message.
+  test.beforeEach(async ({ page }) => {
+    created.push(await startChatEntry(page, `E2E 실패 상태 ${Date.now()}`))
+    await page.getByRole('button', { name: '정지' }).click()
+    await expect(page.getByRole('button', { name: '보내기' })).toBeVisible()
+  })
+
+  test('a failed reply keeps the message and 다시 시도 sends it again', async ({ page }) => {
+    const message = `답장 실패 ${Date.now()}`
+    await page.route(MESSAGES, (route) => route.fulfill({ status: 500 }))
+    await page.getByLabel('이어서 이야기하기').fill(message)
+    await page.getByRole('button', { name: '보내기' }).click()
+
+    const log = page.getByRole('log', { name: '대화' })
+    await expect(log.getByText(message)).toBeVisible()
+    await expect(page.getByRole('main').getByRole('alert')).toHaveText(
+      /답장을 받지 못했어요\. 쓴 글은 그대로 있어요\./
+    )
+
+    await page.unroute(MESSAGES)
+    const stored = page.waitForResponse(
+      (r) => r.url().includes('/messages') && r.request().method() === 'POST'
+    )
+    await page.getByRole('button', { name: '다시 시도' }).click()
+    expect((await stored).ok()).toBe(true)
+    await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: '정지' })).toBeVisible()
+
+    // Sent once: the failed attempt never reached the server.
+    await page.reload()
+    await expect(log.getByText(message)).toHaveCount(1)
+  })
+})
