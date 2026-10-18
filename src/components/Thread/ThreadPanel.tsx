@@ -71,14 +71,11 @@ export function ThreadPanel({ threadId, initialMessages, bench }: Props) {
 
   const streaming = status === 'streaming'
 
-  const submit = async () => {
-    const pending = text
-    // Cleared optimistically so the composer feels instant...
+  const submit = () => {
+    // Cleared optimistically so the composer feels instant. A message whose reply fails
+    // stays in the thread, so what the user wrote is never lost.
+    send(text)
     setText('')
-    const ok = await send(pending)
-    // ...and restored from this local copy if the request never landed, so what the
-    // user wrote is never lost.
-    if (!ok) setText(pending)
   }
 
   return (

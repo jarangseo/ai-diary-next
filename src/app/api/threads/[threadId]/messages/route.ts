@@ -7,6 +7,7 @@ import { cappedParts, isOverDailyLimit, DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { fakeParts } from '@/lib/fakeStream'
 import { modelParts } from '@/lib/modelStream'
 import { partsToNdjsonStream } from '@/lib/streamResponse'
+import { MESSAGE_MAX, messageLength } from '@/components/Home/composerRules'
 import { NextResponse } from 'next/server'
 
 // POST /api/threads/:threadId/messages
@@ -42,6 +43,11 @@ export async function POST(
   const { text } = await request.json()
   if (typeof text !== 'string' || !text.trim()) {
     return NextResponse.json({ error: 'text is required' }, { status: 400 })
+  }
+  // The input's own limit, counted the same way (by code point), so the server never
+  // takes more than the UI lets anyone send.
+  if (messageLength(text.trim()) > MESSAGE_MAX) {
+    return NextResponse.json({ error: `text is over ${MESSAGE_MAX} characters` }, { status: 400 })
   }
 
   // Read before appending: the model needs the conversation so far to reply coherently,

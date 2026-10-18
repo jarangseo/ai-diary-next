@@ -64,6 +64,49 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   }
 }
 
+// The user's bubble with whatever went wrong with it right underneath (spec 5-2: the
+// problem shows where it happened).
+.sent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $spacing-sm;
+}
+
+.failure {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.retry {
+  min-height: 44px;
+  padding: 0 $spacing-md;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-sm;
+  background-color: $color-surface;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-hover;
+  }
+
+  &:disabled {
+    color: $color-text-tertiary;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
 .mine {
   align-self: flex-end;
   max-width: 85%;
