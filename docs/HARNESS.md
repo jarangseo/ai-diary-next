@@ -166,6 +166,10 @@ passed. Another session spotted the branch change and warned the person running 
   worktrees. `require-worktree.sh` blocks edits there and blocks git commands that move
   HEAD there. It fails open, and `CLAUDE_ALLOW_MAIN_CHECKOUT=1` lets a person working
   alone opt out on purpose.
+- **After pulling main, run `pnpm install` there too.** `git pull` brings a new
+  `package.json` but not the packages it names, so the main checkout's dev server breaks
+  on the next import of an added dependency. That happened on 2026-10-18 with `next-intl`
+  after #89 merged (#95). `pnpm install --frozen-lockfile` is quick when nothing changed.
 - **Set up a new worktree before building in it:** `pnpm install`, then link the env file from
   the main checkout:
   `ln -s "$(git rev-parse --path-format=absolute --git-common-dir)/../.env.local" .env.local`.
