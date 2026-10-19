@@ -593,6 +593,25 @@ $fold: 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 }
 
+.diaryEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid $color-border-input;
+    border-radius: $radius-md;
+    background-color: $color-bg-primary;
+    resize: vertical;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+}
+
 .diaryMeta {
   display: flex;
   align-items: center;

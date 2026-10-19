@@ -1,5 +1,5 @@
 'use client'
-import type { ReactNode, Ref } from 'react'
+import { useRef, useState, type ReactNode, type Ref } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { EmotionPending } from '@/components/Diary/EmotionPending'
 import type { DiaryEmotion, DiarySummary, EmotionSource } from '@/types/diary'
@@ -18,6 +18,8 @@ interface Props {
   fresh: boolean
   /** Drafting again, could not, or outdated by later messages: above the 일기. */
   notice?: ReactNode
+  /** `다듬기`: stores the user's edit; rejects when it could not. */
+  onSave: (text: string) => Promise<void>
   headingRef: Ref<HTMLHeadingElement>
   /** Present on narrow screens, where the 일기 and the 대화 are tabs. */
   tabpanel?: { id: string; labelledBy: string }
@@ -33,6 +35,7 @@ export function DiaryPane({
   timeZone,
   fresh,
   notice,
+  onSave,
   headingRef,
   tabpanel,
 }: Props) {
@@ -48,6 +51,30 @@ export function DiaryPane({
     minute: '2-digit',
     timeZone,
   }).format(summary.madeAt)
+
+  // `다듬기`: the 일기 becomes its own editor, in place.
+  const [draft, setDraft] = useState<string>()
+  const [saving, setSaving] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
+  const editRef = useRef<HTMLButtonElement>(null)
+  const close = () => {
+    setDraft(undefined)
+    setSaveFailed(false)
+    requestAnimationFrame(() => editRef.current?.focus())
+  }
+  const save = async () => {
+    setSaving(true)
+    setSaveFailed(false)
+    try {
+      await onSave(draft!.trim())
+      close()
+    } catch (error) {
+      console.error(error)
+      setSaveFailed(true)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <article
@@ -87,16 +114,67 @@ export function DiaryPane({
       <h1 id="diary-title" className={styles.diaryTitle} ref={headingRef} tabIndex={-1}>
         {title}
       </h1>
-      <div className={styles.diaryText}>
-        {summary.text
-          .split(/\n+/)
-          .filter((p) => p.trim())
-          .map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-      </div>
+      {draft === undefined ? (
+        <div className={styles.diaryText}>
+          {summary.text
+            .split(/\n+/)
+            .filter((p) => p.trim())
+            .map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+        </div>
+      ) : (
+        <form
+          className={styles.diaryEdit}
+          onSubmit={(e) => {
+            e.preventDefault()
+            save()
+          }}
+        >
+          <textarea
+            className={styles.diaryText}
+            aria-label={t('editLabel')}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') close()
+            }}
+            maxLength={10_000}
+            rows={12}
+            autoFocus
+          />
+          {saveFailed && (
+            <p className={styles.limitBody} role="alert">
+              {t('saveFailed')}
+            </p>
+          )}
+          <div className={styles.offerActions}>
+            <button
+              type="submit"
+              className={styles.primary}
+              disabled={saving || !draft.trim()}
+              aria-busy={saving || undefined}
+            >
+              {t('save')}
+            </button>
+            <button type="button" className={styles.secondary} onClick={close} disabled={saving}>
+              {t('cancel')}
+            </button>
+          </div>
+        </form>
+      )}
       <footer className={styles.diaryMeta}>
         <span>{t('made', { count: said, time })}</span>
+        {draft === undefined && (
+          <button
+            ref={editRef}
+            type="button"
+            className={styles.secondary}
+            onClick={() => setDraft(summary.text)}
+          >
+            {t('edit')}
+          </button>
+        )}
       </footer>
     </article>
   )

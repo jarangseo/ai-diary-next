@@ -133,3 +133,38 @@ test('talking on after the draft offers 다시 정리', async ({ page }) => {
   await expect(stale).toHaveCount(0)
   await expect(page.getByText(/^대화 2개를 정리했어요 · /)).toBeVisible()
 })
+
+test('다듬기 keeps the user’s edit, and 다시 정리 asks before replacing it', async ({ page }) => {
+  const message = `E2E 다듬기 ${Date.now()}`
+  await wrappedUpEntry(page, message)
+  const diary = page.getByRole('article')
+
+  await page.getByRole('button', { name: '다듬기' }).click()
+  const editor = page.getByRole('textbox', { name: '일기 다듬기' })
+  await expect(editor).toBeFocused()
+  await editor.fill('내가 고친 일기')
+  await page.getByRole('button', { name: '저장' }).click()
+  await expect(diary.getByText('내가 고친 일기')).toBeVisible()
+  await expect(page.getByRole('button', { name: '다듬기' })).toBeFocused()
+
+  // Stored, not just shown.
+  await page.reload()
+  await expect(diary.getByText('내가 고친 일기')).toBeVisible()
+
+  // Talking on outdates it; 다시 정리 warns first, and cancel keeps the edit.
+  await page.getByRole('button', { name: '대화 보기' }).click()
+  await page.getByRole('textbox', { name: '이어서 이야기하기' }).fill('E2E 덧붙임')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('log', { name: '대화' }).getByText(/읽어보니/)).toHaveCount(2)
+  await page.getByRole('button', { name: '정지' }).click()
+  await diary.getByRole('button', { name: '다시 정리' }).click()
+  const confirm = page.getByRole('alert').filter({ hasText: '다시 정리하면 고친 부분이 바뀌어요' })
+  await confirm.getByRole('button', { name: '취소' }).click()
+  await expect(confirm).toHaveCount(0)
+  await expect(diary.getByText('내가 고친 일기')).toBeVisible()
+
+  await diary.getByRole('button', { name: '다시 정리' }).click()
+  await confirm.getByRole('button', { name: '다시 정리' }).click()
+  await expect(diary.getByText('내가 고친 일기')).toHaveCount(0)
+  await expect(page.getByText(/^대화 2개를 정리했어요 · /)).toBeVisible()
+})
