@@ -1,5 +1,5 @@
 'use client'
-import type { Ref } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { EmotionPending } from '@/components/Diary/EmotionPending'
 import type { DiaryEmotion, DiarySummary, EmotionSource } from '@/types/diary'
@@ -16,6 +16,8 @@ interface Props {
   timeZone: string
   /** Drafted a moment ago in this session: the completion moment plays. */
   fresh: boolean
+  /** Drafting again, could not, or outdated by later messages: above the 일기. */
+  notice?: ReactNode
   headingRef: Ref<HTMLHeadingElement>
   /** Present on narrow screens, where the 일기 and the 대화 are tabs. */
   tabpanel?: { id: string; labelledBy: string }
@@ -30,6 +32,7 @@ export function DiaryPane({
   said,
   timeZone,
   fresh,
+  notice,
   headingRef,
   tabpanel,
 }: Props) {
@@ -54,7 +57,8 @@ export function DiaryPane({
       role={tabpanel ? 'tabpanel' : undefined}
       aria-labelledby={tabpanel?.labelledBy ?? 'diary-title'}
     >
-      {fresh && (
+      {notice}
+      {fresh && !notice && (
         <p className={styles.fresh}>
           <Signature />
           {t('fresh')}

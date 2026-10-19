@@ -13,7 +13,7 @@ import { takeFirstMessage } from '@/components/Home/firstMessage'
 import { titleFromText } from '@/components/Shell/entryTitle'
 import { readDraft, writeDraft } from './draft'
 import { OfferCard, WrapUpButton, WrapUpFailed } from './WrapUp'
-import { countSaid, draftCut } from './afterWrapUp'
+import { countSaid, draftCut, saidSince } from './afterWrapUp'
 import { DiaryPane } from './DiaryPane'
 import { AfterLayout } from './AfterLayout'
 import styles from './ChatEntry.module.scss'
@@ -173,6 +173,30 @@ export function ChatEntry({
     if (fresh) headingRef.current?.focus({ preventScroll: true })
   }, [fresh])
 
+  // Spec 1-2 / 5-2: drafting, could not draft, or drafted before the latest messages.
+  const wrapState = wrapping ? (
+    <p className={styles.drafting} role="status">
+      <span className={styles.typing} aria-hidden>
+        <i />
+        <i />
+        <i />
+      </span>
+      {tAfter('drafting')}
+    </p>
+  ) : wrapFailed ? (
+    <WrapUpFailed onWrapUp={wrapUp} busy={wrapping} />
+  ) : (
+    wrappedUp &&
+    saidSince(messages, cut) && (
+      <div className={styles.stale} role="status">
+        <p>{tAfter('stale')}</p>
+        <button type="button" className={styles.secondary} onClick={wrapUp} disabled={streaming}>
+          {tAfter('redraft')}
+        </button>
+      </div>
+    )
+  )
+
   const firstMessage = messages.find((m) => m.role === 'user')
   // Spec 1-1: the header's button only until the AI has offered; never both at once.
   const headerWrapUp =
@@ -318,7 +342,6 @@ export function ChatEntry({
                 </span>
               )}
               {/* Source chips (#76): the entries a reply drew on, at most three. */}
-              {wrapFailed && <WrapUpFailed onWrapUp={wrapUp} busy={wrapping} />}
             </div>
           ),
           wrappedUp && i === cut - 1 && (
@@ -327,6 +350,8 @@ export function ChatEntry({
             </div>
           ),
         ])}
+        {/* Before the first draft the wrap-up states close the log; after it, the 일기 has them. */}
+        {!wrappedUp && wrapState}
       </div>
 
       {atLimit && (
@@ -359,6 +384,8 @@ export function ChatEntry({
               e.preventDefault()
               submit()
             }}
+            // Locked while the 일기 is drafted (spec 1-2), without losing what is typed.
+            readOnly={wrapping}
             placeholder={t('input.placeholder')}
             aria-invalid={(remaining ?? 0) < 0 || undefined}
             aria-describedby={remaining === null ? undefined : 'chat-count'}
@@ -411,6 +438,7 @@ export function ChatEntry({
           said={countSaid(messages, cut)}
           timeZone={timeZone}
           fresh={fresh}
+          notice={wrapState}
           headingRef={headingRef}
           tabpanel={wide ? undefined : { id: 'diary-pane', labelledBy: 'tab-diary' }}
         />
