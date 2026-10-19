@@ -15,8 +15,13 @@ async function wrappedUpEntry(page: Page, message: string) {
   created.push(await startChatEntry(page, message))
   await expect(page.getByRole('log', { name: '대화' }).getByText(/읽어보니/)).toHaveCount(1)
   await page.getByRole('button', { name: '정지' }).click()
+  const drafted = page.waitForResponse((r) => r.url().endsWith('/wrap-up') && r.ok())
   await page.getByRole('button', { name: '일기로 정리하기' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: message })).toBeVisible()
+  await drafted
+  // The heading alone is no proof: before wrap-up it is the first message too.
+  await expect(
+    page.getByRole('article').getByRole('heading', { level: 1, name: message })
+  ).toBeVisible()
 }
 
 test('the 일기 takes the centre and the conversation opens beside it', async ({ page }) => {
