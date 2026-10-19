@@ -1,4 +1,4 @@
-import type { DiarySummary } from '@/types/diary'
+import type { DiarySummary, EmotionPick } from '@/types/diary'
 
 export const diaryApi = {
   /**
@@ -50,5 +50,17 @@ export const diaryApi = {
       throw new Error(`API Error: ${res.status} ${res.statusText}`)
     }
     return (await res.json()).editedAt
+  },
+
+  /** The emotion chip's pick (#84): the user's from now on, kept through re-analysis. */
+  setEmotion: async (id: string, pick: EmotionPick): Promise<void> => {
+    const res = await fetch(`/api/diary/${id}/emotion`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ primary: pick.primary, secondary: pick.secondary ?? null }),
+    })
+    if (!res.ok) {
+      throw new Error(`API Error: ${res.status} ${res.statusText}`)
+    }
   },
 }

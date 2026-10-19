@@ -2,7 +2,8 @@
 import { useRef, useState, type ReactNode, type Ref } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { EmotionPending } from '@/components/Diary/EmotionPending'
-import type { DiaryEmotion, DiarySummary, EmotionSource } from '@/types/diary'
+import { EmotionPicker } from './EmotionPicker'
+import type { DiaryEmotion, DiarySummary, EmotionPick, EmotionSource } from '@/types/diary'
 import styles from './ChatEntry.module.scss'
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
   notice?: ReactNode
   /** `다듬기`: stores the user's edit; rejects when it could not. */
   onSave: (text: string) => Promise<void>
+  /** The emotion chip's picker (#84): stores the user's pick; rejects when it could not. */
+  onPickEmotion: (pick: EmotionPick) => Promise<void>
   headingRef: Ref<HTMLHeadingElement>
   /** Present on narrow screens, where the 일기 and the 대화 are tabs. */
   tabpanel?: { id: string; labelledBy: string }
@@ -36,6 +39,7 @@ export function DiaryPane({
   fresh,
   notice,
   onSave,
+  onPickEmotion,
   headingRef,
   tabpanel,
 }: Props) {
@@ -57,6 +61,13 @@ export function DiaryPane({
   const [saving, setSaving] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const editRef = useRef<HTMLButtonElement>(null)
+  const [picking, setPicking] = useState(false)
+  const chipRef = useRef<HTMLButtonElement>(null)
+  const closePicker = () => {
+    setPicking(false)
+    requestAnimationFrame(() => chipRef.current?.focus())
+  }
+  const labels = emotions.map((key) => tEmotion(key)).join(' · ')
   const close = () => {
     setDraft(undefined)
     setSaveFailed(false)
@@ -91,22 +102,39 @@ export function DiaryPane({
           {t('fresh')}
         </p>
       )}
-      {/* Display only; changing it is #84. */}
-      {emotions.length > 0 ? (
-        <p className={styles.emotionLine}>
-          <span className={styles.emotionChip}>
-            {emotions.map((key) => (
-              <span
-                key={key}
-                className={styles.emotionDot}
-                style={{ '--emotion': `var(--emotion-${key})` } as React.CSSProperties}
-                aria-hidden
-              />
-            ))}
-            {emotions.map((key) => tEmotion(key)).join(' · ')}
-          </span>
-          {emotionSource === 'ai' && <span className={styles.emotionNote}>{t('aiEmotion')}</span>}
-        </p>
+      {/* The AI suggests, the user owns it: the chip opens the picker (#84). */}
+      {emotion ? (
+        <>
+          <p className={styles.emotionLine}>
+            <button
+              ref={chipRef}
+              type="button"
+              className={styles.emotionChip}
+              aria-label={`${t('pickEmotion')}: ${labels}`}
+              aria-expanded={picking}
+              aria-controls="emotion-picker"
+              onClick={() => (picking ? closePicker() : setPicking(true))}
+            >
+              {emotions.map((key) => (
+                <span
+                  key={key}
+                  className={styles.emotionDot}
+                  style={{ '--emotion': `var(--emotion-${key})` } as React.CSSProperties}
+                  aria-hidden
+                />
+              ))}
+              {labels}
+            </button>
+            {emotionSource === 'ai' && <span className={styles.emotionNote}>{t('aiEmotion')}</span>}
+          </p>
+          {picking && (
+            <EmotionPicker
+              initial={{ primary: emotion.primary, secondary: emotion.secondary }}
+              onSave={onPickEmotion}
+              onClose={closePicker}
+            />
+          )}
+        </>
       ) : (
         // The emotion is analysed after the draft is stored, so it arrives a moment later.
         <EmotionPending />

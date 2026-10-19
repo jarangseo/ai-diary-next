@@ -544,6 +544,75 @@ $fold: 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
   background-color: $color-bg-tertiary;
   font-size: 13px;
   color: $color-text-primary;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $color-bg-secondary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// The emotion picker (#84): two radio groups as wrapping chips.
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border-radius: $radius-md;
+  background-color: $color-bg-tertiary;
+}
+
+.pickGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+
+  legend {
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: $color-text-secondary;
+  }
+}
+
+.pickOption {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid $color-border-input;
+  border-radius: 999px;
+  font-size: 13px;
+  color: $color-text-primary;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:has(input:checked) {
+    border-color: $color-text-primary;
+    box-shadow: inset 0 0 0 1px $color-text-primary;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:has(input:focus-visible) {
+    @include focus-ring;
+  }
+
+  &:has(input:disabled) {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 }
 
 .emotionDot {

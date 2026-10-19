@@ -43,3 +43,6 @@ export interface Diary {
   createdAt: number
   updatedAt: number
 }
+
+/** The user's choice from the emotion chip (#84). */
+export type EmotionPick = Pick<DiaryEmotion, 'primary' | 'secondary'>
