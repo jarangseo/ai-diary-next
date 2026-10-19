@@ -172,6 +172,8 @@ test('다듬기 keeps the user’s edit, and 다시 정리 asks before replacing
 test('the emotion chip changes the emotion, and 다시 정리 keeps the pick (#84)', async ({
   page,
 }) => {
+  // Two drafts, a reply and three reloads: longer than the default 30 s on CI.
+  test.setTimeout(60_000)
   const message = `E2E 감정 ${Date.now()}`
   await wrappedUpEntry(page, message)
   // CI has no model key, so no analysis lands: seed an emotion through the same endpoint.
