@@ -1,7 +1,14 @@
 import { auth } from '@/auth'
-import { appendMessage, countUserMessagesToday, getThread, listMessages } from '@/lib/threads'
+import {
+  appendMessage,
+  countUserMessagesToday,
+  deleteMessages,
+  getThread,
+  listMessages,
+} from '@/lib/threads'
 import { getDiaryById } from '@/lib/diary'
 import { shouldOfferWrapUp } from '@/lib/wrapUp'
+import { planRetry } from '@/lib/messageRetry'
 import { memoryFor } from '@/lib/memory'
 import { cappedParts, isOverDailyLimit, DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { fakeParts } from '@/lib/fakeStream'
@@ -40,7 +47,7 @@ export async function POST(
     return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
   }
 
-  const { text } = await request.json()
+  const { text, retry } = await request.json()
   if (typeof text !== 'string' || !text.trim()) {
     return NextResponse.json({ error: 'text is required' }, { status: 400 })
   }
@@ -53,9 +60,15 @@ export async function POST(
   // Read before appending: the model needs the conversation so far to reply coherently,
   // and the count doubles as "is this the first exchange", which decides whether the
   // emotion card is emitted.
-  const history = await listMessages(threadId)
+  const conversation = await listMessages(threadId)
 
-  const stored = await appendMessage(threadId, 'user', text.trim())
+  // `다시 시도` after a broken-off reply (#115): the message is already stored, so reuse it,
+  // drop what the failed attempt left after it, and generate the reply again. `history` is
+  // then the conversation before the message, exactly as on the first attempt.
+  const plan = retry === true ? planRetry(conversation, text) : null
+  if (plan?.orphanIds.length) await deleteMessages(threadId, plan.orphanIds)
+  const history = plan ? conversation.slice(0, conversation.indexOf(plan.message)) : conversation
+  const stored = plan ? plan.message : await appendMessage(threadId, 'user', text.trim())
   if (!stored) {
     return NextResponse.json({ error: 'Failed to store message' }, { status: 500 })
   }
