@@ -96,6 +96,18 @@ export async function appendMessage(
 }
 
 /**
+ * Removes messages from one thread — what a broken-off reply left behind, before `다시 시도`
+ * generates it again (#115). Scoped by thread as well as id, so a stray id from elsewhere
+ * cannot delete anything; the caller has already checked the thread is the user's.
+ */
+export async function deleteMessages(threadId: string, ids: string[]): Promise<boolean> {
+  if (ids.length === 0) return true
+  const { error } = await supabase.from('messages').delete().eq('thread_id', threadId).in('id', ids)
+  if (error) console.error('deleteMessages failed:', error.message)
+  return !error
+}
+
+/**
  * The thread for an entry, created on first sight if it does not exist yet.
  *
  * Lazy rather than created alongside the entry, for two reasons: entries written before
@@ -164,4 +176,41 @@ export async function countUserMessagesToday(userId: string): Promise<number | n
   }
 
   return count ?? 0
+}
+
+/**
+ * The first user message of each of these entries, by entry id, in **one query** (#114):
+ * before wrap-up a chat entry's title is the first 30 characters of it (spec 1-1), and the
+ * sidebar used to read a thread and its messages per entry.
+ *
+ * PostgREST has no "first row per group", so this reads the user messages of all the
+ * given entries oldest first and keeps the first per entry. They are few — only entries
+ * not yet wrapped up are asked for — and the row cap bounds the worst case.
+ */
+export async function firstUserMessages(
+  userId: string,
+  diaryIds: string[]
+): Promise<Map<string, string>> {
+  if (diaryIds.length === 0) return new Map()
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select('content, created_at, threads!inner(diary_id, user_id)')
+    .eq('threads.user_id', userId)
+    .in('threads.diary_id', diaryIds)
+    .eq('role', 'user')
+    .order('created_at', { ascending: true })
+    .limit(500)
+
+  if (error) throw new Error(`firstUserMessages failed: ${error.message}`)
+
+  // The embedded thread is one object at runtime (messages → threads is many-to-one), but
+  // the inferred type says array; accept both rather than cast past it.
+  const first = new Map<string, string>()
+  for (const row of data) {
+    const thread = Array.isArray(row.threads) ? row.threads[0] : row.threads
+    const id = (thread as { diary_id?: string } | undefined)?.diary_id
+    if (id && !first.has(id)) first.set(id, row.content)
+  }
+  return first
 }

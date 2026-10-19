@@ -6,6 +6,7 @@ vi.mock('@/lib/threads', () => ({
   getThread: vi.fn(),
   listMessages: vi.fn(),
   appendMessage: vi.fn(),
+  deleteMessages: vi.fn(async () => true),
   countUserMessagesToday: vi.fn(async () => 0),
 }))
 vi.mock('@/lib/diary', () => ({ getDiaryById: vi.fn() }))
@@ -22,7 +23,7 @@ vi.mock('@/lib/fakeStream', () => ({
 }))
 
 import { POST } from '../route'
-import { appendMessage, getThread, listMessages } from '@/lib/threads'
+import { appendMessage, deleteMessages, getThread, listMessages } from '@/lib/threads'
 import { getDiaryById } from '@/lib/diary'
 
 const THREAD = 'thread-1'
@@ -93,6 +94,48 @@ describe('POST messages — wrap-up offer', () => {
     vi.mocked(getDiaryById).mockRejectedValue(new Error('getDiaryById failed'))
     vi.mocked(listMessages).mockResolvedValue([user, reply, user, reply, user, reply])
     await send()
+    expect(stored().map((x) => x.role)).toEqual(['user', 'assistant'])
+  })
+})
+
+describe('POST messages — 다시 시도 after a broken-off reply (#115)', () => {
+  const sendRetry = async (retry: boolean) => {
+    const res = await POST(
+      new Request(`http://test/api/threads/${THREAD}/messages?bench=1`, {
+        method: 'POST',
+        body: JSON.stringify({ text: 'hello', retry }),
+      }),
+      { params: Promise.resolve({ threadId: THREAD }) }
+    )
+    await res.text()
+  }
+
+  beforeEach(() => vi.mocked(deleteMessages).mockClear())
+
+  it('reuses the stored message, drops the partial reply, and replies again', async () => {
+    vi.mocked(listMessages).mockResolvedValue([
+      { ...user, id: 'u1', content: 'hello' },
+      { ...reply, id: 'partial', content: '그랬' },
+    ])
+    await sendRetry(true)
+    expect(deleteMessages).toHaveBeenCalledWith(THREAD, ['partial'])
+    expect(stored().map((x) => x.role)).toEqual(['assistant'])
+  })
+
+  it('without the retry flag, the same text twice is just sent twice', async () => {
+    vi.mocked(listMessages).mockResolvedValue([
+      { ...user, id: 'u1', content: 'hello' },
+      { ...reply, id: 'r1', content: '응?' },
+    ])
+    await sendRetry(false)
+    expect(deleteMessages).not.toHaveBeenCalled()
+    expect(stored().map((x) => x.role)).toEqual(['user', 'assistant'])
+  })
+
+  it('a retry whose first attempt never reached the server is stored as usual', async () => {
+    vi.mocked(listMessages).mockResolvedValue([])
+    await sendRetry(true)
+    expect(deleteMessages).not.toHaveBeenCalled()
     expect(stored().map((x) => x.role)).toEqual(['user', 'assistant'])
   })
 })
