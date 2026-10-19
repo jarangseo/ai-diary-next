@@ -13,6 +13,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { BackButton } from '@/components/BackButton/BackButton'
 import { formatDateLabel, isDateKey } from '@/lib/date'
 import { getEmotionMeta } from '@/lib/emotion'
+import { DEFAULT_SETTINGS, getSettings } from '@/lib/settings'
 import styles from './page.module.scss'
 
 export default async function DiaryDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,6 +56,11 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
     // over it.
     const used = bench ? null : await countUserMessagesToday(session.user.id)
     const remainingToday = bench ? null : Math.max(0, DAILY_MESSAGE_LIMIT - (used ?? Infinity))
+    // Only for printing when the 일기 was made: UTC beats no page if settings are down.
+    const timeZone = await getSettings(session.user.id).then(
+      (r) => r.settings.timezone,
+      () => DEFAULT_SETTINGS.timezone
+    )
     return (
       <ChatEntry
         key={diary.id}
@@ -64,7 +70,10 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
         dateLabel={formatDateLabel(diary.date, locale)}
         initialMessages={messages}
         remainingToday={remainingToday}
-        wrappedUp={Boolean(diary.summary)}
+        summary={diary.summary}
+        emotion={diary.emotion}
+        emotionSource={diary.emotionSource}
+        timeZone={timeZone}
         crisis={Boolean(thread.crisisAt)}
         bench={bench}
       />
