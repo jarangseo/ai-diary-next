@@ -142,11 +142,17 @@ export function ChatEntry({
     !declined.includes(messages[lastOffer].id)
       ? messages[lastOffer].id
       : null
-  const wrapUp = async () => {
+  // `다시 정리` over the user's own edit asks first (spec: "다시 정리하면 고친 부분이 바뀌어요").
+  const [confirming, setConfirming] = useState(false)
+  const wrapUp = async (confirm = false) => {
+    if (summary?.editedAt && !confirm) return setConfirming(true)
+    setConfirming(false)
     setWrapping(true)
     setWrapFailed(false)
     try {
-      const result = await diaryApi.wrapUp(entryId)
+      const result = await diaryApi.wrapUp(entryId, confirm)
+      // Edited in another tab since this page loaded: the server asks the same question.
+      if (result.needsConfirm) return setConfirming(true)
       setMade({ summary: result.summary, title: result.title, cut: messages.length })
       setFresh(true)
       // The sidebar takes the title and loses its 정리 전 badge.
@@ -157,6 +163,12 @@ export function ChatEntry({
     } finally {
       setWrapping(false)
     }
+  }
+  // For buttons: their click event must not reach `confirm`.
+  const redraft = () => wrapUp()
+  const saveEdit = async (text: string) => {
+    const editedAt = await diaryApi.editSummary(entryId, text)
+    if (summary) setMade({ summary: { ...summary, text, editedAt }, title: made?.title, cut })
   }
 
   // After wrap-up: the panel beside the 일기 (wide) or the 대화 tab (narrow).
@@ -183,14 +195,26 @@ export function ChatEntry({
       </span>
       {tAfter('drafting')}
     </p>
+  ) : confirming ? (
+    <div className={styles.stale} role="alert">
+      <p>{tAfter('confirm')}</p>
+      <div className={styles.offerActions}>
+        <button type="button" className={styles.primary} onClick={() => wrapUp(true)}>
+          {tAfter('redraft')}
+        </button>
+        <button type="button" className={styles.secondary} onClick={() => setConfirming(false)}>
+          {tAfter('cancel')}
+        </button>
+      </div>
+    </div>
   ) : wrapFailed ? (
-    <WrapUpFailed onWrapUp={wrapUp} busy={wrapping} />
+    <WrapUpFailed onWrapUp={redraft} busy={wrapping} />
   ) : (
     wrappedUp &&
     saidSince(messages, cut) && (
       <div className={styles.stale} role="status">
         <p>{tAfter('stale')}</p>
-        <button type="button" className={styles.secondary} onClick={wrapUp} disabled={streaming}>
+        <button type="button" className={styles.secondary} onClick={redraft} disabled={streaming}>
           {tAfter('redraft')}
         </button>
       </div>
@@ -272,7 +296,7 @@ export function ChatEntry({
           </div>
           {headerWrapUp && (
             <WrapUpButton
-              onWrapUp={wrapUp}
+              onWrapUp={redraft}
               busy={wrapping || streaming}
               className={styles.secondary}
             />
@@ -292,7 +316,7 @@ export function ChatEntry({
             m.id === openOffer && (
               <OfferCard
                 key={m.id}
-                onWrapUp={wrapUp}
+                onWrapUp={redraft}
                 busy={wrapping}
                 onDecline={() => setDeclined((ids) => [...ids, m.id])}
               />
@@ -358,7 +382,7 @@ export function ChatEntry({
         <div className={styles.limit} role="status">
           <p className={styles.limitTitle}>{t('limit.title')}</p>
           <p className={styles.limitBody}>{t('limit.body')}</p>
-          <WrapUpButton onWrapUp={wrapUp} busy={wrapping} />
+          <WrapUpButton onWrapUp={redraft} busy={wrapping} />
         </div>
       )}
       {/* Hidden rather than removed at the limit, so the draft in it is kept. */}
@@ -439,6 +463,7 @@ export function ChatEntry({
           timeZone={timeZone}
           fresh={fresh}
           notice={wrapState}
+          onSave={saveEdit}
           headingRef={headingRef}
           tabpanel={wide ? undefined : { id: 'diary-pane', labelledBy: 'tab-diary' }}
         />
