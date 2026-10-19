@@ -223,6 +223,27 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   background-color: $color-surface;
 }
 
+.drafting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.stale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: $radius-md;
+  background-color: $color-bg-tertiary;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
 .limitTitle {
   font-size: 15px;
   font-weight: $font-weight-semibold;

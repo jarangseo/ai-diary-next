@@ -80,3 +80,56 @@ test.describe('on a phone', () => {
     await expect(page.getByRole('heading', { level: 1, name: message })).toBeVisible()
   })
 })
+
+test('drafting locks the input, and a failure keeps the conversation', async ({ page }) => {
+  const message = `E2E 정리중 ${Date.now()}`
+  created.push(await startChatEntry(page, message))
+  await expect(page.getByRole('log', { name: '대화' }).getByText(/읽어보니/)).toHaveCount(1)
+  await page.getByRole('button', { name: '정지' }).click()
+
+  // Held until the drafting state has been seen, then failed once.
+  let release!: () => void
+  const held = new Promise<void>((resolve) => (release = resolve))
+  await page.route('**/wrap-up', async (route) => {
+    await held
+    await route.fulfill({ status: 502, json: { error: 'Could not draft' } })
+  })
+  const input = page.getByRole('textbox', { name: '이어서 이야기하기' })
+  await page.getByRole('button', { name: '일기로 정리하기' }).click()
+  await expect(
+    page.getByRole('status').filter({ hasText: '대화를 일기로 정리하고 있어요' })
+  ).toBeVisible()
+  await expect(input).not.toBeEditable()
+  release()
+
+  // Shown once, not under every reply.
+  await expect(page.getByRole('alert').filter({ hasText: '일기로 정리하지 못했어요' })).toHaveCount(
+    1
+  )
+  await expect(input).toBeEditable()
+
+  // 다시 정리 goes through once the server answers again.
+  await page.unroute('**/wrap-up')
+  await page.getByRole('button', { name: '다시 정리' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: message })).toBeVisible()
+  await expect(page.getByText('일기로 정리하지 못했어요')).toHaveCount(0)
+})
+
+test('talking on after the draft offers 다시 정리', async ({ page }) => {
+  const message = `E2E 이어서 ${Date.now()}`
+  await wrappedUpEntry(page, message)
+  await expect(page.getByText('정리한 뒤에 나눈 대화가 있어요')).toHaveCount(0)
+
+  await page.getByRole('button', { name: '대화 보기' }).click()
+  const log = page.getByRole('log', { name: '대화' })
+  await page.getByRole('textbox', { name: '이어서 이야기하기' }).fill('E2E 하나 더')
+  await page.keyboard.press('Enter')
+  await expect(log.getByText(/읽어보니/)).toHaveCount(2)
+  await page.getByRole('button', { name: '정지' }).click()
+
+  const stale = page.getByRole('status').filter({ hasText: '정리한 뒤에 나눈 대화가 있어요' })
+  await expect(stale).toBeVisible()
+  await stale.getByRole('button', { name: '다시 정리' }).click()
+  await expect(stale).toHaveCount(0)
+  await expect(page.getByText(/^대화 2개를 정리했어요 · /)).toBeVisible()
+})
