@@ -168,3 +168,45 @@ test('다듬기 keeps the user’s edit, and 다시 정리 asks before replacing
   await expect(diary.getByText('내가 고친 일기')).toHaveCount(0)
   await expect(page.getByText(/^대화 2개를 정리했어요 · /)).toBeVisible()
 })
+
+test('the emotion chip changes the emotion, and 다시 정리 keeps the pick (#84)', async ({
+  page,
+}) => {
+  const message = `E2E 감정 ${Date.now()}`
+  await wrappedUpEntry(page, message)
+  // CI has no model key, so no analysis lands: seed an emotion through the same endpoint.
+  const id = created[created.length - 1]
+  expect(
+    (await page.request.patch(`/api/diary/${id}/emotion`, { data: { primary: 'calm' } })).ok()
+  ).toBe(true)
+  await page.reload()
+
+  const chip = page.getByRole('button', { name: '감정 바꾸기: 평온' })
+  await chip.click()
+  const picker = page.getByRole('form', { name: '감정 바꾸기' })
+  const primary = picker.getByRole('group', { name: '주된 감정' })
+  const secondary = picker.getByRole('group', { name: '함께 느낀 감정' })
+  await expect(primary.getByRole('radio', { name: '평온' })).toBeFocused()
+  await primary.getByRole('radio', { name: '기쁨' }).check()
+  // The secondary cannot repeat the primary.
+  await expect(secondary.getByRole('radio', { name: '기쁨' })).toBeDisabled()
+  await secondary.getByRole('radio', { name: '설렘' }).check()
+  await picker.getByRole('button', { name: '저장' }).click()
+
+  const picked = page.getByRole('button', { name: '감정 바꾸기: 기쁨 · 설렘' })
+  await expect(picked).toBeFocused()
+  await expect(picker).toHaveCount(0)
+  await page.reload()
+  await expect(picked).toBeVisible()
+
+  // Talking on and 다시 정리 make a new draft; the user's pick stays.
+  await page.getByRole('button', { name: '대화 보기' }).click()
+  await page.getByRole('textbox', { name: '이어서 이야기하기' }).fill('E2E 감정 덧붙임')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('log', { name: '대화' }).getByText(/읽어보니/)).toHaveCount(2)
+  await page.getByRole('button', { name: '정지' }).click()
+  await page.getByRole('article').getByRole('button', { name: '다시 정리' }).click()
+  await expect(page.getByText(/^대화 2개를 정리했어요 · /)).toBeVisible()
+  await page.reload()
+  await expect(picked).toBeVisible()
+})
