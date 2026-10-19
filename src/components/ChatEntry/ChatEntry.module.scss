@@ -399,3 +399,343 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
     font-weight: $font-weight-semibold;
   }
 }
+
+// === After wrap-up (spec 1-2 / 1-3): the 일기 at the centre ===
+$panel-width: 380px;
+$fold: 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+
+// Wide: the 일기 column and the 대화 panel. Narrow: the same two as tabs.
+.entry {
+  @include lrg {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 100dvh;
+  }
+}
+
+.afterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+
+  @include lrg {
+    min-height: 72px;
+    padding: $spacing-lg 28px;
+    border-bottom: 1px solid $color-border;
+  }
+}
+
+.toggle {
+  @include action;
+  display: none;
+  align-items: center;
+  gap: $spacing-sm;
+  border: 1px solid $color-border-strong;
+  background-color: $color-surface;
+  color: $color-text-primary;
+
+  &:hover {
+    background-color: $color-bg-hover;
+  }
+
+  @include lrg {
+    display: inline-flex;
+  }
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-xs;
+  margin-top: $spacing-md;
+  padding: $spacing-xs;
+  border-radius: $radius-md;
+  background-color: $color-bg-tertiary;
+
+  @include lrg {
+    display: none;
+  }
+}
+
+.tab {
+  min-height: 44px;
+  border-radius: 9px;
+  font-size: 14px;
+  color: $color-text-secondary;
+
+  &[aria-selected='true'] {
+    background-color: $color-surface;
+    color: $color-text-primary;
+    font-weight: $font-weight-semibold;
+    box-shadow:
+      inset 0 -2px 0 $color-accent,
+      $shadow-xs;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// --- The 일기 ---
+.diary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: $spacing-xl $spacing-xs $spacing-2xl;
+
+  @include lrg {
+    gap: 18px;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px $spacing-xl 64px;
+  }
+}
+
+.fresh {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  font-size: 14px;
+  color: $color-text-secondary;
+}
+
+.signature {
+  flex: none;
+  color: $color-accent;
+}
+
+.emotionLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.emotionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background-color: $color-bg-tertiary;
+  font-size: 13px;
+  color: $color-text-primary;
+}
+
+.emotionDot {
+  width: 9px;
+  height: 9px;
+  border-radius: $radius-full;
+  background-color: var(--emotion);
+  box-shadow: 0 0 0 1px var(--dot-ring);
+}
+
+.emotionNote {
+  font-size: 12px;
+  color: $color-text-tertiary;
+}
+
+.diaryTitle {
+  font-family: $font-serif;
+  font-size: 24px;
+  font-weight: $font-weight-bold;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  color: $color-text-primary;
+  outline: none;
+
+  @include lrg {
+    font-size: $font-size-2xl;
+  }
+}
+
+.diaryText {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-family: $font-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.85;
+  color: $color-text-primary;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  @include lrg {
+    gap: $spacing-lg;
+    font-size: $font-size-lg;
+    line-height: 1.9;
+  }
+}
+
+.diaryMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding-top: 14px;
+  border-top: 1px solid $color-border;
+  font-size: 12px;
+  color: $color-text-tertiary;
+}
+
+// --- The 대화 ---
+.panelHeader {
+  display: none;
+}
+
+.cut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: $color-text-tertiary;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: $color-border;
+  }
+}
+
+// Narrow: one tab at a time.
+.entry[data-tab='diary'] .panel,
+.entry[data-tab='chat'] .diary {
+  @include sml-mdm {
+    display: none;
+  }
+}
+
+// Wide: a panel that folds open and shut beside the 일기, which re-centres as it moves.
+// Its content keeps its width while the panel narrows, so nothing reflows mid-fold.
+.panel {
+  @include lrg {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    width: $panel-width;
+    overflow: hidden;
+    border-left: 1px solid $color-border;
+    background-color: $color-bg-secondary;
+    transition:
+      width $fold,
+      visibility 0s;
+
+    .entry:not([data-open]) & {
+      width: 0;
+      visibility: hidden;
+      transition:
+        width $fold,
+        visibility 0s linear 0.45s;
+    }
+
+    .panelInner {
+      display: flex;
+      flex-direction: column;
+      width: $panel-width;
+      height: 100%;
+    }
+
+    .panelHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 72px;
+      padding: $spacing-lg 20px;
+      border-bottom: 1px solid $color-border;
+    }
+
+    .chat {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .log {
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding: 20px;
+      font-size: 15px;
+    }
+
+    .composer {
+      padding: $spacing-sm $spacing-lg 20px;
+      background-color: transparent;
+    }
+  }
+}
+
+.panelTitle {
+  font-size: 12px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.04em;
+  color: $color-text-tertiary;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+
+  &:hover {
+    background-color: $color-bg-hover;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// --- The completion moment: the 일기 rises into place, line by line, and the drawing is
+// drawn. The product's reward, so it is slow enough to see, and it never plays twice.
+.diary[data-fresh] > * {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @for $i from 2 through 6 {
+    &:nth-child(#{$i}) {
+      animation-delay: 0.08s * ($i - 1) + 0.15s;
+    }
+  }
+}
+
+.diary[data-fresh] .signature path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.2s ease-out 0.2s forwards;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diary[data-fresh] > *,
+  .diary[data-fresh] .signature path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .panel,
+  .entry:not([data-open]) .panel {
+    transition: none;
+  }
+}

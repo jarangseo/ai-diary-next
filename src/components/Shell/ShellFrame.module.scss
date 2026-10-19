@@ -388,4 +388,13 @@ $touch: 44px; // the minimum touch target
   max-width: $content-max-width;
   margin: 0 auto;
   padding: $spacing-xl $spacing-lg $spacing-3xl;
+
+  // A page with its own columns (a wrapped-up chat entry: the 일기 and the 대화 panel)
+  // takes the whole width beside the sidebar and lays itself out.
+  @include lrg {
+    &:has(> [data-wide-layout]) {
+      max-width: none;
+      padding: 0;
+    }
+  }
 }
