@@ -7,11 +7,15 @@ import { useThreadStream } from '@/hooks/useThreadStream'
 import { isWrapUpOffer, shouldOfferWrapUp } from '@/lib/wrapUp'
 import { diaryApi } from '@/services/diaryServices'
 import type { Message } from '@/types/thread'
+import type { DiaryEmotion, DiarySummary, EmotionSource } from '@/types/diary'
 import { canSendMessage, remainingCount, sendsOnEnter } from '@/components/Home/composerRules'
 import { takeFirstMessage } from '@/components/Home/firstMessage'
 import { titleFromText } from '@/components/Shell/entryTitle'
 import { readDraft, writeDraft } from './draft'
 import { OfferCard, WrapUpButton, WrapUpFailed } from './WrapUp'
+import { countSaid, draftCut } from './afterWrapUp'
+import { DiaryPane } from './DiaryPane'
+import { AfterLayout } from './AfterLayout'
 import styles from './ChatEntry.module.scss'
 
 interface Props {
@@ -26,8 +30,12 @@ interface Props {
    * page loads; null when no limit applies (test runs, like the route's bench path).
    */
   remainingToday: number | null
-  /** The 일기 has been drafted (#83 shows it); no more offers or header button. */
-  wrappedUp: boolean
+  /** The 일기, once drafted: it takes the centre and the conversation folds aside. */
+  summary?: DiarySummary
+  emotion?: DiaryEmotion
+  emotionSource: EmotionSource
+  /** The user's stored zone, for the time the 일기 was made. */
+  timeZone: string
   /** A crisis signal was seen in this conversation: the AI does not offer wrap-up. */
   crisis: boolean
   /** Deterministic stream instead of the model — set by the page in test runs. */
@@ -48,8 +56,18 @@ const subscribeOnline = (onChange: () => void) => {
 const TOUCH = '(pointer: coarse)'
 // How close to the bottom still counts as following the conversation.
 const PIN_THRESHOLD_PX = 80
+// Where the conversation becomes a side panel beside the 일기, rather than a tab.
+const WIDE = '(min-width: 1025px)'
+const subscribeWide = (onChange: () => void) => {
+  const query = window.matchMedia(WIDE)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
 
-/** Screen 1-1 / 1-1m: a 대화로 쓰기 entry before wrap-up. */
+/**
+ * Screen 1-1 / 1-1m: a 대화로 쓰기 entry while talking; 1-2 / 1-3 once its 일기 is drafted,
+ * with the 일기 at the centre and the conversation in a side panel (or a tab on a phone).
+ */
 export function ChatEntry({
   entryId,
   threadId,
@@ -57,14 +75,26 @@ export function ChatEntry({
   dateLabel,
   initialMessages,
   remainingToday,
-  wrappedUp,
+  summary: storedSummary,
+  emotion,
+  emotionSource,
+  timeZone,
   crisis,
   bench,
 }: Props) {
   const t = useTranslations('ChatEntry')
+  const tAfter = useTranslations('ChatEntry.after')
   const tHome = useTranslations('Home.input')
   const tShell = useTranslations('Shell')
   const router = useRouter()
+
+  // A draft made in this session, with where it was cut from the conversation (by index:
+  // see draftCut). Until the page reloads it stands in for the stored one.
+  const [made, setMade] = useState<{ summary: DiarySummary; title?: string; cut: number }>()
+  const summary = made?.summary ?? storedSummary
+  const wrappedUp = Boolean(summary)
+  const cut = made?.cut ?? (storedSummary ? draftCut(initialMessages, storedSummary.madeAt) : 0)
+
   const { messages, status, send, stop, retry, delivery, limited } = useThreadStream({
     threadId,
     initialMessages,
@@ -116,8 +146,10 @@ export function ChatEntry({
     setWrapping(true)
     setWrapFailed(false)
     try {
-      await diaryApi.wrapUp(entryId)
-      // What the page shows after wrap-up is #83's; the sidebar loses its badge now.
+      const result = await diaryApi.wrapUp(entryId)
+      setMade({ summary: result.summary, title: result.title, cut: messages.length })
+      setFresh(true)
+      // The sidebar takes the title and loses its 정리 전 badge.
       router.refresh()
     } catch (error) {
       console.error(error)
@@ -127,12 +159,29 @@ export function ChatEntry({
     }
   }
 
+  // After wrap-up: the panel beside the 일기 (wide) or the 대화 tab (narrow).
+  const wide = useSyncExternalStore(
+    subscribeWide,
+    () => window.matchMedia(WIDE).matches,
+    () => false
+  )
+  const [fresh, setFresh] = useState(false)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const logRef = useRef<HTMLDivElement>(null)
+  // The completion moment: the reader lands on the new 일기.
+  useEffect(() => {
+    if (fresh) headingRef.current?.focus({ preventScroll: true })
+  }, [fresh])
+
   const firstMessage = messages.find((m) => m.role === 'user')
   // Spec 1-1: the header's button only until the AI has offered; never both at once.
   const headerWrapUp =
     !wrappedUp && !atLimit && Boolean(firstMessage) && !messages.some(isWrapUpOffer)
   const heading =
-    title || (firstMessage && titleFromText(firstMessage.content)) || tShell('untitled')
+    made?.title ||
+    title ||
+    (firstMessage && titleFromText(firstMessage.content)) ||
+    tShell('untitled')
 
   // The home's first message waits in sessionStorage (firstMessage.ts). Taken once, on
   // mount, and only into an empty conversation. Deferred a tick so React's development
@@ -161,9 +210,13 @@ export function ChatEntry({
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+  // Beside the 일기 the panel scrolls on its own instead, and starts at the latest message.
+  const inPanel = wrappedUp && wide
   useEffect(() => {
-    if (pinned.current) window.scrollTo({ top: document.documentElement.scrollHeight })
-  }, [messages])
+    const log = logRef.current
+    if (inPanel) log?.scrollTo({ top: log.scrollHeight })
+    else if (pinned.current) window.scrollTo({ top: document.documentElement.scrollHeight })
+  }, [messages, inPanel])
 
   const canSend = canSendMessage(text) && !streaming && !wrapping
   const remaining = remainingCount(text)
@@ -177,7 +230,7 @@ export function ChatEntry({
     await sendCounted(text)
   }
 
-  return (
+  const conversation = (
     <div className={styles.chat}>
       {!online && (
         <p className={styles.offline} role="status">
@@ -185,24 +238,32 @@ export function ChatEntry({
           {t('offline')}
         </p>
       )}
-      <header className={styles.header}>
-        <div className={styles.heading}>
-          <h1 className={styles.title}>{heading}</h1>
-          <p className={styles.subtitle}>
-            {dateLabel} · {t('writing')}
-          </p>
-        </div>
-        {headerWrapUp && (
-          <WrapUpButton
-            onWrapUp={wrapUp}
-            busy={wrapping || streaming}
-            className={styles.secondary}
-          />
-        )}
-      </header>
+      {!wrappedUp && (
+        <header className={styles.header}>
+          <div className={styles.heading}>
+            <h1 className={styles.title}>{heading}</h1>
+            <p className={styles.subtitle}>
+              {dateLabel} · {t('writing')}
+            </p>
+          </div>
+          {headerWrapUp && (
+            <WrapUpButton
+              onWrapUp={wrapUp}
+              busy={wrapping || streaming}
+              className={styles.secondary}
+            />
+          )}
+        </header>
+      )}
 
-      <div className={styles.log} role="log" aria-label={t('log')} aria-busy={streaming}>
-        {messages.map((m) =>
+      <div
+        ref={logRef}
+        className={styles.log}
+        role="log"
+        aria-label={t('log')}
+        aria-busy={streaming}
+      >
+        {messages.map((m, i) => [
           isWrapUpOffer(m) ? (
             m.id === openOffer && (
               <OfferCard
@@ -259,8 +320,13 @@ export function ChatEntry({
               {/* Source chips (#76): the entries a reply drew on, at most three. */}
               {wrapFailed && <WrapUpFailed onWrapUp={wrapUp} busy={wrapping} />}
             </div>
-          )
-        )}
+          ),
+          wrappedUp && i === cut - 1 && (
+            <div key="cut" className={styles.cut} role="separator" aria-label={tAfter('cut')}>
+              <span aria-hidden>{tAfter('cut')}</span>
+            </div>
+          ),
+        ])}
       </div>
 
       {atLimit && (
@@ -329,5 +395,28 @@ export function ChatEntry({
         </div>
       </form>
     </div>
+  )
+
+  if (!summary) return conversation
+  return (
+    <AfterLayout
+      dateLabel={dateLabel}
+      wide={wide}
+      diary={
+        <DiaryPane
+          title={heading}
+          summary={summary}
+          emotion={emotion}
+          emotionSource={emotionSource}
+          said={countSaid(messages, cut)}
+          timeZone={timeZone}
+          fresh={fresh}
+          headingRef={headingRef}
+          tabpanel={wide ? undefined : { id: 'diary-pane', labelledBy: 'tab-diary' }}
+        />
+      }
+    >
+      {conversation}
+    </AfterLayout>
   )
 }
