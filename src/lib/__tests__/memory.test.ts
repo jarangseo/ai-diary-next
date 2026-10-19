@@ -7,7 +7,7 @@ const db = vi.hoisted(() => ({
 }))
 vi.mock('../supabase', () => {
   const builder: Record<string, unknown> = {}
-  for (const name of ['select', 'eq', 'gte', 'lte', 'order', 'limit']) {
+  for (const name of ['select', 'eq', 'gte', 'lte', 'lt', 'not', 'order', 'limit']) {
     builder[name] = (...args: unknown[]) => {
       db.calls.push([name, ...args])
       return builder
@@ -26,6 +26,8 @@ vi.mock('../settings', () => ({
 import {
   MEMORY_DAYS,
   buildMemoryContext,
+  buildOlderNotes,
+  combineMemory,
   dateKeyMinusDays,
   entryText,
   loadMemoryEntries,
@@ -109,6 +111,40 @@ describe('loadMemoryEntries', () => {
     expect(db.calls).toContainEqual(['eq', 'user_id', 'u1'])
     expect(db.calls).toContainEqual(['gte', 'date', '2026-10-04'])
     expect(db.calls).toContainEqual(['lte', 'date', '2026-10-18'])
+  })
+})
+
+describe('buildOlderNotes', () => {
+  it('lists notes newest first, one line each', () => {
+    expect(
+      buildOlderNotes([
+        { date: '2026-09-01', note: '발표 준비가 막막했다' },
+        { date: '2026-09-20', note: '엄마와 오래 통화' },
+      ])
+    ).toBe('- 2026-09-20: 엄마와 오래 통화\n- 2026-09-01: 발표 준비가 막막했다')
+  })
+
+  it('keeps only the newest notes that fit the cap', () => {
+    const year = Array.from({ length: 365 }, (_, i) => ({
+      date: new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10),
+      note: '운동을 하고 일찍 잤다. 내일은 회의가 있다.',
+    }))
+    const text = buildOlderNotes(year)
+    expect(text.length).toBeLessThanOrEqual(2000)
+    expect(text.startsWith('- 2025-12-31')).toBe(true)
+  })
+
+  it('is empty without notes', () => {
+    expect(buildOlderNotes([])).toBe('')
+  })
+})
+
+describe('combineMemory', () => {
+  it('labels each layer and drops an empty one', () => {
+    expect(combineMemory('a', 'b')).toBe('[최근 2주]\na\n\n[그 이전 — 한 줄 메모]\nb')
+    expect(combineMemory('', 'b')).toBe('[그 이전 — 한 줄 메모]\nb')
+    expect(combineMemory('a', '')).toBe('[최근 2주]\na')
+    expect(combineMemory('', '')).toBe('')
   })
 })
 

@@ -94,7 +94,7 @@ describe('modelParts', () => {
       })
     )
     const system = (withMemory.messages as { content: string }[])[0].content
-    expect(system).toContain('<최근 일기>\n- 2026-10-13 Tue: 회의 끝나고 지쳤다\n</최근 일기>')
+    expect(system).toContain('<지난 일기>\n- 2026-10-13 Tue: 회의 끝나고 지쳤다\n</지난 일기>')
     expect(system).toContain('지어내지 마')
 
     const without: { messages?: unknown } = {}
@@ -106,7 +106,7 @@ describe('modelParts', () => {
         client: fakeClient(['ok'], without),
       })
     )
-    expect((without.messages as { content: string }[])[0].content).not.toContain('최근 일기')
+    expect((without.messages as { content: string }[])[0].content).not.toContain('지난 일기')
   })
 
   it('caps how much history is sent, so a long thread cannot grow the prompt without limit', async () => {
@@ -146,6 +146,20 @@ describe('modelParts', () => {
 
     // After the text, before the terminator — the card belongs to the finished reply.
     expect(parts.map((p) => p.type)).toEqual(['text-delta', 'tool-result', 'done'])
+  })
+
+  it('leaves the memory note out of the emotion card', async () => {
+    vi.mocked(analyzeEmotion).mockResolvedValue({
+      primary: 'tired',
+      score: 60,
+      summary: '지친 하루',
+      memoryNote: '회의가 길었다',
+    })
+    const parts = await collect(
+      modelParts({ history: [], text: 'x', withEmotion: true, client: fakeClient(['ok']) })
+    )
+    const card = parts.find((p) => p.type === 'tool-result')
+    expect(card && 'data' in card ? card.data : undefined).not.toHaveProperty('memoryNote')
   })
 
   it('does not ask for an emotion card on later exchanges', async () => {

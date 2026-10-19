@@ -3,7 +3,7 @@ import { deleteChatDataForUser } from './chat'
 import type { DiaryEmotion, DiaryMode } from '@/types/diary'
 import type { EmotionPrimary } from './emotion'
 import { rowToDiary } from './diaryMapper'
-import { analyzeEmotion } from './emotionAnalysis'
+import { analyzeEmotion, type EmotionAnalysis } from './emotionAnalysis'
 
 // Ids are uuids. Anything else would reach Postgres as a cast error (22P02) and surface as
 // a 500, so it is answered as "no such entry" before a query is made — old date-shaped
@@ -151,13 +151,16 @@ export async function deleteDiary(userId: string, id: string) {
 export async function updateDiaryEmotion(
   userId: string,
   id: string,
-  emotion: DiaryEmotion
+  emotion: EmotionAnalysis
 ): Promise<boolean> {
   const { error: reflectionError } = await supabase
     .from('diaries')
     .update({
       emotion_summary: emotion.summary,
       emotion_questions: emotion.questions ?? null,
+      // The memory note (#108) describes what happened, not how it felt, so it follows the
+      // latest text like the reflection does, whoever chose the emotion.
+      ...(emotion.memoryNote ? { memory_note: emotion.memoryNote } : {}),
     })
     .eq('user_id', userId)
     .eq('id', id)

@@ -22,7 +22,8 @@ const SYSTEM_PROMPT = [
   'score는 그 감정의 강도를 0~100 정수로 나타낸다(0=거의 없음, 100=매우 강함).',
   'summary는 감정의 흐름을 1~2문장의 따뜻한 한국어로 요약한다.',
   'questions는 글쓴이가 그날을 더 돌아보게 돕는 한국어 회고 질문 2~3개다.',
-  '모든 출력은 한국어로 작성한다.',
+  'memory_note는 그날 무슨 일이 있었는지를 한 줄(40자 안팎)로 적은 기억용 메모다. 감정이 아니라 사건 중심으로, 일기에 없는 내용은 넣지 않는다. memory_note는 일기를 쓴 언어로 쓴다.',
+  'memory_note를 뺀 나머지 출력은 한국어로 작성한다.',
 ].join(' ')
 
 // JSON schema for OpenAI structured outputs. `enum` + `strict` force `primary` into the
@@ -41,8 +42,9 @@ const RESPONSE_FORMAT = {
         score: { type: 'integer' },
         summary: { type: 'string' },
         questions: { type: 'array', items: { type: 'string' } },
+        memory_note: { type: 'string' },
       },
-      required: ['primary', 'score', 'summary', 'questions'],
+      required: ['primary', 'score', 'summary', 'questions', 'memory_note'],
     },
   },
 }
@@ -55,7 +57,17 @@ function clampScore(value: unknown): number {
 
 // Pure, side-effect-free validator for the model's raw JSON string. Returns a normalized
 // DiaryEmotion, or null when the payload is unusable (malformed JSON, unknown emotion).
-export function parseEmotionResponse(raw: string | null | undefined): DiaryEmotion | null {
+/**
+ * The analysis plus the entry's one-line memory note (#108), which layered memory reads for
+ * entries older than the 14-day window. Written by this same call, so it costs no extra
+ * model call. The note is not part of the emotion card, so callers that show the card
+ * leave it out.
+ */
+export type EmotionAnalysis = DiaryEmotion & { memoryNote?: string }
+
+const MAX_NOTE_CHARS = 120
+
+export function parseEmotionResponse(raw: string | null | undefined): EmotionAnalysis | null {
   if (!raw) return null
 
   let data: unknown
@@ -83,6 +95,10 @@ export function parseEmotionResponse(raw: string | null | undefined): DiaryEmoti
     score: clampScore(obj.score),
     summary: typeof obj.summary === 'string' ? obj.summary.trim() : '',
     questions,
+    memoryNote:
+      typeof obj.memory_note === 'string' && obj.memory_note.trim()
+        ? obj.memory_note.trim().slice(0, MAX_NOTE_CHARS)
+        : undefined,
   }
 }
 
@@ -91,7 +107,7 @@ export function parseEmotionResponse(raw: string | null | undefined): DiaryEmoti
 export async function analyzeEmotion(
   content: string,
   client?: OpenAI
-): Promise<DiaryEmotion | null> {
+): Promise<EmotionAnalysis | null> {
   const text = content?.trim().slice(0, MAX_INPUT_CHARS)
   if (!text) return null
 

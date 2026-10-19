@@ -22,16 +22,18 @@ const SYSTEM_PROMPT = `너는 사용자가 방금 쓴 일기를 함께 들여다
 // in it, is worse than one that remembers nothing.
 const MEMORY_PROMPT = `
 
-아래는 사용자가 최근 2주 동안 쓴 일기야. 지금 이야기와 이어질 때만 자연스럽게 떠올려 말해
-(예: "화요일에도 회의 끝나고 지쳤다고 했었죠").
+아래는 사용자가 쓴 지난 일기야. [최근 2주]는 일기 요약이고, [그 이전 — 한 줄 메모]는 더 오래된
+날의 한 줄 기록이야. 지금 이야기와 이어질 때만 자연스럽게 떠올려 말해
+(예: "화요일에도 회의 끝나고 지쳤다고 했었죠", "지난달에도 발표 앞두고 막막하다고 했었죠").
 - 한 답장에 한 번이면 충분해. 이어지지 않으면 꺼내지 마.
-- 일기에 없는 내용은 절대 지어내지 마. 길게 인용하지 말고 짧게 되짚어.
+- 일기와 메모에 없는 내용은 절대 지어내지 마. 한 줄 메모는 짧으니 그 이상을 아는 척하지 마.
+  길게 인용하지 말고 짧게 되짚어.
 - 반복되는 일을 짚더라도 판단하거나 조언하지 말고, 사용자가 더 이야기하도록 물어봐.
-<최근 일기>
+<지난 일기>
 `
 
 export function systemPrompt(memory?: string): string {
-  return memory ? `${SYSTEM_PROMPT}${MEMORY_PROMPT}${memory}\n</최근 일기>` : SYSTEM_PROMPT
+  return memory ? `${SYSTEM_PROMPT}${MEMORY_PROMPT}${memory}\n</지난 일기>` : SYSTEM_PROMPT
 }
 
 export interface ModelStreamOptions {
@@ -100,8 +102,16 @@ export async function* modelParts(options: ModelStreamOptions): AsyncGenerator<S
   // Only on the first exchange. A card after every reply would bury the conversation in
   // its own analysis — the product shows one per thread, and the seeded data models that.
   if (withEmotion && !signal?.aborted) {
-    const emotion = await analyzeEmotion(text)
-    if (emotion) yield { type: 'tool-result', tool: 'emotion', data: emotion }
+    const analysis = await analyzeEmotion(text)
+    if (analysis) {
+      // The card shows the emotion only; the memory note belongs to the stored entry.
+      const { primary, secondary, score, summary, questions } = analysis
+      yield {
+        type: 'tool-result',
+        tool: 'emotion',
+        data: { primary, secondary, score, summary, questions },
+      }
+    }
   }
 
   yield { type: 'done' }

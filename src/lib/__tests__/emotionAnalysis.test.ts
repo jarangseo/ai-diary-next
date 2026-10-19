@@ -14,6 +14,19 @@ describe('parseEmotionResponse', () => {
     expect(parseEmotionResponse(JSON.stringify(validPayload))).toEqual(validPayload)
   })
 
+  it('reads the memory note, trimmed and bounded, and leaves it out when absent or blank', () => {
+    const withNote = { ...validPayload, memory_note: '  퇴근길 노을에 잠깐 멈췄다 ' }
+    expect(parseEmotionResponse(JSON.stringify(withNote))?.memoryNote).toBe(
+      '퇴근길 노을에 잠깐 멈췄다'
+    )
+    const long = { ...validPayload, memory_note: 'ㄱ'.repeat(200) }
+    expect(parseEmotionResponse(JSON.stringify(long))?.memoryNote).toHaveLength(120)
+    expect(
+      parseEmotionResponse(JSON.stringify({ ...validPayload, memory_note: ' ' }))?.memoryNote
+    ).toBeUndefined()
+    expect(parseEmotionResponse(JSON.stringify(validPayload))?.memoryNote).toBeUndefined()
+  })
+
   it('returns null for empty / malformed input', () => {
     expect(parseEmotionResponse(null)).toBeNull()
     expect(parseEmotionResponse(undefined)).toBeNull()
