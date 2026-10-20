@@ -7,7 +7,7 @@ import { useThreadStream } from '@/hooks/useThreadStream'
 import { isWrapUpOffer, shouldOfferWrapUp } from '@/lib/wrapUp'
 import { diaryApi } from '@/services/diaryServices'
 import type { Message } from '@/types/thread'
-import type { DiaryEmotion, DiarySummary, EmotionSource } from '@/types/diary'
+import type { DiaryEmotion, DiarySummary, EmotionPick, EmotionSource } from '@/types/diary'
 import { canSendMessage, remainingCount, sendsOnEnter } from '@/components/Home/composerRules'
 import { takeFirstMessage } from '@/components/Home/firstMessage'
 import { titleFromText } from '@/components/Shell/entryTitle'
@@ -166,6 +166,12 @@ export function ChatEntry({
   }
   // For buttons: their click event must not reach `confirm`.
   const redraft = () => wrapUp()
+  // The user's emotion pick (#84) stands until the page reloads with it stored.
+  const [picked, setPicked] = useState<EmotionPick>()
+  const pickEmotion = async (pick: EmotionPick) => {
+    await diaryApi.setEmotion(entryId, pick)
+    setPicked(pick)
+  }
   const saveEdit = async (text: string) => {
     const editedAt = await diaryApi.editSummary(entryId, text)
     if (summary) setMade({ summary: { ...summary, text, editedAt }, title: made?.title, cut })
@@ -457,13 +463,14 @@ export function ChatEntry({
         <DiaryPane
           title={heading}
           summary={summary}
-          emotion={emotion}
-          emotionSource={emotionSource}
+          emotion={emotion && picked ? { ...emotion, ...picked } : emotion}
+          emotionSource={picked ? 'user' : emotionSource}
           said={countSaid(messages, cut)}
           timeZone={timeZone}
           fresh={fresh}
           notice={wrapState}
           onSave={saveEdit}
+          onPickEmotion={pickEmotion}
           headingRef={headingRef}
           tabpanel={wide ? undefined : { id: 'diary-pane', labelledBy: 'tab-diary' }}
         />

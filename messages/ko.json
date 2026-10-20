@@ -131,7 +131,11 @@
       "edit": "다듬기",
       "editLabel": "일기 다듬기",
       "save": "저장",
-      "saveFailed": "저장하지 못했어요. 잠시 뒤 다시 저장해 주세요."
+      "saveFailed": "저장하지 못했어요. 잠시 뒤 다시 저장해 주세요.",
+      "pickEmotion": "감정 바꾸기",
+      "primaryEmotion": "주된 감정",
+      "secondaryEmotion": "함께 느낀 감정",
+      "noEmotion": "없음"
     }
   }
 }
