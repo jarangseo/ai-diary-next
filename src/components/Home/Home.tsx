@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { LockIcon } from 'lucide-react'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { getSettings, DEFAULT_SETTINGS } from '@/lib/settings'
 import { HomeComposer } from './HomeComposer'
@@ -12,6 +14,12 @@ interface Props {
    * what the spec asks for when there is nothing to remember or memory is off.
    */
   memoryLine?: string
+  /**
+   * Screen 5-1: the user has no entries yet (also after deleting them all). The greeting
+   * says hello instead of remembering, a sentence explains 대화로 쓰기, and a line says
+   * where the words go.
+   */
+  firstRun?: boolean
 }
 
 async function readTimeZone(userId: string | undefined) {
@@ -25,7 +33,7 @@ async function readTimeZone(userId: string | undefined) {
 }
 
 /** Screen 1-0: the greeting, the writing-mode tabs and the first message's input. */
-export async function Home({ userId, name, memoryLine }: Props) {
+export async function Home({ userId, name, memoryLine, firstRun }: Props) {
   const [t, locale, timeZone] = await Promise.all([
     getTranslations('Home'),
     getLocale(),
@@ -45,9 +53,19 @@ export async function Home({ userId, name, memoryLine }: Props) {
       <div className={styles.intro}>
         <p className={styles.today}>{today}</p>
         <h1 className={styles.greeting} id="home-greeting">
-          {name ? t.rich('greeting', { name, br: () => <br /> }) : t('greetingNoName')}
+          {firstRun
+            ? name
+              ? t.rich('firstRun.greeting', { name, br: () => <br /> })
+              : t.rich('firstRun.greetingNoName', { br: () => <br /> })
+            : name
+              ? t.rich('greeting', { name, br: () => <br /> })
+              : t('greetingNoName')}
         </h1>
-        {memoryLine && <p className={styles.memory}>{memoryLine}</p>}
+        {firstRun ? (
+          <p className={styles.guide}>{t('firstRun.guide')}</p>
+        ) : (
+          memoryLine && <p className={styles.memory}>{memoryLine}</p>
+        )}
       </div>
 
       <div className={styles.start}>
@@ -76,6 +94,14 @@ export async function Home({ userId, name, memoryLine }: Props) {
         </div>
 
         <HomeComposer />
+        {firstRun && (
+          <p className={styles.privacy}>
+            <LockIcon size={16} aria-hidden className={styles.privacyIcon} />
+            <span>
+              {t('firstRun.privacy')} <Link href="/settings">{t('firstRun.privacyMore')}</Link>
+            </span>
+          </p>
+        )}
       </div>
     </section>
   )

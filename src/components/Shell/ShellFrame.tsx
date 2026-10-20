@@ -36,6 +36,8 @@ export interface SidebarGroup {
 interface Props {
   groups: SidebarGroup[]
   user: { name: string; initial: string } | null
+  /** Shown in place of the entries while there are none (screen 5-1). */
+  empty?: React.ReactNode
   children: React.ReactNode
 }
 
@@ -43,7 +45,7 @@ interface Props {
 const WIDE = '(min-width: 768px)'
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-export function ShellFrame({ groups, user, children }: Props) {
+export function ShellFrame({ groups, user, empty, children }: Props) {
   const t = useTranslations('Shell')
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
@@ -182,6 +184,7 @@ export function ShellFrame({ groups, user, children }: Props) {
         </div>
 
         <nav className={styles.entries} aria-label={t('entries')}>
+          {groups.length === 0 && empty}
           {groups.map((group) => (
             <section key={group.id} className={styles.group} aria-labelledby={`group-${group.id}`}>
               <h2 className={styles.groupLabel} id={`group-${group.id}`}>

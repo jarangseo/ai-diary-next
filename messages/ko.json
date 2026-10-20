@@ -38,6 +38,7 @@
     "skipToContent": "본문으로 건너뛰기",
     "home": "AI Diary",
     "newEntry": "새 일기",
+    "empty": "아직 일기가 없어요.<br></br>오늘 첫 일기를 쓰면<br></br>여기에 하루하루 쌓여요.",
     "calendar": "캘린더",
     "entries": "지난 일기",
     "openDrawer": "지난 일기 열기",
@@ -67,6 +68,13 @@
   "Home": {
     "greeting": "{name}님,<br></br>오늘은 어땠어요?",
     "greetingNoName": "오늘은 어땠어요?",
+    "firstRun": {
+      "greeting": "{name}님, 반가워요.<br></br>오늘은 어땠어요?",
+      "greetingNoName": "반가워요.<br></br>오늘은 어땠어요?",
+      "guide": "처음이라면 대화로 시작해 보세요. AI가 질문하며 이야기를 이끌고, 마지막에 한 편의 일기로 정리해 드려요.",
+      "privacy": "쓴 글은 답장과 일기 정리를 위해 AI에게 전달돼요. 지난 일기를 참고할지는 설정에서 정할 수 있어요.",
+      "privacyMore": "자세히 보기"
+    },
     "modes": {
       "label": "쓰는 방식",
       "chat": "대화로 쓰기",

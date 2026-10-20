@@ -23,5 +23,9 @@ export default async function DiaryPage({
   // Given name only (서자랑 → 자랑). A session from before this change, or a provider without
   // a given name (GitHub), falls back to the full name.
   const name = session?.user?.givenName ?? session?.user?.name ?? ''
-  return <Home userId={session?.user?.id} name={name} />
+  // Screen 5-1 whenever there are no entries, deleting them all included. The list is the
+  // one the sidebar reads in this request (`getEntries` is cached), so it costs no query.
+  const userId = session?.user?.id
+  const firstRun = userId ? (await getEntries(userId)).length === 0 : false
+  return <Home userId={userId} name={name} firstRun={firstRun} />
 }
