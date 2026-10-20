@@ -7,6 +7,8 @@ import type { Diary } from '@/types/diary'
 import { getEntries, getFirstMessages } from './entries'
 import { titleFromText } from './entryTitle'
 import { ShellFrame, type SidebarGroup } from './ShellFrame'
+import { Signature } from '@/components/Signature/Signature'
+import styles from './ShellFrame.module.scss'
 
 /** The settings, or the defaults if they cannot be read: a sidebar grouped in UTC beats no app. */
 async function readSettings(userId: string) {
@@ -82,7 +84,17 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = userId ? { name, initial: Array.from(name)[0] ?? '' } : null
 
   return (
-    <ShellFrame groups={groups} user={user}>
+    <ShellFrame
+      groups={groups}
+      user={user}
+      empty={
+        // Screen 5-1: what will appear here. Rendered on the server, so no client JS.
+        <div className={styles.empty}>
+          <Signature size={88} className={styles.emptyArt} />
+          <p>{t.rich('empty', { br: () => <br /> })}</p>
+        </div>
+      }
+    >
       {children}
     </ShellFrame>
   )

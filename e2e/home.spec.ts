@@ -11,7 +11,11 @@ test('greets the user by name, with 대화로 쓰기 chosen and 직접 쓰기 no
 }) => {
   await page.goto('/diary')
 
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('E2E님,오늘은 어땠어요?')
+  // The run's user has no entries here, so this is the first-run greeting (#85); the
+  // returning one is checked in first-run.spec.ts.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'E2E님, 반가워요.오늘은 어땠어요?'
+  )
 
   const modes = page.getByRole('group', { name: '쓰는 방식' })
   await expect(modes.getByRole('button', { name: '대화로 쓰기' })).toHaveAttribute(

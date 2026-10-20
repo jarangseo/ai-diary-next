@@ -67,6 +67,11 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   color: $color-text-secondary;
 }
 
+.guide {
+  max-width: 460px;
+  color: $color-text-secondary;
+}
+
 .start {
   display: flex;
   flex-direction: column;
@@ -238,4 +243,31 @@ $mobile-chrome: 61px + $spacing-xl + $spacing-3xl;
   &:focus-visible {
     @include focus-ring;
   }
+}
+
+// Screen 5-1: where the words go, under the first input.
+.privacy {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 680px;
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: $color-text-secondary;
+
+  a {
+    color: $color-text-primary;
+    text-decoration: underline;
+  }
+
+  a:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.privacyIcon {
+  flex: none;
+  margin-top: 2px;
 }
