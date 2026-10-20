@@ -20,7 +20,7 @@ async function wrappedUpEntry(page: Page, message: string) {
   await drafted
   // The heading alone is no proof: before wrap-up it is the first message too.
   await expect(
-    page.getByRole('article').getByRole('heading', { level: 1, name: message })
+    page.locator('#diary-pane').getByRole('heading', { level: 1, name: message })
   ).toBeVisible()
 }
 
