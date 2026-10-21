@@ -1,0 +1,72 @@
+@use '@/styles/variables' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 18px 20px;
+  border: 1px solid $color-border;
+  border-radius: 16px;
+  background-color: $color-surface;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.label {
+  font-size: 16px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: $color-text-secondary;
+}
+
+.error {
+  font-size: 14px;
+  color: $color-error;
+}
+
+// A 52×32 track with a 26 px knob; the button itself is the 44 px target's core and the
+// row around it is padded. Off uses the input edge color, which keeps 3:1 on the surface.
+.switch {
+  flex: none;
+  display: flex;
+  justify-content: flex-start;
+  width: 52px;
+  height: 32px;
+  padding: 3px;
+  border: 0;
+  border-radius: 16px;
+  background-color: $color-border-input;
+  cursor: pointer;
+
+  span {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: $color-surface;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+  }
+
+  &[aria-checked='true'] {
+    justify-content: flex-end;
+    background-color: $color-accent-strong;
+  }
+
+  &[aria-busy='true'] {
+    cursor: progress;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}

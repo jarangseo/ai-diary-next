@@ -3,7 +3,9 @@
 .settings {
   display: flex;
   flex-direction: column;
-  gap: $spacing-2xl;
+  gap: 28px;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .title {
@@ -14,12 +16,31 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: $spacing-sm;
-  align-items: flex-start;
+  gap: 12px;
 }
 
+// Small group labels over cards, as on the canvas (5-3).
 .sectionTitle {
-  font-size: $font-size-base;
+  font-size: 12px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.04em;
+  color: $color-text-tertiary;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid $color-border;
+  border-radius: 16px;
+  background-color: $color-surface;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: $font-weight-semibold;
   color: $color-text-primary;
 }
 

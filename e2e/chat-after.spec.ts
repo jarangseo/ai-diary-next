@@ -24,6 +24,17 @@ async function wrappedUpEntry(page: Page, message: string) {
   ).toBeVisible()
 }
 
+/**
+ * Opens the 대화 panel and waits for focus to land in it: typing before that frame lets
+ * the move to the close button swallow the next Enter, which then closes the panel.
+ */
+async function openChat(page: Page) {
+  await page.getByRole('button', { name: '대화 보기' }).click()
+  await expect(
+    page.getByRole('region', { name: '대화' }).getByRole('button', { name: '대화 닫기' })
+  ).toBeFocused()
+}
+
 test('the 일기 takes the centre and the conversation opens beside it', async ({ page }) => {
   const message = `E2E 노을 ${Date.now()}`
   await wrappedUpEntry(page, message)
@@ -125,7 +136,7 @@ test('talking on after the draft offers 다시 정리', async ({ page }) => {
   await wrappedUpEntry(page, message)
   await expect(page.getByText('정리한 뒤에 나눈 대화가 있어요')).toHaveCount(0)
 
-  await page.getByRole('button', { name: '대화 보기' }).click()
+  await openChat(page)
   const log = page.getByRole('log', { name: '대화' })
   await page.getByRole('textbox', { name: '이어서 이야기하기' }).fill('E2E 하나 더')
   await page.keyboard.press('Enter')
@@ -157,7 +168,7 @@ test('다듬기 keeps the user’s edit, and 다시 정리 asks before replacing
   await expect(diary.getByText('내가 고친 일기')).toBeVisible()
 
   // Talking on outdates it; 다시 정리 warns first, and cancel keeps the edit.
-  await page.getByRole('button', { name: '대화 보기' }).click()
+  await openChat(page)
   await page.getByRole('textbox', { name: '이어서 이야기하기' }).fill('E2E 덧붙임')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('log', { name: '대화' }).getByText(/읽어보니/)).toHaveCount(2)
@@ -207,7 +218,7 @@ test('the emotion chip changes the emotion, and 다시 정리 keeps the pick (#8
   await expect(picked).toBeVisible()
 
   // Talking on and 다시 정리 make a new draft; the user's pick stays.
-  await page.getByRole('button', { name: '대화 보기' }).click()
+  await openChat(page)
   await page.getByRole('textbox', { name: '이어서 이야기하기' }).fill('E2E 감정 덧붙임')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('log', { name: '대화' }).getByText(/읽어보니/)).toHaveCount(2)
