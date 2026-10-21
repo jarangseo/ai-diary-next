@@ -108,6 +108,21 @@ export async function deleteMessages(threadId: string, ids: string[]): Promise<b
 }
 
 /**
+ * Marks a crisis signal in this conversation (#77). The first time only: `crisis_at` says
+ * when it began, and it stops wrap-up offers and diary questions from then on. The caller
+ * has already checked the thread is the user's.
+ */
+export async function markThreadCrisis(threadId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('threads')
+    .update({ crisis_at: new Date().toISOString() })
+    .eq('id', threadId)
+    .is('crisis_at', null)
+  if (error) console.error('markThreadCrisis failed:', error.message)
+  return !error
+}
+
+/**
  * The thread for an entry, created on first sight if it does not exist yet.
  *
  * Lazy rather than created alongside the entry, for two reasons: entries written before

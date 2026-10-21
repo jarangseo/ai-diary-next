@@ -8,7 +8,15 @@ vi.mock('@/lib/threads', () => ({
   appendMessage: vi.fn(),
   deleteMessages: vi.fn(async () => true),
   countUserMessagesToday: vi.fn(async () => 0),
+  markThreadCrisis: vi.fn(async () => true),
 }))
+vi.mock('@/lib/settings', () => ({
+  DEFAULT_SETTINGS: { memoryEnabled: true, timezone: 'UTC', locale: 'ko' },
+  getSettings: vi.fn(async () => ({
+    settings: { memoryEnabled: true, timezone: 'Asia/Seoul', locale: 'ko' },
+  })),
+}))
+vi.mock('next-intl/server', () => ({ getTranslations: vi.fn(async () => (key: string) => key) }))
 vi.mock('@/lib/diary', () => ({ getDiaryById: vi.fn() }))
 vi.mock('@/lib/memory', () => ({ memoryFor: vi.fn(async () => '') }))
 // The model path is never taken here (bench=1). The fake stream paces itself like a real
@@ -23,7 +31,13 @@ vi.mock('@/lib/fakeStream', () => ({
 }))
 
 import { POST } from '../route'
-import { appendMessage, deleteMessages, getThread, listMessages } from '@/lib/threads'
+import {
+  appendMessage,
+  deleteMessages,
+  getThread,
+  listMessages,
+  markThreadCrisis,
+} from '@/lib/threads'
 import { getDiaryById } from '@/lib/diary'
 
 const THREAD = 'thread-1'
@@ -34,11 +48,11 @@ const reply = { ...user, role: 'assistant' as const }
 
 // Sends one message and reads the whole response, so onComplete (which stores the reply
 // and any offer) has run by the time this resolves.
-async function send() {
+async function send(text = 'hello') {
   const res = await POST(
     new Request(`http://test/api/threads/${THREAD}/messages?bench=1`, {
       method: 'POST',
-      body: JSON.stringify({ text: 'hello' }),
+      body: JSON.stringify({ text }),
     }),
     { params: Promise.resolve({ threadId: THREAD }) }
   )
@@ -163,5 +177,40 @@ describe('POST messages — length', () => {
     expect(res.status).toBe(200)
     await res.text()
     expect(stored()[0].role).toBe('user')
+  })
+})
+
+describe('POST messages — crisis (#77)', () => {
+  beforeEach(() => vi.mocked(markThreadCrisis).mockClear())
+
+  it('marks the thread and stores the crisis card with the user’s country after the reply', async () => {
+    vi.mocked(listMessages).mockResolvedValue([])
+    await send('요즘 죽고 싶다는 생각이 들어')
+    expect(markThreadCrisis).toHaveBeenCalledWith(THREAD)
+    const s = stored()
+    expect(s.map((x) => x.role)).toEqual(['user', 'assistant'])
+    expect(s[1].tools).toEqual([{ tool: 'crisis', data: { country: 'KR' } }])
+  })
+
+  it('offers no wrap-up on the message that signals it, even on the fourth', async () => {
+    vi.mocked(listMessages).mockResolvedValue([user, reply, user, reply, user, reply])
+    await send('사라지고 싶어')
+    expect(stored().some((x) => x.tools?.some((t) => t.tool === 'wrapup_offer'))).toBe(false)
+  })
+
+  it('marks an already-marked thread only once, and shows no card for an everyday message', async () => {
+    vi.mocked(getThread).mockResolvedValue({
+      id: THREAD,
+      kind: 'diary',
+      diaryId: DIARY,
+      title: '',
+      crisisAt: 1,
+      createdAt: 0,
+      updatedAt: 0,
+    })
+    vi.mocked(listMessages).mockResolvedValue([])
+    await send('오늘 회의가 길었어')
+    expect(markThreadCrisis).not.toHaveBeenCalled()
+    expect(stored()[1].tools).toBeUndefined()
   })
 })

@@ -1,6 +1,6 @@
 import type { StreamPart } from '@/types/stream'
 import type { MessageToolResult } from '@/types/thread'
-import { encodePart } from './streamProtocol'
+import { encodePart, toolResultOf } from './streamProtocol'
 
 export interface StreamResponseOptions {
   /**
@@ -34,8 +34,7 @@ export function partsToNdjsonStream(
           if (cancelled) break
 
           if (part.type === 'text-delta') text += part.delta
-          else if (part.type === 'tool-result')
-            toolResults.push({ tool: part.tool, data: part.data })
+          else if (part.type === 'tool-result') toolResults.push(toolResultOf(part))
 
           controller.enqueue(encoder.encode(encodePart(part)))
         }

@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createPartParser } from '@/lib/streamProtocol'
+import { createPartParser, toolResultOf } from '@/lib/streamProtocol'
 import type { Message, MessageToolResult } from '@/types/thread'
 
 export type ThreadStatus = 'idle' | 'streaming' | 'error'
@@ -164,8 +164,7 @@ export function useThreadStream({
         const apply = (parts: ReturnType<typeof parser.push>) => {
           for (const part of parts) {
             if (part.type === 'text-delta') applyDelta(part.delta)
-            else if (part.type === 'tool-result')
-              applyToolResult({ tool: part.tool, data: part.data })
+            else if (part.type === 'tool-result') applyToolResult(toolResultOf(part))
             else if (part.type === 'error') failed = true
           }
         }

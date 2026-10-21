@@ -29,7 +29,13 @@ export type EmotionToolResult = { tool: 'emotion'; data: DiaryEmotion }
  */
 export type WrapUpOfferToolResult = { tool: 'wrapup_offer' }
 
-export type MessageToolResult = EmotionToolResult | WrapUpOfferToolResult
+/**
+ * The crisis card (#77): crisis lines for the user's country under the AI's reply. Only
+ * the country is stored; the lines and the words come from crisisLines.ts and the locale.
+ */
+export type CrisisToolResult = { tool: 'crisis'; data: { country: string | null } }
+
+export type MessageToolResult = EmotionToolResult | WrapUpOfferToolResult | CrisisToolResult
 
 export interface Message {
   id: string

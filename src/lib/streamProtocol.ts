@@ -1,4 +1,5 @@
 import type { StreamPart } from '@/types/stream'
+import type { MessageToolResult } from '@/types/thread'
 
 // Encode/decode for the NDJSON wire protocol (see types/stream.ts).
 // Pure and dependency-free so it can be unit-tested without a server or a browser —
@@ -48,4 +49,13 @@ export function createPartParser(): PartParser {
       return part ? [part] : []
     },
   }
+}
+
+/** A `tool-result` part as the message's tool result (the part without its `type`). */
+export function toolResultOf(
+  part: Extract<StreamPart, { type: 'tool-result' }>
+): MessageToolResult {
+  return part.tool === 'emotion'
+    ? { tool: 'emotion', data: part.data }
+    : { tool: 'crisis', data: part.data }
 }
