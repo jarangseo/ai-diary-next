@@ -40,6 +40,9 @@ test('a failed save puts the switch back and says so', async ({ page }) => {
       : route.continue()
   )
   await memory.click()
-  await expect(page.getByRole('alert')).toHaveText('저장하지 못했어요. 잠시 뒤 다시 바꿔 주세요.')
+  // By text: Next.js keeps its own route announcer in the page as another alert.
+  await expect(
+    page.getByRole('alert').filter({ hasText: '저장하지 못했어요. 잠시 뒤 다시 바꿔 주세요.' })
+  ).toBeVisible()
   await expect(memory).toHaveAttribute('aria-checked', 'true')
 })
