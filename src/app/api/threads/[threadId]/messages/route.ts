@@ -5,7 +5,17 @@ import {
   deleteMessages,
   getThread,
   listMessages,
+  markThreadCrisis,
 } from '@/lib/threads'
+import {
+  countryFor,
+  decideCrisis,
+  matchesCrisisPhrase,
+  moderationSignal,
+  withCrisisCard,
+} from '@/lib/crisis'
+import { DEFAULT_SETTINGS, getSettings } from '@/lib/settings'
+import { getTranslations } from 'next-intl/server'
 import { getDiaryById } from '@/lib/diary'
 import { shouldOfferWrapUp } from '@/lib/wrapUp'
 import { planRetry } from '@/lib/messageRetry'
@@ -85,11 +95,23 @@ export async function POST(
   const used = bench ? 0 : await countUserMessagesToday(session.user.id)
   const overLimit = used === null || isOverDailyLimit(used, DAILY_MESSAGE_LIMIT)
 
+  // Crisis (#77): checked on every message, before the reply, so the reply itself can be
+  // the careful one. The word list always runs; the model's judgement (moderation, free)
+  // only where a model is called at all — not in test runs.
+  const crisisNow = decideCrisis({
+    phrase: matchesCrisisPhrase(text),
+    moderation: bench ? null : await moderationSignal(text.trim()),
+  })
+  if (crisisNow && !thread.crisisAt) await markThreadCrisis(threadId)
+  const inCrisis = crisisNow || Boolean(thread.crisisAt)
+
   let source
   if (bench) {
     source = fakeParts({ signal: request.signal })
   } else if (overLimit) {
-    source = cappedParts(request.signal)
+    // At the limit a crisis still gets its card (below), with the fixed reply rather than
+    // a model call: typing a phrase must not become a way around the spend guard.
+    source = crisisNow ? (async function* () {})() : cappedParts(request.signal)
   } else {
     source = modelParts({
       history,
@@ -97,8 +119,19 @@ export async function POST(
       // The user's recent entries, unless they turned memory off (#76). Never blocks.
       memory: await memoryFor(session.user.id, thread.diaryId),
       withEmotion: history.length === 0,
+      crisis: inCrisis,
       signal: request.signal,
     })
+  }
+  if (crisisNow) {
+    const [t, settings] = await Promise.all([
+      getTranslations('Crisis'),
+      getSettings(session.user.id).then(
+        (r) => r.settings,
+        () => DEFAULT_SETTINGS
+      ),
+    ])
+    source = withCrisisCard(source, countryFor(settings), t('fallbackReply'))
   }
 
   // Decided now, stored after the reply: the offer reads as the AI's next turn, so it has
@@ -112,7 +145,7 @@ export async function POST(
         messages: [...history, stored],
         isChatEntry: diary?.mode === 'chat',
         wrappedUp: Boolean(diary?.summary),
-        crisis: Boolean(thread.crisisAt),
+        crisis: inCrisis,
       })
     } catch (error) {
       console.error(error)

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useThreadStream } from '@/hooks/useThreadStream'
 import { getEmotionMeta } from '@/lib/emotion'
 import type { EmotionToolResult, Message } from '@/types/thread'
+import { CrisisCard } from '@/components/Crisis/CrisisCard'
 import { isWrapUpOffer } from '@/lib/wrapUp'
 import styles from './ThreadPanel.module.scss'
 
@@ -92,6 +93,9 @@ export function ThreadPanel({ threadId, initialMessages, bench }: Props) {
             >
               {m.content}
               <EmotionCard message={m} />
+              {m.toolResults?.map(
+                (r) => r.tool === 'crisis' && <CrisisCard key="crisis" country={r.data.country} />
+              )}
             </div>
           ))}
       </div>

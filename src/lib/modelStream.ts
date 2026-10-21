@@ -32,8 +32,21 @@ const MEMORY_PROMPT = `
 <지난 일기>
 `
 
-export function systemPrompt(memory?: string): string {
-  return memory ? `${SYSTEM_PROMPT}${MEMORY_PROMPT}${memory}\n</지난 일기>` : SYSTEM_PROMPT
+// Crisis (#77, spec 5-2 "위기 응답"): once a conversation signals self-harm or suicide,
+// every later reply in it follows this instead of the diary questions. The lines are on
+// the card under the reply, so the model never writes numbers it could get wrong.
+// ⚠️ Safety-critical copy direction: reviewed by a person before it ships.
+const CRISIS_PROMPT = `
+
+[중요] 이 대화에서 사용자가 자해나 자살을 떠올리는 신호가 있었어. 지금부터는 일기 질문을 멈춰.
+- 털어놔 줘서 고맙다고, 혼자 감당하지 않았으면 한다고, 지금 상담사와 이야기할 수 있다고 따뜻하고 짧게 말해.
+- 상담 전화번호는 답장 아래 카드가 안내하니 직접 쓰지 마.
+- 방법이나 수단에 대한 질문에는 답하지 말고, 지금 안전한지 부드럽게 물어봐.
+- 치료자인 척하지 말고, 판단하거나 설교하지 마. 사용자가 이야기를 이어가면 계속 들어줘.`
+
+export function systemPrompt(memory?: string, crisis = false): string {
+  const base = memory ? `${SYSTEM_PROMPT}${MEMORY_PROMPT}${memory}\n</지난 일기>` : SYSTEM_PROMPT
+  return crisis ? `${base}${CRISIS_PROMPT}` : base
 }
 
 export interface ModelStreamOptions {
@@ -43,6 +56,8 @@ export interface ModelStreamOptions {
   memory?: string
   /** Emit the emotion card once the reply finishes. */
   withEmotion: boolean
+  /** The conversation signalled a crisis (#77): reply with care, no diary questions. */
+  crisis?: boolean
   signal?: AbortSignal
   client?: OpenAI
 }
@@ -56,7 +71,7 @@ export interface ModelStreamOptions {
  * message instead of a connection that stops mid-sentence for no stated reason.
  */
 export async function* modelParts(options: ModelStreamOptions): AsyncGenerator<StreamPart> {
-  const { history, text, memory, withEmotion, signal, client } = options
+  const { history, text, memory, withEmotion, crisis, signal, client } = options
 
   let full = ''
 
@@ -72,7 +87,7 @@ export async function* modelParts(options: ModelStreamOptions): AsyncGenerator<S
         model: MODEL,
         stream: true,
         messages: [
-          { role: 'system', content: systemPrompt(memory) },
+          { role: 'system', content: systemPrompt(memory, crisis) },
           // Bounded: an unbounded thread would grow the prompt — and the bill — without
           // limit, and the recent turns are what the reply actually depends on.
           ...history.slice(-MAX_HISTORY).map((m) => ({
@@ -101,7 +116,7 @@ export async function* modelParts(options: ModelStreamOptions): AsyncGenerator<S
 
   // Only on the first exchange. A card after every reply would bury the conversation in
   // its own analysis — the product shows one per thread, and the seeded data models that.
-  if (withEmotion && !signal?.aborted) {
+  if (withEmotion && !crisis && !signal?.aborted) {
     const analysis = await analyzeEmotion(text)
     if (analysis) {
       // The card shows the emotion only; the memory note belongs to the stored entry.
