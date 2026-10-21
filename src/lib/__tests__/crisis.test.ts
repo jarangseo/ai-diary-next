@@ -91,11 +91,15 @@ describe('moderationSignal', () => {
 })
 
 describe('countryFor', () => {
-  it('takes the locale region first, then the zone, else unknown', () => {
-    expect(countryFor({ locale: 'en-US', timezone: 'Asia/Seoul' })).toBe('US')
+  it('takes a zone that names a country first, so an en-US browser in Seoul is still KR', () => {
+    expect(countryFor({ locale: 'en-US', timezone: 'Asia/Seoul' })).toBe('KR')
     expect(countryFor({ locale: 'ko', timezone: 'Asia/Seoul' })).toBe('KR')
+  })
+
+  it('falls back to the locale region, else unknown', () => {
+    expect(countryFor({ locale: 'en-US', timezone: 'America/New_York' })).toBe('US')
     expect(countryFor({ locale: 'ko', timezone: 'Europe/Berlin' })).toBe(null)
-    expect(countryFor({ locale: 'not a locale!', timezone: 'Asia/Seoul' })).toBe('KR')
+    expect(countryFor({ locale: 'not a locale!', timezone: 'UTC' })).toBe(null)
   })
 })
 

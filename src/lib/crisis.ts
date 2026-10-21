@@ -90,25 +90,28 @@ export function decideCrisis(signals: { phrase: boolean; moderation: boolean | n
   return signals.phrase || signals.moderation === true
 }
 
-// Zones that name a country unambiguously, for users whose locale has no region (`ko`).
-// Only countries with lines in crisisLines.ts need to be here.
+// Zones that name a country unambiguously. Only countries with lines in crisisLines.ts
+// need to be here.
 const ZONE_COUNTRY: Record<string, string> = {
   'Asia/Seoul': 'KR',
 }
 
 /**
- * The user's country for crisis lines: the region of their locale (`en-US` → US), else
- * their time zone, else unknown (null), which the card answers with the international
- * directory.
+ * The user's country for crisis lines: a zone that names one first (`Asia/Seoul` → KR),
+ * else the region of their locale (`en-US` → US), else unknown (null), which the card
+ * answers with the international directory.
+ *
+ * Zone before locale: the stored locale is whatever the browser sent, and plenty of people
+ * in Korea browse in `en-US`; their zone still says where they are.
  */
 export function countryFor(settings: Pick<UserSettings, 'locale' | 'timezone'>): string | null {
+  const byZone = ZONE_COUNTRY[settings.timezone]
+  if (byZone) return byZone
   try {
-    const region = new Intl.Locale(settings.locale).region
-    if (region) return region
+    return new Intl.Locale(settings.locale).region ?? null
   } catch {
-    // an invalid stored locale: fall through to the zone
+    return null // an invalid stored locale
   }
-  return ZONE_COUNTRY[settings.timezone] ?? null
 }
 
 /**
