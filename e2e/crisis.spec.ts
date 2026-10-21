@@ -2,21 +2,24 @@ import { test, expect } from '@playwright/test'
 import { removeEntries, startChatEntry } from './entries'
 
 // Crisis (#77, spec 5-2 "위기 응답"). Test runs use the fake stream and no moderation call,
-// so the word list is what fires here. The country comes from the stored settings
-// (locale `ko` has no region, so the zone decides); each test sets the zone it needs and
-// the original is put back after.
+// so the word list is what fires here. The country comes from the stored settings: the
+// locale's region first, else the zone. Each test stores locale `ko` (no region, as a
+// Korean user's is) and the zone it needs, and the originals are put back after — the
+// run's user otherwise keeps whatever its browser sent on the first visit (`en-US`).
 
 const created: string[] = []
-let originalZone: string
+let original: { timezone: string; locale: string }
 test.beforeEach(async ({ page }) => {
-  originalZone = (await (await page.request.get('/api/settings')).json()).settings.timezone
+  original = (await (await page.request.get('/api/settings')).json()).settings
 })
 test.afterEach(async ({ page }) => {
   await removeEntries(page, created.splice(0))
-  await page.request.patch('/api/settings', { data: { timezone: originalZone } })
+  await page.request.patch('/api/settings', {
+    data: { timezone: original.timezone, locale: original.locale },
+  })
 })
 const setZone = (page: import('@playwright/test').Page, timezone: string) =>
-  page.request.patch('/api/settings', { data: { timezone } })
+  page.request.patch('/api/settings', { data: { timezone, locale: 'ko' } })
 
 test('a message that signals a crisis gets the crisis lines under the reply', async ({ page }) => {
   await setZone(page, 'Asia/Seoul')
