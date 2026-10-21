@@ -1,0 +1,75 @@
+@use '@/styles/variables' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 16px;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-md;
+  background-color: $color-surface;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// A whole row is the tap target (≥44 px), so calling never needs a precise touch.
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid $color-border-input;
+  border-radius: $radius-md;
+  color: $color-text-primary;
+  text-decoration: none;
+
+  &:hover {
+    background-color: $color-bg-hover;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.name {
+  font-weight: $font-weight-semibold;
+}
+
+.tel {
+  font-variant-numeric: tabular-nums;
+  font-weight: $font-weight-semibold;
+  color: $color-accent-text;
+}
+
+.hours {
+  font-size: 13px;
+  color: $color-text-secondary;
+}
+
+.pending {
+  font-size: 14px;
+  color: $color-text-secondary;
+}
+
+.note {
+  font-size: 14px;
+  line-height: 1.6;
+  color: $color-text-secondary;
+}
