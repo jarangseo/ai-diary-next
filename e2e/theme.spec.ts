@@ -23,10 +23,10 @@ test('a chosen theme applies at once and survives a reload', async ({ page }) =>
   await expect(page.getByRole('radio', { name: '밤' })).toBeChecked()
 })
 
-test('"기기 설정" follows the operating system', async ({ page }) => {
+test('"시스템 설정" follows the operating system', async ({ page }) => {
   await page.goto('/settings')
   await page.getByRole('radio', { name: '낮' }).check()
-  await page.getByRole('radio', { name: '기기 설정' }).check()
+  await page.getByRole('radio', { name: '시스템 설정' }).check()
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.*/)
 
   await page.emulateMedia({ colorScheme: 'dark' })
