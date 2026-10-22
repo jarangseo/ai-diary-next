@@ -105,6 +105,17 @@ export async function POST(
   if (crisisNow && !thread.crisisAt) await markThreadCrisis(threadId)
   const inCrisis = crisisNow || Boolean(thread.crisisAt)
 
+  // The entry this conversation is about: its date anchors memory (#128), and its mode and
+  // draft decide the wrap-up offer below. A failed lookup costs both, never the reply.
+  let diary: Awaited<ReturnType<typeof getDiaryById>> = null
+  if (thread.kind === 'diary' && thread.diaryId) {
+    try {
+      diary = await getDiaryById(session.user.id, thread.diaryId)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   let source
   if (bench) {
     source = fakeParts({ signal: request.signal })
@@ -117,7 +128,10 @@ export async function POST(
       history,
       text: text.trim(),
       // The user's recent entries, unless they turned memory off (#76). Never blocks.
-      memory: await memoryFor(session.user.id, thread.diaryId),
+      memory: await memoryFor(
+        session.user.id,
+        diary ? { id: diary.id, date: diary.date } : undefined
+      ),
       withEmotion: history.length === 0,
       crisis: inCrisis,
       signal: request.signal,
@@ -137,20 +151,14 @@ export async function POST(
   // Decided now, stored after the reply: the offer reads as the AI's next turn, so it has
   // to land after the reply it follows. A failed entry lookup only costs the offer —
   // the conversation never waits on it.
-  let offerWrapUp = false
-  if (thread.kind === 'diary' && thread.diaryId) {
-    try {
-      const diary = await getDiaryById(session.user.id, thread.diaryId)
-      offerWrapUp = shouldOfferWrapUp({
-        messages: [...history, stored],
-        isChatEntry: diary?.mode === 'chat',
-        wrappedUp: Boolean(diary?.summary),
-        crisis: inCrisis,
-      })
-    } catch (error) {
-      console.error(error)
-    }
-  }
+  const offerWrapUp =
+    diary !== null &&
+    shouldOfferWrapUp({
+      messages: [...history, stored],
+      isChatEntry: diary.mode === 'chat',
+      wrappedUp: Boolean(diary.summary),
+      crisis: inCrisis,
+    })
 
   const stream = partsToNdjsonStream(source, {
     onComplete: async (content, toolResults) => {

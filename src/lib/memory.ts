@@ -70,18 +70,36 @@ export function buildMemoryContext(entries: MemoryEntry[]): string {
   return lines.join('\n')
 }
 
-/** The user's entries from the last MEMORY_DAYS of their calendar, except the current one. */
+/**
+ * The day memory looks back from (#128): the entry's own date. A conversation about a past
+ * entry must not know what came after it — the AI naming someone the user met last week,
+ * in a talk about a day a month ago, reads as the app making things up. Today for an
+ * entry dated today, no entry, or one dated in the future.
+ */
+export function memoryAnchor(today: string, entryDate?: string): string {
+  return entryDate && entryDate < today ? entryDate : today
+}
+
+/**
+ * The user's entries from the MEMORY_DAYS up to `until` (default today) of their calendar,
+ * except the current one. Nothing dated after `until`.
+ */
 export async function loadMemoryEntries(
   userId: string,
-  { excludeId, timeZone, now = new Date() }: { excludeId?: string; timeZone: string; now?: Date }
+  {
+    excludeId,
+    timeZone,
+    until,
+    now = new Date(),
+  }: { excludeId?: string; timeZone: string; until?: string; now?: Date }
 ): Promise<MemoryEntry[]> {
-  const today = todayIn(now, timeZone)
+  const end = memoryAnchor(todayIn(now, timeZone), until)
   const { data, error } = await supabase
     .from('diaries')
     .select('id, date, title, mode, content, summary')
     .eq('user_id', userId)
-    .gte('date', dateKeyMinusDays(today, MEMORY_DAYS))
-    .lte('date', today)
+    .gte('date', dateKeyMinusDays(end, MEMORY_DAYS))
+    .lte('date', end)
     .order('date', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(MAX_ENTRIES)
@@ -159,18 +177,24 @@ export function combineMemory(recent: string, older: string): string {
 }
 
 /**
- * The memory block for a reply in the conversation about `currentEntryId`, or '' when
- * the user turned `지난 일기 참고하기` off, has nothing to remember, or a read fails.
- * Memory is an addition to the reply: it never stops one.
+ * The memory block for a reply in the conversation about `entry`, or '' when the user
+ * turned `지난 일기 참고하기` off, has nothing to remember, or a read fails. Memory is an
+ * addition to the reply: it never stops one.
+ *
+ * Seen from the entry's date (`memoryAnchor`): the two weeks up to it, older notes before
+ * that, and nothing written about a later day.
  */
-export async function memoryFor(userId: string, currentEntryId?: string): Promise<string> {
+export async function memoryFor(
+  userId: string,
+  entry?: { id: string; date: string }
+): Promise<string> {
   try {
     const { settings } = await getSettings(userId)
     if (!settings.memoryEnabled) return ''
-    const windowStart = dateKeyMinusDays(todayIn(new Date(), settings.timezone), MEMORY_DAYS)
+    const end = memoryAnchor(todayIn(new Date(), settings.timezone), entry?.date)
     const [entries, notes] = await Promise.all([
-      loadMemoryEntries(userId, { excludeId: currentEntryId, timeZone: settings.timezone }),
-      loadOlderNotes(userId, windowStart),
+      loadMemoryEntries(userId, { excludeId: entry?.id, timeZone: settings.timezone, until: end }),
+      loadOlderNotes(userId, dateKeyMinusDays(end, MEMORY_DAYS)),
     ])
     return combineMemory(buildMemoryContext(entries), buildOlderNotes(notes))
   } catch (error) {
