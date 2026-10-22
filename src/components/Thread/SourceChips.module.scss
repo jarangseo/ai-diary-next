@@ -1,0 +1,36 @@
+@use '@/styles/variables' as *;
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Small, but a full 44 px tap target: the padding grows the hit area, not the look.
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid $color-border-input;
+  border-radius: 999px;
+  font-size: 13px;
+  color: $color-text-secondary;
+  text-decoration: none;
+
+  @media (pointer: coarse) {
+    min-height: 44px;
+  }
+
+  &:hover {
+    background-color: $color-bg-hover;
+    color: $color-text-primary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
