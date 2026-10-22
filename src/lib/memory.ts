@@ -125,6 +125,7 @@ const MAX_OLDER_CHARS = 2000
 const MAX_OLDER_NOTES = 60
 
 export interface MemoryNote {
+  id: string
   date: string // YYYY-MM-DD
   note: string
 }
@@ -134,7 +135,7 @@ export interface MemoryNote {
  * year of entries stays within the cap because only the newest notes that fit are kept;
  * monthly roll-ups are the next layer if that ever drops too much (PRODUCT_DIRECTION).
  */
-export function buildOlderNotes(notes: MemoryNote[]): string {
+export function buildOlderNotes(notes: Pick<MemoryNote, 'date' | 'note'>[]): string {
   const lines: string[] = []
   let total = 0
   const newestFirst = [...notes].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
@@ -153,7 +154,7 @@ export function buildOlderNotes(notes: MemoryNote[]): string {
 export async function loadOlderNotes(userId: string, before: string): Promise<MemoryNote[]> {
   const { data, error } = await supabase
     .from('diaries')
-    .select('date, memory_note')
+    .select('id, date, memory_note')
     .eq('user_id', userId)
     .lt('date', before)
     .not('memory_note', 'is', null)
@@ -162,7 +163,8 @@ export async function loadOlderNotes(userId: string, before: string): Promise<Me
 
   if (error) throw new Error(`loadOlderNotes failed: ${error.message}`)
 
-  return (data as { date: string; memory_note: string }[]).map((row) => ({
+  return (data as { id: string; date: string; memory_note: string }[]).map((row) => ({
+    id: row.id,
     date: row.date,
     note: row.memory_note,
   }))
@@ -177,28 +179,63 @@ export function combineMemory(recent: string, older: string): string {
 }
 
 /**
- * The memory block for a reply in the conversation about `entry`, or '' when the user
- * turned `지난 일기 참고하기` off, has nothing to remember, or a read fails. Memory is an
- * addition to the reply: it never stops one.
+ * An entry memory may have drawn on: a source chip if the reply turns out to mention it
+ * (#76, lib/memorySources.ts).
+ */
+export interface MemorySource {
+  id: string
+  date: string
+  title?: string
+  /** What the AI saw of it: the condensed 일기 or the one-line note. */
+  text: string
+}
+
+export interface MemoryContext {
+  /** The block for the prompt; '' when there is nothing to remember. */
+  text: string
+  /** Every entry in it, newest first, for source chips. */
+  sources: MemorySource[]
+}
+
+const NO_MEMORY: MemoryContext = { text: '', sources: [] }
+
+/**
+ * Memory for a reply in the conversation about `entry`: the prompt block and the entries
+ * behind it. Empty when the user turned `지난 일기 참고하기` off, has nothing to remember,
+ * or a read fails. Memory is an addition to the reply: it never stops one.
  *
  * Seen from the entry's date (`memoryAnchor`): the two weeks up to it, older notes before
  * that, and nothing written about a later day.
  */
-export async function memoryFor(
+export async function memoryContextFor(
   userId: string,
   entry?: { id: string; date: string }
-): Promise<string> {
+): Promise<MemoryContext> {
   try {
     const { settings } = await getSettings(userId)
-    if (!settings.memoryEnabled) return ''
+    if (!settings.memoryEnabled) return NO_MEMORY
     const end = memoryAnchor(todayIn(new Date(), settings.timezone), entry?.date)
     const [entries, notes] = await Promise.all([
       loadMemoryEntries(userId, { excludeId: entry?.id, timeZone: settings.timezone, until: end }),
       loadOlderNotes(userId, dateKeyMinusDays(end, MEMORY_DAYS)),
     ])
-    return combineMemory(buildMemoryContext(entries), buildOlderNotes(notes))
+    return {
+      text: combineMemory(buildMemoryContext(entries), buildOlderNotes(notes)),
+      sources: [
+        ...entries.map(({ id, date, title, text }) => ({ id, date, title, text })),
+        ...notes.map(({ id, date, note }) => ({ id, date, text: note })),
+      ],
+    }
   } catch (error) {
     console.error(error)
-    return ''
+    return NO_MEMORY
   }
+}
+
+/** The prompt block alone (see `memoryContextFor`). */
+export async function memoryFor(
+  userId: string,
+  entry?: { id: string; date: string }
+): Promise<string> {
+  return (await memoryContextFor(userId, entry)).text
 }

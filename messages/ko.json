@@ -153,6 +153,10 @@
       "noEmotion": "없음"
     }
   },
+  "Sources": {
+    "label": "참고한 일기",
+    "chip": "{date} 일기"
+  },
   "Crisis": {
     "title": "지금 이야기할 수 있는 곳",
     "hours": "24시간",

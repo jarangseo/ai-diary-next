@@ -16,6 +16,7 @@ import { OfferCard, WrapUpButton, WrapUpFailed } from './WrapUp'
 import { countSaid, draftCut, saidSince } from './afterWrapUp'
 import { DiaryPane } from './DiaryPane'
 import { CrisisCard } from '@/components/Crisis/CrisisCard'
+import { SourceChips } from '@/components/Thread/SourceChips'
 import { AfterLayout } from './AfterLayout'
 import styles from './ChatEntry.module.scss'
 
@@ -376,6 +377,10 @@ export function ChatEntry({
                 (r) => r.tool === 'crisis' && <CrisisCard key="crisis" country={r.data.country} />
               )}
               {/* Source chips (#76): the entries a reply drew on, at most three. */}
+              {m.toolResults?.map(
+                (r) =>
+                  r.tool === 'sources' && <SourceChips key="sources" entries={r.data.entries} />
+              )}
             </div>
           ),
           wrappedUp && i === cut - 1 && (
