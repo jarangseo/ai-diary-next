@@ -1,4 +1,4 @@
-import type { CrisisToolResult, EmotionToolResult } from './thread'
+import type { CrisisToolResult, EmotionToolResult, SourcesToolResult } from './thread'
 
 // Wire protocol between the streaming endpoint and the client transport.
 //
@@ -11,8 +11,8 @@ import type { CrisisToolResult, EmotionToolResult } from './thread'
 // component at that point in the stream instead of parsing text back into data.
 export type StreamPart =
   | { type: 'text-delta'; delta: string }
-  // The emotion card and the crisis card stream. A wrap-up offer is decided by the server
-  // after the reply and stored as a message of its own (#74), not emitted mid-stream.
-  | ({ type: 'tool-result' } & (EmotionToolResult | CrisisToolResult))
+  // The emotion card, the crisis card and the source chips stream. A wrap-up offer is
+  // decided by the server after the reply and stored as a message of its own (#74).
+  | ({ type: 'tool-result' } & (EmotionToolResult | CrisisToolResult | SourcesToolResult))
   | { type: 'done' }
   | { type: 'error'; message: string }
