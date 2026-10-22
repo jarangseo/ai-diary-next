@@ -31,6 +31,7 @@ import {
   dateKeyMinusDays,
   entryText,
   loadMemoryEntries,
+  memoryAnchor,
   memoryFor,
 } from '../memory'
 
@@ -151,7 +152,7 @@ describe('combineMemory', () => {
 describe('memoryFor', () => {
   it('is empty and reads no entries when the user turned memory off', async () => {
     settings.value = { ...settings.value, memoryEnabled: false }
-    await expect(memoryFor('u1', 'now')).resolves.toBe('')
+    await expect(memoryFor('u1', { id: 'now', date: '2026-10-22' })).resolves.toBe('')
     expect(db.calls).toEqual([])
   })
 
@@ -159,5 +160,29 @@ describe('memoryFor', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     db.result = { data: null, error: { message: 'fetch failed' } }
     await expect(memoryFor('u1')).resolves.toBe('')
+  })
+})
+
+describe('memory seen from the entry’s date (#128)', () => {
+  it('anchors at a past entry’s date, and at today for today, none or a future date', () => {
+    expect(memoryAnchor('2026-10-22', '2026-09-10')).toBe('2026-09-10')
+    expect(memoryAnchor('2026-10-22', '2026-10-22')).toBe('2026-10-22')
+    expect(memoryAnchor('2026-10-22')).toBe('2026-10-22')
+    expect(memoryAnchor('2026-10-22', '2026-12-01')).toBe('2026-10-22')
+  })
+
+  it('a past entry’s conversation reads nothing dated after it', async () => {
+    await memoryFor('u1', { id: 'past', date: '2026-09-10' })
+    // The two weeks up to the entry's date…
+    expect(db.calls).toContainEqual(['gte', 'date', '2026-08-27'])
+    expect(db.calls).toContainEqual(['lte', 'date', '2026-09-10'])
+    // …and older notes only before that window.
+    expect(db.calls).toContainEqual(['lt', 'date', '2026-08-27'])
+    // (order('date', …) passes an options object, not a date.)
+    const dates = db.calls
+      .filter(([, column, value]) => column === 'date' && typeof value === 'string')
+      .map(([, , value]) => value as string)
+    expect(dates.length).toBeGreaterThan(0)
+    expect(dates.every((value) => value <= '2026-09-10')).toBe(true)
   })
 })
