@@ -202,3 +202,25 @@ export async function memoryFor(
     return ''
   }
 }
+
+/**
+ * The home greeting's memory line (#76, decided: a fixed sentence, no model call): the
+ * newest titled entry from the MEMORY_DAYS before `today`, and how many days ago it was.
+ * Today's own entries are left out — the greeting asks about today. None when memory is
+ * off or nothing fits; the line is then simply absent.
+ */
+export function greetingEntry(
+  entries: Pick<MemoryEntry, 'id' | 'date' | 'title'>[],
+  today: string,
+  memoryEnabled: boolean
+): { id: string; title: string; daysAgo: number } | null {
+  if (!memoryEnabled) return null
+  const from = dateKeyMinusDays(today, MEMORY_DAYS)
+  const newest = entries
+    .filter((e) => e.title?.trim() && e.date < today && e.date >= from)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))[0]
+  if (!newest) return null
+  const days =
+    (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${newest.date}T00:00:00Z`)) / 86_400_000
+  return { id: newest.id, title: newest.title!.trim(), daysAgo: Math.round(days) }
+}

@@ -75,6 +75,7 @@
   "Home": {
     "greeting": "{name}님,<br></br>오늘은 어땠어요?",
     "greetingNoName": "오늘은 어땠어요?",
+    "memoryLine": "{when} ‘{title}’ 이야기를 남겼어요.",
     "firstRun": {
       "greeting": "{name}님, 반가워요.<br></br>오늘은 어땠어요?",
       "greetingNoName": "반가워요.<br></br>오늘은 어땠어요?",

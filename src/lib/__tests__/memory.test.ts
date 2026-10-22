@@ -30,6 +30,7 @@ import {
   combineMemory,
   dateKeyMinusDays,
   entryText,
+  greetingEntry,
   loadMemoryEntries,
   memoryAnchor,
   memoryFor,
@@ -184,5 +185,36 @@ describe('memory seen from the entry’s date (#128)', () => {
       .map(([, , value]) => value as string)
     expect(dates.length).toBeGreaterThan(0)
     expect(dates.every((value) => value <= '2026-09-10')).toBe(true)
+  })
+})
+
+describe('greetingEntry (#76)', () => {
+  const today = '2026-10-23'
+  const entries = [
+    { id: 'today', date: '2026-10-23', title: '오늘 쓴 일기' },
+    { id: 'untitled', date: '2026-10-22', title: undefined },
+    { id: 'yesterday', date: '2026-10-22', title: ' 회의가 길었던 날 ' },
+    { id: 'older', date: '2026-10-15', title: '발표 준비' },
+    { id: 'tooOld', date: '2026-10-01', title: '한 달 전' },
+  ]
+
+  it('picks the newest titled entry before today, with how many days ago', () => {
+    expect(greetingEntry(entries, today, true)).toEqual({
+      id: 'yesterday',
+      title: '회의가 길었던 날',
+      daysAgo: 1,
+    })
+  })
+
+  it('reaches back two weeks and no further', () => {
+    const rest = entries.filter((e) => e.id !== 'yesterday')
+    expect(greetingEntry(rest, today, true)?.id).toBe('older')
+    expect(greetingEntry(rest, today, true)?.daysAgo).toBe(8)
+    expect(greetingEntry([entries[4]], today, true)).toBe(null)
+  })
+
+  it('is none with memory off, or with only today’s entries', () => {
+    expect(greetingEntry(entries, today, false)).toBe(null)
+    expect(greetingEntry([entries[0]], today, true)).toBe(null)
   })
 })
