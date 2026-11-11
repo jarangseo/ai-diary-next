@@ -13,6 +13,10 @@ import type { MemorySource } from './memory'
 export const MAX_SOURCES = 3
 const MODEL = 'gpt-4o-mini'
 const TIMEOUT_MS = 8_000
+// No retries: the reply's `done` waits for this call, so the SDK's default two retries
+// would keep the composer in its streaming state for up to ~24 s. A missed chip is cheap;
+// a stuck composer is not.
+const MAX_RETRIES = 0
 const SNIPPET_CHARS = 120
 
 const PROMPT = `아래는 사용자가 쓴 지난 일기 목록과, 방금 AI가 사용자에게 한 답장이야.
@@ -62,7 +66,13 @@ export async function citedSources(
 ): Promise<SourceEntry[]> {
   if (!reply.trim() || candidates.length === 0) return []
   try {
-    const openai = client ?? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: TIMEOUT_MS })
+    const openai =
+      client ??
+      new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        timeout: TIMEOUT_MS,
+        maxRetries: MAX_RETRIES,
+      })
     const res = await openai.chat.completions.create(
       {
         model: MODEL,
