@@ -10,11 +10,19 @@ const ZONE = 'Asia/Seoul'
 test.use({ timezoneId: ZONE })
 
 const created: string[] = []
+// The test user is shared with the other specs (and CI's development project): put back
+// whatever zone and memory setting it had, not what this spec assumes they were.
+let original: { timezone: string; memoryEnabled: boolean } | undefined
 test.beforeEach(async ({ page }) => {
+  const res = await page.request.get('/api/settings')
+  expect(res.ok()).toBe(true)
+  const { settings } = await res.json()
+  original = { timezone: settings.timezone, memoryEnabled: settings.memoryEnabled }
   await page.request.patch('/api/settings', { data: { timezone: ZONE, memoryEnabled: true } })
 })
 test.afterEach(async ({ page }) => {
   await removeEntries(page, created.splice(0))
+  if (original) await page.request.patch('/api/settings', { data: original })
 })
 
 test('a reply that drew on an entry links to it', async ({ page }) => {
@@ -39,14 +47,11 @@ test('a reply that drew on an entry links to it', async ({ page }) => {
 
 test('with memory off, no reply shows chips', async ({ page }) => {
   test.setTimeout(90_000)
+  // afterEach puts the setting back.
   await page.request.patch('/api/settings', { data: { memoryEnabled: false } })
-  try {
-    created.push(await writeEntry(page, todayIn(new Date(), ZONE), `E2E 끈 기억 ${Date.now()}`))
-    created.push(await startChatEntry(page, `E2E 기억 끔 ${Date.now()}`))
-    // Wait for the reply to finish: the composer's send comes back when it is done.
-    await expect(page.getByRole('button', { name: '보내기' })).toBeVisible({ timeout: 40_000 })
-    await expect(page.getByRole('list', { name: '참고한 일기' })).toHaveCount(0)
-  } finally {
-    await page.request.patch('/api/settings', { data: { memoryEnabled: true } })
-  }
+  created.push(await writeEntry(page, todayIn(new Date(), ZONE), `E2E 끈 기억 ${Date.now()}`))
+  created.push(await startChatEntry(page, `E2E 기억 끔 ${Date.now()}`))
+  // Wait for the reply to finish: the composer's send comes back when it is done.
+  await expect(page.getByRole('button', { name: '보내기' })).toBeVisible({ timeout: 40_000 })
+  await expect(page.getByRole('list', { name: '참고한 일기' })).toHaveCount(0)
 })
