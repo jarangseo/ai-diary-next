@@ -3,7 +3,7 @@
 // shipped as a plain LLM passthrough, the product would have lost its reason to exist.
 //
 // The window and the condensing are pure functions, tested on their own; only
-// `loadMemoryEntries` and `memoryFor` touch the database.
+// `loadMemoryEntries`, `loadOlderNotes` and `memoryContextFor` touch the database.
 import { supabase } from './supabase'
 import { getSettings } from './settings'
 import { todayIn } from './entryGroups'
@@ -50,11 +50,11 @@ function weekday(dateKey: string): string {
 /**
  * The entries condensed for the model: newest first, one line each, cut per entry and in
  * total so the prompt — and the bill — stay bounded however much was written. The weekday
- * is there so the reply can say "화요일에도…" without doing date arithmetic. Empty when
- * there is nothing to remember.
+ * is there so the reply can say "화요일에도…" without doing date arithmetic. Only the
+ * entries returned are in the prompt, so only they may become source chips.
  */
-export function buildMemoryContext(entries: MemoryEntry[]): string {
-  const lines: string[] = []
+export function fitMemoryEntries(entries: MemoryEntry[]): { entry: MemoryEntry; line: string }[] {
+  const kept: { entry: MemoryEntry; line: string }[] = []
   let total = 0
   const newestFirst = [...entries].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
   for (const entry of newestFirst) {
@@ -64,10 +64,17 @@ export function buildMemoryContext(entries: MemoryEntry[]): string {
     const title = entry.title?.trim() ? ` "${entry.title.trim()}"` : ''
     const line = `- ${entry.date} ${weekday(entry.date)}${title}: ${body}`
     if (total + line.length > MAX_CONTEXT_CHARS) break
-    lines.push(line)
+    kept.push({ entry, line })
     total += line.length + 1
   }
-  return lines.join('\n')
+  return kept
+}
+
+/** The prompt block for `fitMemoryEntries`; empty when there is nothing to remember. */
+export function buildMemoryContext(entries: MemoryEntry[]): string {
+  return fitMemoryEntries(entries)
+    .map(({ line }) => line)
+    .join('\n')
 }
 
 /**
@@ -135,19 +142,28 @@ export interface MemoryNote {
  * year of entries stays within the cap because only the newest notes that fit are kept;
  * monthly roll-ups are the next layer if that ever drops too much (PRODUCT_DIRECTION).
  */
-export function buildOlderNotes(notes: Pick<MemoryNote, 'date' | 'note'>[]): string {
-  const lines: string[] = []
+export function fitOlderNotes<T extends Pick<MemoryNote, 'date' | 'note'>>(
+  notes: T[]
+): { note: T; line: string }[] {
+  const kept: { note: T; line: string }[] = []
   let total = 0
   const newestFirst = [...notes].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-  for (const { date, note } of newestFirst) {
-    const text = note.replace(/\s+/g, ' ').trim()
+  for (const note of newestFirst) {
+    const text = note.note.replace(/\s+/g, ' ').trim()
     if (!text) continue
-    const line = `- ${date}: ${text}`
+    const line = `- ${note.date}: ${text}`
     if (total + line.length > MAX_OLDER_CHARS) break
-    lines.push(line)
+    kept.push({ note, line })
     total += line.length + 1
   }
-  return lines.join('\n')
+  return kept
+}
+
+/** The prompt block for `fitOlderNotes`. */
+export function buildOlderNotes(notes: Pick<MemoryNote, 'date' | 'note'>[]): string {
+  return fitOlderNotes(notes)
+    .map(({ line }) => line)
+    .join('\n')
 }
 
 /** Notes for entries dated before `before` (the window's first day), newest first. */
@@ -219,23 +235,22 @@ export async function memoryContextFor(
       loadMemoryEntries(userId, { excludeId: entry?.id, timeZone: settings.timezone, until: end }),
       loadOlderNotes(userId, dateKeyMinusDays(end, MEMORY_DAYS)),
     ])
+    // Sources are only what made it into the prompt: an entry cut by the cap was never
+    // seen by the reply, so it must not be offered as something the reply drew on.
+    const recent = fitMemoryEntries(entries)
+    const older = fitOlderNotes(notes)
     return {
-      text: combineMemory(buildMemoryContext(entries), buildOlderNotes(notes)),
+      text: combineMemory(
+        recent.map(({ line }) => line).join('\n'),
+        older.map(({ line }) => line).join('\n')
+      ),
       sources: [
-        ...entries.map(({ id, date, title, text }) => ({ id, date, title, text })),
-        ...notes.map(({ id, date, note }) => ({ id, date, text: note })),
+        ...recent.map(({ entry: { id, date, title, text } }) => ({ id, date, title, text })),
+        ...older.map(({ note: { id, date, note } }) => ({ id, date, text: note })),
       ],
     }
   } catch (error) {
     console.error(error)
     return NO_MEMORY
   }
-}
-
-/** The prompt block alone (see `memoryContextFor`). */
-export async function memoryFor(
-  userId: string,
-  entry?: { id: string; date: string }
-): Promise<string> {
-  return (await memoryContextFor(userId, entry)).text
 }

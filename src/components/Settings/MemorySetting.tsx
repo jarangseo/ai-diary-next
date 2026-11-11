@@ -6,7 +6,7 @@ import styles from './MemorySetting.module.scss'
 
 /**
  * `지난 일기 참고하기` (screen 5-3): whether the AI reads the last two weeks of entries
- * (`lib/memory.ts#memoryFor` checks it on every reply). Stored per user, so it follows the
+ * (`lib/memory.ts#memoryContextFor` checks it on every reply). Stored per user, so it follows the
  * account to every device. The switch moves at once and moves back if the save fails.
  */
 export function MemorySetting({ initial }: { initial: boolean }) {
