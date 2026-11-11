@@ -1,6 +1,11 @@
 import { auth } from '@/auth'
 import { getDiaryById } from '@/lib/diary'
-import { countUserMessagesToday, getOrCreateThreadForDiary, listMessages } from '@/lib/threads'
+import {
+  countUserMessagesToday,
+  getOrCreateThreadForDiary,
+  listMessages,
+  withLiveSources,
+} from '@/lib/threads'
 import { DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { ThreadPanel } from '@/components/Thread/ThreadPanel'
 import { ChatEntry } from '@/components/ChatEntry/ChatEntry'
@@ -41,7 +46,9 @@ export default async function DiaryDetailPage({ params }: { params: Promise<{ id
     diary.id,
     diary.title ?? t('threadDefaultTitle')
   )
-  const messages = thread ? await listMessages(thread.id) : []
+  const messages = thread
+    ? await withLiveSources(session.user.id, await listMessages(thread.id))
+    : []
 
   // The deterministic stream in the test environment, the model everywhere else.
   // E2E_AUTH_SECRET is already the "this is a test run" gate (it is what makes the test

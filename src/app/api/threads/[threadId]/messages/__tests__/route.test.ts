@@ -18,7 +18,9 @@ vi.mock('@/lib/settings', () => ({
 }))
 vi.mock('next-intl/server', () => ({ getTranslations: vi.fn(async () => (key: string) => key) }))
 vi.mock('@/lib/diary', () => ({ getDiaryById: vi.fn() }))
-vi.mock('@/lib/memory', () => ({ memoryFor: vi.fn(async () => '') }))
+vi.mock('@/lib/memory', () => ({
+  memoryContextFor: vi.fn(async () => ({ text: '', sources: [] })),
+}))
 // The model path is never taken here (bench=1). The fake stream paces itself like a real
 // model, which is right for the UI and too slow for a unit test, so a one-line reply
 // stands in for it.

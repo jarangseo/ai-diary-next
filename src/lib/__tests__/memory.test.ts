@@ -32,7 +32,7 @@ import {
   entryText,
   loadMemoryEntries,
   memoryAnchor,
-  memoryFor,
+  memoryContextFor,
 } from '../memory'
 
 beforeEach(() => {
@@ -149,17 +149,43 @@ describe('combineMemory', () => {
   })
 })
 
-describe('memoryFor', () => {
+describe('memoryContextFor', () => {
   it('is empty and reads no entries when the user turned memory off', async () => {
     settings.value = { ...settings.value, memoryEnabled: false }
-    await expect(memoryFor('u1', { id: 'now', date: '2026-10-22' })).resolves.toBe('')
+    await expect(memoryContextFor('u1', { id: 'now', date: '2026-10-22' })).resolves.toEqual({
+      text: '',
+      sources: [],
+    })
     expect(db.calls).toEqual([])
   })
 
   it('never throws: a failed read means no memory, not no reply', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     db.result = { data: null, error: { message: 'fetch failed' } }
-    await expect(memoryFor('u1')).resolves.toBe('')
+    await expect(memoryContextFor('u1')).resolves.toEqual({ text: '', sources: [] })
+  })
+
+  it('offers as sources only the entries and notes that fit in the prompt', async () => {
+    // 30 long entries: the 4000-char cap keeps only some of them, and the 2000-char cap
+    // only some of the notes (the mock answers both reads with the same rows).
+    db.result = {
+      data: Array.from({ length: 30 }, (_, i) => ({
+        id: `e${i}`,
+        date: dateKeyMinusDays('2026-10-22', i % 14),
+        title: null,
+        mode: 'write',
+        content: '가'.repeat(400),
+        summary: null,
+        memory_note: '나'.repeat(100),
+      })),
+      error: null,
+    }
+    const { text, sources } = await memoryContextFor('u1')
+    const promptLines = text.split('\n').filter((line) => line.startsWith('- '))
+    expect(sources.length).toBeLessThan(60)
+    expect(sources).toHaveLength(promptLines.length)
+    // Each source is the entry on the matching line, in the prompt's order.
+    sources.forEach((source, i) => expect(promptLines[i]).toContain(source.date))
   })
 })
 
@@ -172,7 +198,7 @@ describe('memory seen from the entry’s date (#128)', () => {
   })
 
   it('a past entry’s conversation reads nothing dated after it', async () => {
-    await memoryFor('u1', { id: 'past', date: '2026-09-10' })
+    await memoryContextFor('u1', { id: 'past', date: '2026-09-10' })
     // The two weeks up to the entry's date…
     expect(db.calls).toContainEqual(['gte', 'date', '2026-08-27'])
     expect(db.calls).toContainEqual(['lte', 'date', '2026-09-10'])

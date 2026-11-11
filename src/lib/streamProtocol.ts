@@ -55,7 +55,7 @@ export function createPartParser(): PartParser {
 export function toolResultOf(
   part: Extract<StreamPart, { type: 'tool-result' }>
 ): MessageToolResult {
-  return part.tool === 'emotion'
-    ? { tool: 'emotion', data: part.data }
-    : { tool: 'crisis', data: part.data }
+  if (part.tool === 'emotion') return { tool: 'emotion', data: part.data }
+  if (part.tool === 'crisis') return { tool: 'crisis', data: part.data }
+  return { tool: 'sources', data: part.data }
 }

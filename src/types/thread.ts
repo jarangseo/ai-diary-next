@@ -35,7 +35,19 @@ export type WrapUpOfferToolResult = { tool: 'wrapup_offer' }
  */
 export type CrisisToolResult = { tool: 'crisis'; data: { country: string | null } }
 
-export type MessageToolResult = EmotionToolResult | WrapUpOfferToolResult | CrisisToolResult
+/** An entry a reply drew on (#76): enough to label the chip and open the entry. */
+export interface SourceEntry {
+  id: string
+  date: string // YYYY-MM-DD
+  /** Tells apart two chips on the same date. Refreshed from the entry when the page loads. */
+  title?: string
+}
+
+/** Source chips (#76): the entries a reply drew on, at most three. */
+export type SourcesToolResult = { tool: 'sources'; data: { entries: SourceEntry[] } }
+
+export type MessageToolResult =
+  EmotionToolResult | WrapUpOfferToolResult | CrisisToolResult | SourcesToolResult
 
 export interface Message {
   id: string

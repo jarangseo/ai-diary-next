@@ -19,7 +19,8 @@ import { getTranslations } from 'next-intl/server'
 import { getDiaryById } from '@/lib/diary'
 import { shouldOfferWrapUp } from '@/lib/wrapUp'
 import { planRetry } from '@/lib/messageRetry'
-import { memoryFor } from '@/lib/memory'
+import { memoryContextFor, type MemoryContext } from '@/lib/memory'
+import { citedSources, fakeCited, withSources } from '@/lib/memorySources'
 import { cappedParts, isOverDailyLimit, DAILY_MESSAGE_LIMIT } from '@/lib/usage'
 import { fakeParts } from '@/lib/fakeStream'
 import { modelParts } from '@/lib/modelStream'
@@ -116,6 +117,17 @@ export async function POST(
     }
   }
 
+  // What the reply may draw on (#76): read only where it can be used — a model reply, or a
+  // test run, which checks the source chips with a stand-in for the model.
+  const testRun = Boolean(process.env.E2E_AUTH_SECRET)
+  const memory: MemoryContext =
+    (bench && !testRun) || overLimit
+      ? { text: '', sources: [] }
+      : await memoryContextFor(
+          session.user.id,
+          diary ? { id: diary.id, date: diary.date } : undefined
+        )
+
   let source
   if (bench) {
     source = fakeParts({ signal: request.signal })
@@ -128,14 +140,22 @@ export async function POST(
       history,
       text: text.trim(),
       // The user's recent entries, unless they turned memory off (#76). Never blocks.
-      memory: await memoryFor(
-        session.user.id,
-        diary ? { id: diary.id, date: diary.date } : undefined
-      ),
+      memory: memory.text,
       withEmotion: history.length === 0,
       crisis: inCrisis,
       signal: request.signal,
     })
+  }
+  // Source chips (#76), unless the conversation is in crisis: there the card under the
+  // reply is the crisis lines, and a link back to an old day is the wrong thing to offer.
+  if (memory.sources.length && !inCrisis) {
+    source = withSources(
+      source,
+      bench
+        ? async () => fakeCited(memory.sources)
+        : (reply) => citedSources(reply, memory.sources, { signal: request.signal }),
+      request.signal
+    )
   }
   if (crisisNow) {
     const [t, settings] = await Promise.all([
