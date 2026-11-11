@@ -155,7 +155,9 @@
   },
   "Sources": {
     "label": "참고한 일기",
-    "chip": "{date} 일기"
+    "chip": "{date} 일기",
+    "chipTitled": "{date} 일기 · {title}",
+    "chipNumbered": "{date} 일기 {n}"
   },
   "Crisis": {
     "title": "지금 이야기할 수 있는 곳",

@@ -3,6 +3,7 @@ import type { MessageRow, ThreadRow } from './supabase'
 import type { Message, MessageToolResult, Thread } from '@/types/thread'
 import { DEFAULT_SETTINGS, getSettings } from './settings'
 import { startOfDayIn } from './usage'
+import { keepLiveSources, sourceIds } from './memorySources'
 
 // Server-side data access for threads and messages. Ownership is checked here rather
 // than in the route: every read takes a userId, so there is no way to fetch a thread
@@ -65,6 +66,29 @@ export async function listMessages(threadId: string): Promise<Message[]> {
     .order('created_at', { ascending: true })
 
   return data?.map(rowToMessage) ?? []
+}
+
+/**
+ * The messages with their source chips checked against the user's entries (#76): a chip
+ * to a deleted entry is dropped, a renamed one gets its current title. If the check
+ * fails, the chips are shown as stored — a stale chip is better than a broken thread.
+ */
+export async function withLiveSources(userId: string, messages: Message[]): Promise<Message[]> {
+  const ids = sourceIds(messages)
+  if (ids.length === 0) return messages
+  const { data, error } = await supabase
+    .from('diaries')
+    .select('id, title')
+    .eq('user_id', userId)
+    .in('id', ids)
+  if (error) {
+    console.error('withLiveSources failed:', error.message)
+    return messages
+  }
+  const live = new Map(
+    (data as { id: string; title: string | null }[]).map((row) => [row.id, row.title])
+  )
+  return keepLiveSources(messages, live)
 }
 
 export async function appendMessage(

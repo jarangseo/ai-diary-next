@@ -39,6 +39,8 @@ export type CrisisToolResult = { tool: 'crisis'; data: { country: string | null 
 export interface SourceEntry {
   id: string
   date: string // YYYY-MM-DD
+  /** Tells apart two chips on the same date. Refreshed from the entry when the page loads. */
+  title?: string
 }
 
 /** Source chips (#76): the entries a reply drew on, at most three. */

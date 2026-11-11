@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import type { StreamPart } from '@/types/stream'
-import type { SourceEntry } from '@/types/thread'
+import type { MessageToolResult, SourceEntry } from '@/types/thread'
 import type { MemorySource } from './memory'
 
 // Source chips (#76): the entries a reply drew on, shown under it as `M월 D일 일기`, at most
@@ -52,7 +52,11 @@ export function parseCited(raw: string, candidates: MemorySource[]): SourceEntry
     const candidate = match ? candidates[Number(match[1]) - 1] : undefined
     if (!candidate || seen.has(candidate.id)) continue
     seen.add(candidate.id)
-    out.push({ id: candidate.id, date: candidate.date })
+    out.push({
+      id: candidate.id,
+      date: candidate.date,
+      ...(candidate.title ? { title: candidate.title } : {}),
+    })
     if (out.length === MAX_SOURCES) break
   }
   return out
@@ -103,7 +107,45 @@ export async function citedSources(
  * newest entry memory held, so a test can see a chip appear and open it.
  */
 export function fakeCited(candidates: MemorySource[]): SourceEntry[] {
-  return candidates.slice(0, 1).map(({ id, date }) => ({ id, date }))
+  return candidates
+    .slice(0, 1)
+    .map(({ id, date, title }) => ({ id, date, ...(title ? { title } : {}) }))
+}
+
+/**
+ * Stored chips as they stand now: an entry deleted since the reply loses its chip (it
+ * would open a page that is gone), and a renamed one shows its current title. `live` maps
+ * each entry that still exists to its title. A reply whose chips all went keeps no
+ * empty `sources` result.
+ */
+export function keepLiveSources<M extends { toolResults?: MessageToolResult[] }>(
+  messages: M[],
+  live: Map<string, string | null>
+): M[] {
+  return messages.map((message) => {
+    if (!message.toolResults?.some((r) => r.tool === 'sources')) return message
+    const toolResults = message.toolResults.flatMap((r): MessageToolResult[] => {
+      if (r.tool !== 'sources') return [r]
+      const entries = r.data.entries.flatMap((entry): SourceEntry[] => {
+        if (!live.has(entry.id)) return []
+        const title = live.get(entry.id)?.trim()
+        return [{ id: entry.id, date: entry.date, ...(title ? { title } : {}) }]
+      })
+      return entries.length ? [{ tool: 'sources', data: { entries } }] : []
+    })
+    return { ...message, toolResults }
+  })
+}
+
+/** Every entry id the messages' source chips point at. */
+export function sourceIds(messages: { toolResults?: MessageToolResult[] }[]): string[] {
+  const ids = new Set<string>()
+  for (const message of messages) {
+    for (const r of message.toolResults ?? []) {
+      if (r.tool === 'sources') r.data.entries.forEach((entry) => ids.add(entry.id))
+    }
+  }
+  return [...ids]
 }
 
 /**

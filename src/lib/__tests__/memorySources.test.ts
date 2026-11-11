@@ -8,6 +8,8 @@ import {
   candidateList,
   citedSources,
   fakeCited,
+  keepLiveSources,
+  sourceIds,
   parseCited,
   withSources,
 } from '../memorySources'
@@ -33,13 +35,13 @@ describe('parseCited', () => {
   it('maps the keys back to entries, in the model’s order', () => {
     expect(parseCited('{"cited":["E2","E1"]}', candidates)).toEqual([
       { id: 'b', date: '2026-10-17' },
-      { id: 'a', date: '2026-10-20' },
+      { id: 'a', date: '2026-10-20', title: '회의가 길었던 날' },
     ])
   })
 
   it('drops unknown keys and repeats, and keeps at most three', () => {
     expect(parseCited('{"cited":["E9","E1","E1","x"]}', candidates)).toEqual([
-      { id: 'a', date: '2026-10-20' },
+      { id: 'a', date: '2026-10-20', title: '회의가 길었던 날' },
     ])
     expect(parseCited('{"cited":["E1","E2","E3","E4"]}', candidates)).toHaveLength(MAX_SOURCES)
   })
@@ -83,7 +85,9 @@ describe('citedSources', () => {
 
 describe('fakeCited', () => {
   it('cites the newest entry, or nothing', () => {
-    expect(fakeCited(candidates)).toEqual([{ id: 'a', date: '2026-10-20' }])
+    expect(fakeCited(candidates)).toEqual([
+      { id: 'a', date: '2026-10-20', title: '회의가 길었던 날' },
+    ])
     expect(fakeCited([])).toEqual([])
   })
 })
@@ -143,5 +147,55 @@ describe('withSources', () => {
       )
     )
     expect(cite).not.toHaveBeenCalled()
+  })
+})
+
+describe('keepLiveSources', () => {
+  const messages = [
+    { id: 'm1', toolResults: undefined },
+    {
+      id: 'm2',
+      toolResults: [
+        { tool: 'wrapup_offer' as const },
+        {
+          tool: 'sources' as const,
+          data: {
+            entries: [
+              { id: 'a', date: '2026-10-20', title: '옛 제목' },
+              { id: 'gone', date: '2026-10-19' },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      id: 'm3',
+      toolResults: [
+        { tool: 'sources' as const, data: { entries: [{ id: 'gone', date: '2026-10-19' }] } },
+      ],
+    },
+  ]
+
+  it('lists every entry the chips point at, once', () => {
+    expect(sourceIds(messages)).toEqual(['a', 'gone'])
+  })
+
+  it('drops chips to deleted entries and shows the current title', () => {
+    const [m1, m2, m3] = keepLiveSources(messages, new Map([['a', '새 제목']]))
+    expect(m1).toBe(messages[0])
+    expect(m2.toolResults).toEqual([
+      { tool: 'wrapup_offer' },
+      { tool: 'sources', data: { entries: [{ id: 'a', date: '2026-10-20', title: '새 제목' }] } },
+    ])
+    // Every chip went: no empty chip list is left behind.
+    expect(m3.toolResults).toEqual([])
+  })
+
+  it('drops a title the entry no longer has', () => {
+    const [, m2] = keepLiveSources(messages, new Map([['a', null]]))
+    expect(m2.toolResults?.[1]).toEqual({
+      tool: 'sources',
+      data: { entries: [{ id: 'a', date: '2026-10-20' }] },
+    })
   })
 })
